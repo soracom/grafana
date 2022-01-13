@@ -408,6 +408,11 @@ type GetDashboardPermissionsForUserQuery struct {
 	Result       []*DashboardPermissionForUser
 }
 
+type GetDashboardsByOrgIdQuery struct {
+	OrgId  int64
+	Result []*Dashboard
+}
+
 type GetDashboardsByPluginIdQuery struct {
 	OrgId    int64
 	PluginId string
