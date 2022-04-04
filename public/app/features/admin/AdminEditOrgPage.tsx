@@ -1,4 +1,4 @@
-import React, { FC, useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import Page from 'app/core/components/Page/Page';
 import { useSelector } from 'react-redux';
 import { StoreState, OrgUser, AccessControlAction } from 'app/types';
@@ -11,6 +11,7 @@ import { Form, Field, Input, Button, Legend, Alert } from '@grafana/ui';
 import { css } from '@emotion/css';
 import { GrafanaRouteComponentProps } from 'app/core/navigation/types';
 import { contextSrv } from 'app/core/core';
+import { accessControlQueryParam } from 'app/core/utils/accessControl';
 
 interface OrgNameDTO {
   orgName: string;
@@ -22,7 +23,7 @@ const getOrg = async (orgId: UrlQueryValue) => {
 
 const getOrgUsers = async (orgId: UrlQueryValue) => {
   if (contextSrv.hasPermission(AccessControlAction.OrgUsersRead)) {
-    return await getBackendSrv().get(`/api/orgs/${orgId}/users`);
+    return await getBackendSrv().get(`/api/orgs/${orgId}/users`, accessControlQueryParam());
   }
   return [];
 };
@@ -37,7 +38,7 @@ const removeOrgUser = async (orgUser: OrgUser, orgId: UrlQueryValue) => {
 
 interface Props extends GrafanaRouteComponentProps<{ id: string }> {}
 
-export const AdminEditOrgPage: FC<Props> = ({ match }) => {
+export default function AdminEditOrgPage({ match }: Props) {
   const navIndex = useSelector((state: StoreState) => state.navIndex);
   const navModel = getNavModel(navIndex, 'global-orgs');
   const orgId = parseInt(match.params.id, 10);
@@ -123,6 +124,4 @@ export const AdminEditOrgPage: FC<Props> = ({ match }) => {
       </Page.Contents>
     </Page>
   );
-};
-
-export default AdminEditOrgPage;
+}

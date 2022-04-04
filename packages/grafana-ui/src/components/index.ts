@@ -2,7 +2,8 @@ export { Icon } from './Icon/Icon';
 export { IconButton, IconButtonVariant } from './IconButton/IconButton';
 export { ConfirmButton } from './ConfirmButton/ConfirmButton';
 export { DeleteButton } from './ConfirmButton/DeleteButton';
-export { Tooltip, PopoverContent } from './Tooltip/Tooltip';
+export { Tooltip } from './Tooltip/Tooltip';
+export { PopoverContent } from './Tooltip/types';
 export { PopoverController } from './Tooltip/PopoverController';
 export { Popover } from './Tooltip/Popover';
 export { Portal } from './Portal/Portal';
@@ -61,7 +62,7 @@ export { Modal } from './Modal/Modal';
 export { ModalHeader } from './Modal/ModalHeader';
 export { ModalTabsHeader } from './Modal/ModalTabsHeader';
 export { ModalTabContent } from './Modal/ModalTabContent';
-export { ModalsProvider, ModalRoot, ModalsController } from './Modal/ModalsContext';
+export { ModalsProvider, ModalRoot, ModalsController, ModalsContext } from './Modal/ModalsContext';
 export { PageToolbar } from './PageLayout/PageToolbar';
 
 // Renderless

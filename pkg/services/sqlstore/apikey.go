@@ -4,17 +4,18 @@ import (
 	"context"
 	"time"
 
+	"xorm.io/xorm"
+
 	"github.com/grafana/grafana/pkg/bus"
 	"github.com/grafana/grafana/pkg/models"
-	"xorm.io/xorm"
 )
 
 func (ss *SQLStore) addAPIKeysQueryAndCommandHandlers() {
-	bus.AddHandlerCtx("sql", ss.GetAPIKeys)
-	bus.AddHandlerCtx("sql", ss.GetApiKeyById)
-	bus.AddHandlerCtx("sql", ss.GetApiKeyByName)
-	bus.AddHandlerCtx("sql", ss.DeleteApiKey)
-	bus.AddHandlerCtx("sql", ss.AddAPIKey)
+	bus.AddHandler("sql", ss.GetAPIKeys)
+	bus.AddHandler("sql", ss.GetApiKeyById)
+	bus.AddHandler("sql", ss.GetApiKeyByName)
+	bus.AddHandler("sql", ss.DeleteApiKey)
+	bus.AddHandler("sql", ss.AddAPIKey)
 }
 
 // GetAPIKeys queries the database based
@@ -33,9 +34,25 @@ func (ss *SQLStore) GetAPIKeys(ctx context.Context, query *models.GetApiKeysQuer
 				Asc("name")
 		}
 
+		sess = sess.Where("service_account_id IS NULL")
+
 		query.Result = make([]*models.ApiKey, 0)
 		return sess.Find(&query.Result)
 	})
+}
+
+// GetAllOrgsAPIKeys queries the database for valid non SA APIKeys across all orgs
+func (ss *SQLStore) GetAllOrgsAPIKeys(ctx context.Context) []*models.ApiKey {
+	result := make([]*models.ApiKey, 0)
+	err := ss.WithDbSession(ctx, func(dbSession *DBSession) error {
+		sess := dbSession. //CHECK how many API keys do our clients have?  Can we load them all?
+					Where("(expires IS NULL OR expires >= ?) AND service_account_id IS NULL", timeNow().Unix()).Asc("name")
+		return sess.Find(&result)
+	})
+	if err != nil {
+		ss.log.Warn("API key not loaded", "err", err)
+	}
+	return result
 }
 
 func (ss *SQLStore) DeleteApiKey(ctx context.Context, cmd *models.DeleteApiKeyCommand) error {
@@ -45,7 +62,7 @@ func (ss *SQLStore) DeleteApiKey(ctx context.Context, cmd *models.DeleteApiKeyCo
 }
 
 func deleteAPIKey(sess *DBSession, id, orgID int64) error {
-	rawSQL := "DELETE FROM api_key WHERE id=? and org_id=?"
+	rawSQL := "DELETE FROM api_key WHERE id=? and org_id=? and service_account_id IS NULL"
 	result, err := sess.Exec(rawSQL, id, orgID)
 	if err != nil {
 		return err
@@ -85,7 +102,7 @@ func (ss *SQLStore) AddAPIKey(ctx context.Context, cmd *models.AddApiKeyCommand)
 			Created:          updated,
 			Updated:          updated,
 			Expires:          expires,
-			ServiceAccountId: cmd.ServiceAccountId,
+			ServiceAccountId: nil,
 		}
 
 		if _, err := sess.Insert(&t); err != nil {

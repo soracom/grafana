@@ -1,14 +1,17 @@
 package loginservice
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"testing"
 
+	"github.com/go-kit/log"
 	"github.com/grafana/grafana/pkg/bus"
+	"github.com/grafana/grafana/pkg/infra/log/level"
 	"github.com/grafana/grafana/pkg/models"
 	"github.com/grafana/grafana/pkg/services/quota"
-	log "github.com/inconshreveable/log15"
+	"github.com/grafana/grafana/pkg/services/sqlstore/mockstore"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -16,65 +19,48 @@ import (
 func Test_syncOrgRoles_doesNotBreakWhenTryingToRemoveLastOrgAdmin(t *testing.T) {
 	user := createSimpleUser()
 	externalUser := createSimpleExternalUser()
-	remResp := createResponseWithOneErrLastOrgAdminItem()
+	authInfoMock := &authInfoServiceMock{}
 
-	bus.ClearBusHandlers()
-	defer bus.ClearBusHandlers()
-	bus.AddHandlerCtx("test", func(ctx context.Context, q *models.GetUserOrgListQuery) error {
-		q.Result = createUserOrgDTO()
+	store := &mockstore.SQLStoreMock{
+		ExpectedUserOrgList:     createUserOrgDTO(),
+		ExpectedOrgListResponse: createResponseWithOneErrLastOrgAdminItem(),
+	}
 
-		return nil
-	})
+	login := Implementation{
+		Bus:             bus.New(),
+		QuotaService:    &quota.QuotaService{},
+		AuthInfoService: authInfoMock,
+		SQLStore:        store,
+	}
 
-	bus.AddHandlerCtx("test", func(ctx context.Context, cmd *models.RemoveOrgUserCommand) error {
-		testData := remResp[0]
-		remResp = remResp[1:]
-
-		require.Equal(t, testData.orgId, cmd.OrgId)
-		return testData.response
-	})
-	bus.AddHandlerCtx("test", func(ctx context.Context, cmd *models.SetUsingOrgCommand) error {
-		return nil
-	})
-
-	err := syncOrgRoles(context.Background(), &user, &externalUser)
-	require.Empty(t, remResp)
+	err := login.syncOrgRoles(context.Background(), &user, &externalUser)
 	require.NoError(t, err)
 }
 
 func Test_syncOrgRoles_whenTryingToRemoveLastOrgLogsError(t *testing.T) {
-	logs := []string{}
-	logger.SetHandler(log.FuncHandler(func(r *log.Record) error {
-		logs = append(logs, r.Msg)
-		return nil
-	}))
+	buf := &bytes.Buffer{}
+	logger.Swap(level.NewFilter(log.NewLogfmtLogger(buf), level.AllowInfo()))
 
 	user := createSimpleUser()
 	externalUser := createSimpleExternalUser()
-	remResp := createResponseWithOneErrLastOrgAdminItem()
 
-	bus.ClearBusHandlers()
-	defer bus.ClearBusHandlers()
-	bus.AddHandlerCtx("test", func(ctx context.Context, q *models.GetUserOrgListQuery) error {
-		q.Result = createUserOrgDTO()
+	authInfoMock := &authInfoServiceMock{}
 
-		return nil
-	})
+	store := &mockstore.SQLStoreMock{
+		ExpectedUserOrgList:     createUserOrgDTO(),
+		ExpectedOrgListResponse: createResponseWithOneErrLastOrgAdminItem(),
+	}
 
-	bus.AddHandlerCtx("test", func(ctx context.Context, cmd *models.RemoveOrgUserCommand) error {
-		testData := remResp[0]
-		remResp = remResp[1:]
+	login := Implementation{
+		Bus:             bus.New(),
+		QuotaService:    &quota.QuotaService{},
+		AuthInfoService: authInfoMock,
+		SQLStore:        store,
+	}
 
-		require.Equal(t, testData.orgId, cmd.OrgId)
-		return testData.response
-	})
-	bus.AddHandlerCtx("test", func(ctx context.Context, cmd *models.SetUsingOrgCommand) error {
-		return nil
-	})
-
-	err := syncOrgRoles(context.Background(), &user, &externalUser)
+	err := login.syncOrgRoles(context.Background(), &user, &externalUser)
 	require.NoError(t, err)
-	assert.Contains(t, logs, models.ErrLastOrgAdmin.Error())
+	assert.Contains(t, buf.String(), models.ErrLastOrgAdmin.Error())
 }
 
 type authInfoServiceMock struct {
@@ -86,11 +72,22 @@ func (a *authInfoServiceMock) LookupAndUpdate(ctx context.Context, query *models
 	return a.user, a.err
 }
 
+func (a *authInfoServiceMock) GetAuthInfo(ctx context.Context, query *models.GetAuthInfoQuery) error {
+	return nil
+}
+
+func (a *authInfoServiceMock) SetAuthInfo(ctx context.Context, cmd *models.SetAuthInfoCommand) error {
+	return nil
+}
+
+func (a *authInfoServiceMock) UpdateAuthInfo(ctx context.Context, cmd *models.UpdateAuthInfoCommand) error {
+	return nil
+}
+
 func Test_teamSync(t *testing.T) {
-	b := bus.New()
 	authInfoMock := &authInfoServiceMock{}
 	login := Implementation{
-		Bus:             b,
+		Bus:             bus.New(),
 		QuotaService:    &quota.QuotaService{},
 		AuthInfoService: authInfoMock,
 	}
@@ -179,21 +176,15 @@ func createSimpleExternalUser() models.ExternalUserInfo {
 	return externalUser
 }
 
-func createResponseWithOneErrLastOrgAdminItem() []struct {
-	orgId    int64
-	response error
-} {
-	remResp := []struct {
-		orgId    int64
-		response error
-	}{
+func createResponseWithOneErrLastOrgAdminItem() mockstore.OrgListResponse {
+	remResp := mockstore.OrgListResponse{
 		{
-			orgId:    10,
-			response: models.ErrLastOrgAdmin,
+			OrgId:    10,
+			Response: models.ErrLastOrgAdmin,
 		},
 		{
-			orgId:    11,
-			response: nil,
+			OrgId:    11,
+			Response: nil,
 		},
 	}
 	return remResp

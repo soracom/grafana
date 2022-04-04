@@ -2,6 +2,7 @@ import React, { useRef } from 'react';
 import { GrafanaTheme2, NavModelItem } from '@grafana/data';
 import { CustomScrollbar, Icon, IconButton, IconName, useTheme2 } from '@grafana/ui';
 import { FocusScope } from '@react-aria/focus';
+import { useDialog } from '@react-aria/dialog';
 import { useOverlay } from '@react-aria/overlays';
 import { css } from '@emotion/css';
 import { NavBarMenuItem } from './NavBarMenuItem';
@@ -16,6 +17,7 @@ export function NavBarMenu({ activeItem, navItems, onClose }: Props) {
   const theme = useTheme2();
   const styles = getStyles(theme);
   const ref = useRef(null);
+  const { dialogProps } = useDialog({}, ref);
   const { overlayProps } = useOverlay(
     {
       isDismissable: true,
@@ -27,7 +29,7 @@ export function NavBarMenu({ activeItem, navItems, onClose }: Props) {
 
   return (
     <FocusScope contain restoreFocus autoFocus>
-      <div data-testid="navbarmenu" className={styles.container} ref={ref} {...overlayProps}>
+      <div data-testid="navbarmenu" className={styles.container} ref={ref} {...overlayProps} {...dialogProps}>
         <div className={styles.header}>
           <Icon name="bars" size="xl" />
           <IconButton aria-label="Close navigation menu" name="times" onClick={onClose} size="xl" variant="secondary" />
@@ -35,8 +37,8 @@ export function NavBarMenu({ activeItem, navItems, onClose }: Props) {
         <nav className={styles.content}>
           <CustomScrollbar>
             <ul>
-              {navItems.map((link, index) => (
-                <div className={styles.section} key={index}>
+              {navItems.map((link) => (
+                <div className={styles.section} key={link.text}>
                   <NavBarMenuItem
                     isActive={activeItem === link}
                     onClick={() => {
@@ -50,10 +52,10 @@ export function NavBarMenu({ activeItem, navItems, onClose }: Props) {
                     isMobile={true}
                   />
                   {link.children?.map(
-                    (childLink, childIndex) =>
+                    (childLink) =>
                       !childLink.divider && (
                         <NavBarMenuItem
-                          key={childIndex}
+                          key={childLink.text}
                           icon={childLink.icon as IconName}
                           isActive={activeItem === childLink}
                           isDivider={childLink.divider}

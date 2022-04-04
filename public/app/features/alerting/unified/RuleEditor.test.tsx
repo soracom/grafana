@@ -11,15 +11,14 @@ import { contextSrv } from 'app/core/services/context_srv';
 import { mockDataSource, MockDataSourceSrv } from './mocks';
 import userEvent from '@testing-library/user-event';
 import { DataSourceInstanceSettings } from '@grafana/data';
-import { typeAsJestMock } from 'test/helpers/typeAsJestMock';
 import { getAllDataSources } from './utils/config';
 import { fetchRulerRules, fetchRulerRulesGroup, fetchRulerRulesNamespace, setRulerRuleGroup } from './api/ruler';
 import { DataSourceType, GRAFANA_RULES_SOURCE_NAME } from './utils/datasource';
 import { DashboardSearchHit } from 'app/features/search/types';
 import { getDefaultQueries } from './utils/rule-form';
 import { ExpressionEditorProps } from './components/rule-editor/ExpressionEditor';
-import * as api from 'app/features/manage-dashboards/state/actions';
 import { GrafanaAlertStateDecision } from 'app/types/unified-alerting-dto';
+import { searchFolders } from '../../../../app/features/manage-dashboards/state/actions';
 
 jest.mock('./components/rule-editor/ExpressionEditor', () => ({
   // eslint-disable-next-line react/display-name
@@ -30,6 +29,7 @@ jest.mock('./components/rule-editor/ExpressionEditor', () => ({
 
 jest.mock('./api/ruler');
 jest.mock('./utils/config');
+jest.mock('../../../../app/features/manage-dashboards/state/actions');
 
 // there's no angular scope in test and things go terribly wrong when trying to render the query editor row.
 // lets just skip it
@@ -39,13 +39,13 @@ jest.mock('app/features/query/components/QueryEditorRow', () => ({
 }));
 
 const mocks = {
-  getAllDataSources: typeAsJestMock(getAllDataSources),
-
+  getAllDataSources: jest.mocked(getAllDataSources),
+  searchFolders: jest.mocked(searchFolders),
   api: {
-    fetchRulerRulesGroup: typeAsJestMock(fetchRulerRulesGroup),
-    setRulerRuleGroup: typeAsJestMock(setRulerRuleGroup),
-    fetchRulerRulesNamespace: typeAsJestMock(fetchRulerRulesNamespace),
-    fetchRulerRules: typeAsJestMock(fetchRulerRules),
+    fetchRulerRulesGroup: jest.mocked(fetchRulerRulesGroup),
+    setRulerRuleGroup: jest.mocked(setRulerRuleGroup),
+    fetchRulerRulesNamespace: jest.mocked(fetchRulerRulesNamespace),
+    fetchRulerRules: jest.mocked(fetchRulerRules),
   },
 };
 
@@ -81,6 +81,10 @@ const ui = {
     save: byRole('button', { name: 'Save' }),
     addAnnotation: byRole('button', { name: /Add info/ }),
     addLabel: byRole('button', { name: /Add label/ }),
+    // alert type buttons
+    grafanaManagedAlert: byRole('button', { name: /Grafana managed/ }),
+    lotexAlert: byRole('button', { name: /Mimir or Loki alert/ }),
+    lotexRecordingRule: byRole('button', { name: /Mimir or Loki recording rule/ }),
   },
 };
 
@@ -124,10 +128,14 @@ describe('RuleEditor', () => {
         },
       ],
     });
+    mocks.searchFolders.mockResolvedValue([]);
 
     await renderRuleEditor();
+    await waitFor(() => expect(mocks.searchFolders).toHaveBeenCalled());
+    await waitFor(() => expect(mocks.api.fetchRulerRulesGroup).toHaveBeenCalled());
+
     userEvent.type(await ui.inputs.name.find(), 'my great new rule');
-    await clickSelectOption(ui.inputs.alertType.get(), /Cortex\/Loki managed alert/);
+    userEvent.click(await ui.buttons.lotexAlert.get());
     const dataSourceSelect = ui.inputs.dataSource.get();
     userEvent.click(byRole('combobox').get(dataSourceSelect));
     await clickSelectOption(dataSourceSelect, 'Prom (default)');
@@ -166,7 +174,40 @@ describe('RuleEditor', () => {
   });
 
   it('can create new grafana managed alert', async () => {
-    const searchFolderMock = jest.spyOn(api, 'searchFolders').mockResolvedValue([
+    const dataSources = {
+      default: mockDataSource(
+        {
+          type: 'prometheus',
+          name: 'Prom',
+          isDefault: true,
+        },
+        { alerting: true }
+      ),
+    };
+
+    setDataSourceSrv(new MockDataSourceSrv(dataSources));
+    mocks.getAllDataSources.mockReturnValue(Object.values(dataSources));
+    mocks.api.setRulerRuleGroup.mockResolvedValue();
+    mocks.api.fetchRulerRulesNamespace.mockResolvedValue([]);
+    mocks.api.fetchRulerRulesGroup.mockResolvedValue({
+      name: 'group2',
+      rules: [],
+    });
+    mocks.api.fetchRulerRules.mockResolvedValue({
+      namespace1: [
+        {
+          name: 'group1',
+          rules: [],
+        },
+      ],
+      namespace2: [
+        {
+          name: 'group2',
+          rules: [],
+        },
+      ],
+    });
+    mocks.searchFolders.mockResolvedValue([
       {
         title: 'Folder A',
         id: 1,
@@ -177,24 +218,13 @@ describe('RuleEditor', () => {
       },
     ] as DashboardSearchHit[]);
 
-    const dataSources = {
-      default: mockDataSource({
-        type: 'prometheus',
-        name: 'Prom',
-        isDefault: true,
-      }),
-    };
-
-    setDataSourceSrv(new MockDataSourceSrv(dataSources));
-    mocks.api.setRulerRuleGroup.mockResolvedValue();
-    mocks.api.fetchRulerRulesNamespace.mockResolvedValue([]);
-
     // fill out the form
     await renderRuleEditor();
+    await waitFor(() => expect(mocks.searchFolders).toHaveBeenCalled());
+
     userEvent.type(await ui.inputs.name.find(), 'my great new rule');
-    await clickSelectOption(ui.inputs.alertType.get(), /Classic Grafana alerts based on thresholds/);
+
     const folderInput = await ui.inputs.folder.find();
-    await waitFor(() => expect(searchFolderMock).toHaveBeenCalled());
     await clickSelectOption(folderInput, 'Folder A');
 
     userEvent.type(ui.inputs.annotationValue(0).get(), 'some summary');
@@ -265,12 +295,17 @@ describe('RuleEditor', () => {
         },
       ],
     });
+    mocks.searchFolders.mockResolvedValue([]);
 
     await renderRuleEditor();
+    await waitFor(() => expect(mocks.searchFolders).toHaveBeenCalled());
+
     userEvent.type(await ui.inputs.name.find(), 'my great new recording rule');
-    await clickSelectOption(ui.inputs.alertType.get(), /Cortex\/Loki managed recording rule/);
+    userEvent.click(await ui.buttons.lotexRecordingRule.get());
+
     const dataSourceSelect = ui.inputs.dataSource.get();
     userEvent.click(byRole('combobox').get(dataSourceSelect));
+
     await clickSelectOption(dataSourceSelect, 'Prom (default)');
     await waitFor(() => expect(mocks.api.fetchRulerRules).toHaveBeenCalled());
     await clickSelectOption(ui.inputs.namespace.get(), 'namespace2');
@@ -321,7 +356,6 @@ describe('RuleEditor', () => {
       uid: 'abcd',
       id: 1,
     };
-    const searchFolderMock = jest.spyOn(api, 'searchFolders').mockResolvedValue([folder] as DashboardSearchHit[]);
     const getFolderByUid = jest.fn().mockResolvedValue({
       ...folder,
       canSave: true,
@@ -334,11 +368,12 @@ describe('RuleEditor', () => {
       }),
     };
 
-    const backendSrv = ({
+    const backendSrv = {
       getFolderByUid,
-    } as any) as BackendSrv;
+    } as any as BackendSrv;
     setBackendSrv(backendSrv);
     setDataSourceSrv(new MockDataSourceSrv(dataSources));
+    mocks.getAllDataSources.mockReturnValue(Object.values(dataSources));
     mocks.api.setRulerRuleGroup.mockResolvedValue();
     mocks.api.fetchRulerRulesNamespace.mockResolvedValue([]);
     mocks.api.fetchRulerRules.mockResolvedValue({
@@ -366,9 +401,10 @@ describe('RuleEditor', () => {
         },
       ],
     });
+    mocks.searchFolders.mockResolvedValue([folder] as DashboardSearchHit[]);
 
     await renderRuleEditor(uid);
-    await waitFor(() => expect(searchFolderMock).toHaveBeenCalled());
+    await waitFor(() => expect(mocks.searchFolders).toHaveBeenCalled());
 
     // check that it's filled in
     const nameInput = await ui.inputs.name.find();
@@ -485,14 +521,16 @@ describe('RuleEditor', () => {
 
     setDataSourceSrv(new MockDataSourceSrv(dataSources));
     mocks.getAllDataSources.mockReturnValue(Object.values(dataSources));
+    mocks.searchFolders.mockResolvedValue([]);
 
-    // render rule editor, select cortex/loki managed alerts
+    // render rule editor, select mimir/loki managed alerts
     await renderRuleEditor();
-    await ui.inputs.name.find();
-    await clickSelectOption(ui.inputs.alertType.get(), /Cortex\/Loki managed alert/);
-
+    await waitFor(() => expect(mocks.searchFolders).toHaveBeenCalled());
     // wait for ui theck each datasource if it supports rule editing
     await waitFor(() => expect(mocks.api.fetchRulerRulesGroup).toHaveBeenCalledTimes(4));
+
+    await ui.inputs.name.find();
+    userEvent.click(await ui.buttons.lotexAlert.get());
 
     // check that only rules sources that have ruler available are there
     const dataSourceSelect = ui.inputs.dataSource.get();

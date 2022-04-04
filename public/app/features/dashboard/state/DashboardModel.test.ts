@@ -464,10 +464,52 @@ describe('DashboardModel', () => {
     });
   });
 
-  describe('Given model with time', () => {
-    let model: DashboardModel;
+  describe('When expanding row with panels that do not contain an x and y pos', () => {
+    let dashboard: DashboardModel;
 
     beforeEach(() => {
+      dashboard = new DashboardModel({
+        panels: [
+          { id: 1, type: 'graph', gridPos: { x: 0, y: 0, w: 24, h: 6 } },
+          {
+            id: 2,
+            type: 'row',
+            gridPos: { x: 0, y: 6, w: 24, h: 1 },
+            collapsed: true,
+            panels: [
+              { id: 3, type: 'graph', gridPos: { w: 12, h: 2 } },
+              { id: 4, type: 'graph', gridPos: { w: 12, h: 2 } },
+            ],
+          },
+          { id: 5, type: 'row', gridPos: { x: 0, y: 7, w: 1, h: 1 } },
+        ],
+      });
+      dashboard.toggleRow(dashboard.panels[1]);
+    });
+
+    it('should correctly set the x and y values for the inner panels', () => {
+      expect(dashboard.panels[2].gridPos).toMatchObject({
+        x: 0,
+        y: 7,
+        w: 12,
+        h: 2,
+      });
+
+      expect(dashboard.panels[3].gridPos).toMatchObject({
+        x: 0,
+        y: 7,
+        w: 12,
+        h: 2,
+      });
+    });
+  });
+
+  describe('Given model with time', () => {
+    let model: DashboardModel;
+    let consoleWarnSpy: jest.SpyInstance;
+
+    beforeEach(() => {
+      consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
       model = new DashboardModel({
         time: {
           from: 'now-6h',
@@ -479,6 +521,10 @@ describe('DashboardModel', () => {
         from: 'now-3h',
         to: 'now-1h',
       };
+    });
+
+    afterEach(() => {
+      consoleWarnSpy.mockRestore();
     });
 
     it('hasTimeChanged should be true', () => {
@@ -924,11 +970,11 @@ describe('exitPanelEditor', () => {
   function getTestContext(setPreviousAutoRefresh = false) {
     const panel: any = { destroy: jest.fn() };
     const dashboard = new DashboardModel({});
-    const timeSrvMock = ({
+    const timeSrvMock = {
       pauseAutoRefresh: jest.fn(),
       resumeAutoRefresh: jest.fn(),
       setAutoRefresh: jest.fn(),
-    } as unknown) as TimeSrv;
+    } as unknown as TimeSrv;
     dashboard.startRefresh = jest.fn();
     dashboard.panelInEdit = panel;
     if (setPreviousAutoRefresh) {
@@ -974,10 +1020,10 @@ describe('exitPanelEditor', () => {
 describe('initEditPanel', () => {
   function getTestContext() {
     const dashboard = new DashboardModel({});
-    const timeSrvMock = ({
+    const timeSrvMock = {
       pauseAutoRefresh: jest.fn(),
       resumeAutoRefresh: jest.fn(),
-    } as unknown) as TimeSrv;
+    } as unknown as TimeSrv;
     setTimeSrv(timeSrvMock);
     return { dashboard, timeSrvMock };
   }

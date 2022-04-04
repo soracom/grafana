@@ -2,21 +2,22 @@ package datasources
 
 import (
 	"context"
-	"crypto/sha256"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
 
+	"gopkg.in/yaml.v2"
+
 	"github.com/grafana/grafana/pkg/infra/log"
 	"github.com/grafana/grafana/pkg/models"
 	"github.com/grafana/grafana/pkg/services/provisioning/utils"
-	"gopkg.in/yaml.v2"
 )
 
 type configReader struct {
-	log log.Logger
+	log      log.Logger
+	orgStore utils.OrgStore
 }
 
 func (cr *configReader) readConfig(ctx context.Context, path string) ([]*configs, error) {
@@ -36,12 +37,6 @@ func (cr *configReader) readConfig(ctx context.Context, path string) ([]*configs
 			}
 
 			if datasource != nil {
-				for _, ds := range datasource.Datasources {
-					if ds.UID == "" && ds.Name != "" {
-						ds.UID = safeUIDFromName(ds.Name)
-					}
-				}
-
 				datasources = append(datasources, datasource)
 			}
 		}
@@ -99,11 +94,11 @@ func (cr *configReader) parseDatasourceConfig(path string, file os.FileInfo) (*c
 func (cr *configReader) validateDefaultUniqueness(ctx context.Context, datasources []*configs) error {
 	defaultCount := map[int64]int{}
 	for i := range datasources {
-		if datasources[i].Datasources == nil {
-			continue
-		}
-
 		for _, ds := range datasources[i].Datasources {
+			if ds == nil {
+				continue
+			}
+
 			if ds.OrgID == 0 {
 				ds.OrgID = 1
 			}
@@ -121,6 +116,10 @@ func (cr *configReader) validateDefaultUniqueness(ctx context.Context, datasourc
 		}
 
 		for _, ds := range datasources[i].DeleteDatasources {
+			if ds == nil {
+				continue
+			}
+
 			if ds.OrgID == 0 {
 				ds.OrgID = 1
 			}
@@ -131,7 +130,7 @@ func (cr *configReader) validateDefaultUniqueness(ctx context.Context, datasourc
 }
 
 func (cr *configReader) validateAccessAndOrgID(ctx context.Context, ds *upsertDataSourceFromConfig) error {
-	if err := utils.CheckOrgExists(ctx, ds.OrgID); err != nil {
+	if err := utils.CheckOrgExists(ctx, cr.orgStore, ds.OrgID); err != nil {
 		return err
 	}
 
@@ -144,11 +143,4 @@ func (cr *configReader) validateAccessAndOrgID(ctx context.Context, ds *upsertDa
 		ds.Access = models.DS_ACCESS_PROXY
 	}
 	return nil
-}
-
-func safeUIDFromName(name string) string {
-	h := sha256.New()
-	_, _ = h.Write([]byte(name))
-	bs := h.Sum(nil)
-	return strings.ToUpper(fmt.Sprintf("P%x", bs[:8]))
 }

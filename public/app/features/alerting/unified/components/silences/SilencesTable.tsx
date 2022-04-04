@@ -17,6 +17,10 @@ import { ActionIcon } from '../rules/ActionIcon';
 import { useDispatch } from 'react-redux';
 import { expireSilenceAction } from '../../state/actions';
 import { SilenceDetails } from './SilenceDetails';
+import { Stack } from '@grafana/experimental';
+import { AccessControlAction } from '../../../../../types';
+import { Authorize } from '../Authorize';
+import { isGrafanaRulesSource } from '../../utils/datasource';
 
 export interface SilenceTableItem extends Silence {
   silencedAlerts: AlertmanagerAlert[];
@@ -34,6 +38,7 @@ const SilencesTable: FC<Props> = ({ silences, alertManagerAlerts, alertManagerSo
   const styles = useStyles2(getStyles);
   const [queryParams] = useQueryParams();
   const filteredSilences = useFilteredSilences(silences);
+  const isExternalAM = !isGrafanaRulesSource(alertManagerSourceName);
 
   const { silenceState } = getSilenceFiltersFromUrlParams(queryParams);
 
@@ -60,7 +65,14 @@ const SilencesTable: FC<Props> = ({ silences, alertManagerAlerts, alertManagerSo
       {!!silences.length && (
         <>
           <SilencesFilter />
-          {contextSrv.isEditor && (
+          <Authorize
+            actions={
+              isExternalAM
+                ? [AccessControlAction.AlertingInstancesExternalWrite]
+                : [AccessControlAction.AlertingInstanceCreate]
+            }
+            fallback={contextSrv.isEditor}
+          >
             <div className={styles.topButtonContainer}>
               <Link href={makeAMLink('/alerting/silence/new', alertManagerSourceName)}>
                 <Button className={styles.addNewSilence} icon="plus">
@@ -68,7 +80,7 @@ const SilencesTable: FC<Props> = ({ silences, alertManagerAlerts, alertManagerSo
                 </Button>
               </Link>
             </div>
-          )}
+          </Authorize>
           {!!items.length ? (
             <>
               <DynamicTable
@@ -166,11 +178,15 @@ const getStyles = (theme: GrafanaTheme2) => ({
 function useColumns(alertManagerSourceName: string) {
   const dispatch = useDispatch();
   const styles = useStyles2(getStyles);
+  const isExternalAM = !isGrafanaRulesSource(alertManagerSourceName);
   return useMemo((): SilenceTableColumnProps[] => {
     const handleExpireSilenceClick = (id: string) => {
       dispatch(expireSilenceAction(alertManagerSourceName, id));
     };
-    const showActions = contextSrv.isEditor;
+    const showActions = contextSrv.hasAccess(
+      isExternalAM ? AccessControlAction.AlertingInstancesExternalWrite : AccessControlAction.AlertingInstanceUpdate,
+      contextSrv.isEditor
+    );
     const columns: SilenceTableColumnProps[] = [
       {
         id: 'state',
@@ -221,7 +237,7 @@ function useColumns(alertManagerSourceName: string) {
         label: 'Actions',
         renderCell: function renderActions({ data: silence }) {
           return (
-            <>
+            <Stack gap={0.5}>
               {silence.status.state === 'expired' ? (
                 <Link href={makeAMLink(`/alerting/silence/${silence.id}/edit`, alertManagerSourceName)}>
                   <ActionButton icon="sync">Recreate</ActionButton>
@@ -239,14 +255,14 @@ function useColumns(alertManagerSourceName: string) {
                   tooltip="edit"
                 />
               )}
-            </>
+            </Stack>
           );
         },
-        size: '140px',
+        size: '147px',
       });
     }
     return columns;
-  }, [alertManagerSourceName, dispatch, styles]);
+  }, [alertManagerSourceName, dispatch, styles, isExternalAM]);
 }
 
 export default SilencesTable;

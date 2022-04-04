@@ -34,6 +34,12 @@ side to be valid for a different number of users or a new duration,
 your Grafana instance will be updated with the new terms
 automatically. Defaults to `true`.
 
+### license_validation_type
+
+> **Note:** Available in Grafana Enterprise v8.3+.
+
+When set to `aws`, Grafana will validate its license status with Amazon Web Services (AWS) instead of with Grafana Labs. Only use this setting if you purchased an Enterprise license from AWS Marketplace. Defaults to empty, which means that by default Grafana Enterprise will validate using a license issued by Grafana Labs. For details about licenses issued by AWS, refer to [Activate a Grafana Enterprise license purchased through AWS Marketplace]({{< relref "../enterprise/license/activate-aws-marketplace-license/" >}}).
+
 ## [white_labeling]
 
 ### app_title
@@ -265,7 +271,7 @@ List of comma- or space-separated organizations. Each user must be a member of a
 
 ### org_mapping
 
-List of comma- or space-separated Organization:OrgId mappings.
+List of comma- or space-separated Organization:OrgId:Role mappings. Organization can be `*` meaning "All users". Role is optional and can have the following values: `Viewer`, `Editor` or `Admin`.
 
 ### role_values_editor
 
@@ -433,15 +439,18 @@ The default is `25`.
 
 ### url
 
-The full Redis URL of your Redis server. Example: `redis://localhost:6739/0`.
+The full Redis URL of your Redis server. For example: `redis://username:password@localhost:6739/0`. To enable TLS, use the `rediss` scheme.
 
 The default is `"redis://localhost:6379"`.
 
 ### cluster
 
-A comma-separated list of Redis cluster members in `host:port` format. For example, `localhost:7000, localhost: 7001, localhost:7002`.
+A comma-separated list of Redis cluster members, either in `host:port` format or using the full Redis URLs (`redis://username:password@localhost:6739`). For example, `localhost:7000, localhost: 7001, localhost:7002`.
+If you use the full Redis URLs, then you can specify the scheme, username, and password only once. For example, `redis://username:password@localhost:0000,localhost:1111,localhost:2222`. You cannot specify a different username and password for each URL.
 
 > **Note:** If you have specify `cluster`, the value for `url` is ignored.
+
+> **Note:** You can enable TLS for cluster mode using the `rediss` scheme in Grafana Enterprise v8.5 and later versions.
 
 ### prefix
 

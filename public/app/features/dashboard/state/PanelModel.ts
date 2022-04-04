@@ -121,7 +121,6 @@ const defaults: any = {
     defaults: {},
     overrides: [],
   },
-  datasource: null,
   title: '',
 };
 
@@ -284,12 +283,6 @@ export class PanelModel implements DataConfigSource, IPanelModel {
       model[property] = cloneDeep(this[property]);
     }
 
-    if (model.datasource === undefined) {
-      // This is part of defaults as defaults are removed in save model and
-      // this should not be removed in save model as exporter needs to templatize it
-      model.datasource = null;
-    }
-
     return model;
   }
 
@@ -443,12 +436,10 @@ export class PanelModel implements DataConfigSource, IPanelModel {
 
   updateQueries(options: QueryGroupOptions) {
     const { dataSource } = options;
-    this.datasource = dataSource.default
-      ? null
-      : {
-          uid: dataSource.uid,
-          type: dataSource.type,
-        };
+    this.datasource = {
+      uid: dataSource.uid,
+      type: dataSource.type,
+    };
     this.cacheTimeout = options.cacheTimeout;
     this.timeFrom = options.timeRange?.from;
     this.timeShift = options.timeRange?.shift;
@@ -564,26 +555,21 @@ export class PanelModel implements DataConfigSource, IPanelModel {
   }
 
   replaceVariables(value: string, extraVars: ScopedVars | undefined, format?: string | Function) {
-    let vars = this.scopedVars;
-
-    if (extraVars) {
-      vars = vars ? { ...vars, ...extraVars } : extraVars;
-    }
+    const lastRequest = this.getQueryRunner().getLastRequest();
+    const vars: ScopedVars = Object.assign({}, this.scopedVars, lastRequest?.scopedVars, extraVars);
 
     const allVariablesParams = getVariablesUrlParams(vars);
     const variablesQuery = urlUtil.toUrlParams(allVariablesParams);
     const timeRangeUrl = urlUtil.toUrlParams(getTimeSrv().timeRangeForUrl());
 
-    vars = {
-      ...vars,
-      [DataLinkBuiltInVars.keepTime]: {
-        text: timeRangeUrl,
-        value: timeRangeUrl,
-      },
-      [DataLinkBuiltInVars.includeVars]: {
-        text: variablesQuery,
-        value: variablesQuery,
-      },
+    vars[DataLinkBuiltInVars.keepTime] = {
+      text: timeRangeUrl,
+      value: timeRangeUrl,
+    };
+
+    vars[DataLinkBuiltInVars.includeVars] = {
+      text: variablesQuery,
+      value: variablesQuery,
     };
 
     return getTemplateSrv().replace(value, vars, format);
@@ -602,7 +588,7 @@ export class PanelModel implements DataConfigSource, IPanelModel {
    * If you need the raw title without interpolation use title property instead.
    * */
   getDisplayTitle(): string {
-    return this.replaceVariables(this.title, {}, 'text');
+    return this.replaceVariables(this.title, undefined, 'text');
   }
 }
 

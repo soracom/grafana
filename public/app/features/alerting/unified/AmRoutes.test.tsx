@@ -7,10 +7,10 @@ import {
   AlertManagerCortexConfig,
   AlertManagerDataSourceJsonData,
   AlertManagerImplementation,
+  MuteTimeInterval,
   Route,
 } from 'app/plugins/datasource/alertmanager/types';
 import { configureStore } from 'app/store/configureStore';
-import { typeAsJestMock } from 'test/helpers/typeAsJestMock';
 import { byLabelText, byRole, byTestId, byText } from 'testing-library-selector';
 import AmRoutes from './AmRoutes';
 import { fetchAlertManagerConfig, fetchStatus, updateAlertManagerConfig } from './api/alertmanager';
@@ -25,12 +25,12 @@ jest.mock('./api/alertmanager');
 jest.mock('./utils/config');
 
 const mocks = {
-  getAllDataSourcesMock: typeAsJestMock(getAllDataSources),
+  getAllDataSourcesMock: jest.mocked(getAllDataSources),
 
   api: {
-    fetchAlertManagerConfig: typeAsJestMock(fetchAlertManagerConfig),
-    updateAlertManagerConfig: typeAsJestMock(updateAlertManagerConfig),
-    fetchStatus: typeAsJestMock(fetchStatus),
+    fetchAlertManagerConfig: jest.mocked(fetchAlertManagerConfig),
+    updateAlertManagerConfig: jest.mocked(updateAlertManagerConfig),
+    fetchStatus: jest.mocked(fetchStatus),
   },
 };
 
@@ -80,9 +80,11 @@ const ui = {
   deleteRouteButton: byLabelText('Delete route'),
   newPolicyButton: byRole('button', { name: /New policy/ }),
   newPolicyCTAButton: byRole('button', { name: /New specific policy/ }),
+  savePolicyButton: byRole('button', { name: /save policy/i }),
 
   receiverSelect: byTestId('am-receiver-select'),
   groupSelect: byTestId('am-group-select'),
+  muteTimingSelect: byTestId('am-mute-timing-select'),
 
   groupWaitContainer: byTestId('am-group-wait'),
   groupIntervalContainer: byTestId('am-group-interval'),
@@ -158,6 +160,19 @@ describe('AmRoutes', () => {
     group_interval: '2m',
     repeat_interval: '3d',
     routes: subroutes,
+  };
+
+  const muteInterval: MuteTimeInterval = {
+    name: 'default-mute',
+    time_intervals: [
+      {
+        times: [{ start_time: '12:00', end_time: '24:00' }],
+        weekdays: ['monday:friday'],
+        days_of_month: ['1:7', '-1:-7'],
+        months: ['january:june'],
+        years: ['2020:2022'],
+      },
+    ],
   };
 
   beforeEach(() => {
@@ -287,6 +302,7 @@ describe('AmRoutes', () => {
           group_interval: '4m',
           group_wait: '1m',
           repeat_interval: '5h',
+          mute_time_intervals: [],
         },
         templates: [],
       },
@@ -336,6 +352,7 @@ describe('AmRoutes', () => {
           group_by: ['severity', 'namespace'],
           receiver: 'default',
           routes: [],
+          mute_time_intervals: [],
         },
       },
       template_files: {},
@@ -406,6 +423,7 @@ describe('AmRoutes', () => {
           group_wait: '1m',
           receiver: 'default',
           repeat_interval: '5h',
+          mute_time_intervals: [],
           routes: [
             {
               continue: false,
@@ -415,6 +433,7 @@ describe('AmRoutes', () => {
                 ['foo', '!=', 'bar'],
               ],
               receiver: 'simple-receiver',
+              mute_time_intervals: [],
               routes: [],
             },
           ],
@@ -476,6 +495,7 @@ describe('AmRoutes', () => {
           matchers: [],
           receiver: 'default',
           repeat_interval: '5h',
+          mute_time_intervals: [],
           routes: [
             {
               continue: false,
@@ -483,6 +503,7 @@ describe('AmRoutes', () => {
               matchers: ['hello=world', 'foo!=bar'],
               receiver: 'simple-receiver',
               routes: [],
+              mute_time_intervals: [],
             },
           ],
         },
@@ -527,6 +548,72 @@ describe('AmRoutes', () => {
     expect(ui.newPolicyCTAButton.query()).not.toBeInTheDocument();
     expect(mocks.api.fetchAlertManagerConfig).not.toHaveBeenCalled();
     expect(mocks.api.fetchStatus).toHaveBeenCalledTimes(1);
+  });
+
+  it('Can add a mute timing to a route', async () => {
+    const defaultConfig: AlertManagerCortexConfig = {
+      alertmanager_config: {
+        receivers: [{ name: 'default' }, { name: 'critical' }],
+        route: {
+          continue: false,
+          receiver: 'default',
+          group_by: ['alertname'],
+          routes: [simpleRoute],
+          group_interval: '4m',
+          group_wait: '1m',
+          repeat_interval: '5h',
+        },
+        templates: [],
+        mute_time_intervals: [muteInterval],
+      },
+      template_files: {},
+    };
+
+    const currentConfig = { current: defaultConfig };
+    mocks.api.updateAlertManagerConfig.mockImplementation((amSourceName, newConfig) => {
+      currentConfig.current = newConfig;
+      return Promise.resolve();
+    });
+
+    mocks.api.fetchAlertManagerConfig.mockResolvedValue(defaultConfig);
+
+    await renderAmRoutes(dataSources.am.name);
+    const rows = await ui.row.findAll();
+    expect(rows).toHaveLength(1);
+    userEvent.click(ui.editRouteButton.get(rows[0]));
+
+    const muteTimingSelect = ui.muteTimingSelect.get();
+    await clickSelectOption(muteTimingSelect, 'default-mute');
+    expect(muteTimingSelect).toHaveTextContent('default-mute');
+
+    const savePolicyButton = ui.savePolicyButton.get();
+    expect(savePolicyButton).toBeInTheDocument();
+
+    userEvent.click(savePolicyButton);
+
+    await waitFor(() => expect(savePolicyButton).not.toBeInTheDocument());
+
+    expect(mocks.api.updateAlertManagerConfig).toHaveBeenCalled();
+    expect(mocks.api.updateAlertManagerConfig).toHaveBeenCalledWith(dataSources.am.name, {
+      ...defaultConfig,
+      alertmanager_config: {
+        ...defaultConfig.alertmanager_config,
+        route: {
+          ...defaultConfig.alertmanager_config.route,
+          mute_time_intervals: [],
+          matchers: [],
+          routes: [
+            {
+              ...simpleRoute,
+              mute_time_intervals: [muteInterval.name],
+              routes: [],
+              continue: false,
+              group_by: [],
+            },
+          ],
+        },
+      },
+    });
   });
 });
 

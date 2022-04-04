@@ -69,6 +69,7 @@ export class RefreshPicker extends PureComponent<Props> {
     return (
       <ButtonGroup className="refresh-picker">
         <ToolbarButton
+          aria-label={text}
           tooltip={tooltip}
           onClick={onRefresh}
           variant={variant}
@@ -102,12 +103,7 @@ export function intervalsToOptions({ intervals = defaultIntervals }: { intervals
 > {
   const intervalsOrDefault = intervals || defaultIntervals;
   const options = intervalsOrDefault.map((interval) => {
-    const duration: { [key: string]: string | number } = parseDuration(interval);
-
-    const key = Object.keys(duration)[0];
-    const value = duration[key];
-    duration[key] = Number(value);
-
+    const duration = parseDuration(interval);
     const ariaLabel = formatDuration(duration);
 
     return {

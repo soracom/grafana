@@ -1,7 +1,8 @@
-import { MapLayerHandler, MapLayerOptions, SelectableValue } from '@grafana/data';
+import { MapLayerHandler, MapLayerOptions } from '@grafana/data';
+import { HideableFieldConfig } from '@grafana/schema';
 import { LayerElement } from 'app/core/components/Layers/types';
 import BaseLayer from 'ol/layer/Base';
-import { Units } from 'ol/proj/Units';
+import Units from 'ol/proj/Units';
 import { StyleConfig } from './style/types';
 import { MapCenterID } from './view';
 
@@ -40,6 +41,11 @@ export const defaultView: MapViewConfig = {
   zoom: 1,
 };
 
+/** Support hide from legend/tooltip */
+export interface GeomapFieldConfig extends HideableFieldConfig {
+  // nothing custom yet
+}
+
 export interface GeomapPanelOptions {
   view: MapViewConfig;
   controls: ControlsOptions;
@@ -63,9 +69,6 @@ export enum ComparisonOperation {
   LTE = 'lte',
   GT = 'gt',
   GTE = 'gte',
-}
-export interface GazetteerPathEditorConfigSettings {
-  options?: Array<SelectableValue<string>>;
 }
 
 //-------------------

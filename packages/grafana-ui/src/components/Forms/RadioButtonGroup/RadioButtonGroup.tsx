@@ -9,10 +9,12 @@ import { useStyles2 } from '../../../themes';
 
 export interface RadioButtonGroupProps<T> {
   value?: T;
+  id?: string;
   disabled?: boolean;
   disabledOptions?: T[];
   options: Array<SelectableValue<T>>;
   onChange?: (value: T) => void;
+  onClick?: (value: T) => void;
   size?: RadioButtonSize;
   fullWidth?: boolean;
   className?: string;
@@ -23,9 +25,11 @@ export function RadioButtonGroup<T>({
   options,
   value,
   onChange,
+  onClick,
   disabled,
   disabledOptions,
   size = 'md',
+  id,
   className,
   fullWidth = false,
   autoFocus = false,
@@ -40,8 +44,19 @@ export function RadioButtonGroup<T>({
     },
     [onChange]
   );
-  const id = uniqueId('radiogroup-');
-  const groupName = useRef(id);
+  const handleOnClick = useCallback(
+    (option: SelectableValue) => {
+      return () => {
+        if (onClick) {
+          onClick(option.value);
+        }
+      };
+    },
+    [onClick]
+  );
+
+  const internalId = id ?? uniqueId('radiogroup-');
+  const groupName = useRef(internalId);
   const styles = useStyles2(getStyles);
 
   const activeButtonRef = useRef<HTMLInputElement | null>(null);
@@ -63,7 +78,8 @@ export function RadioButtonGroup<T>({
             key={`o.label-${i}`}
             aria-label={o.ariaLabel}
             onChange={handleOnChange(o)}
-            id={`option-${o.value}-${id}`}
+            onClick={handleOnClick(o)}
+            id={`option-${o.value}-${internalId}`}
             name={groupName.current}
             description={o.description}
             fullWidth={fullWidth}

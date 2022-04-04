@@ -1,7 +1,7 @@
 import React, { ReactNode } from 'react';
 import { Item } from '@react-stately/collections';
 import { css, cx } from '@emotion/css';
-import { GrafanaTheme2, NavMenuItemType, NavModelItem } from '@grafana/data';
+import { GrafanaTheme2, locationUtil, NavMenuItemType, NavModelItem } from '@grafana/data';
 import { IconName, useTheme2 } from '@grafana/ui';
 import { locationService } from '@grafana/runtime';
 
@@ -10,6 +10,8 @@ import { getNavBarItemWithoutMenuStyles, NavBarItemWithoutMenu } from './NavBarI
 import { NavBarItemMenuTrigger } from './NavBarItemMenuTrigger';
 import { NavBarItemMenu } from './NavBarItemMenu';
 import { getNavModelItemKey } from './utils';
+import { useLingui } from '@lingui/react';
+import menuItemTranslations from './navBarItem-translations';
 
 export interface Props {
   isActive?: boolean;
@@ -28,20 +30,24 @@ const NavBarItem = ({
   showMenu = true,
   link,
 }: Props) => {
+  const { i18n } = useLingui();
   const theme = useTheme2();
   const menuItems = link.children ?? [];
-  const menuItemsSorted = reverseMenuDirection ? menuItems.reverse() : menuItems;
+
+  // Spreading `menuItems` here as otherwise we'd be mutating props
+  const menuItemsSorted = reverseMenuDirection ? [...menuItems].reverse() : menuItems;
   const filteredItems = menuItemsSorted
     .filter((item) => !item.hideFromMenu)
     .map((i) => ({ ...i, menuItemType: NavMenuItemType.Item }));
   const adjustHeightForBorder = filteredItems.length === 0;
-  const styles = getStyles(theme, adjustHeightForBorder, isActive, reverseMenuDirection);
+  const styles = getStyles(theme, adjustHeightForBorder, isActive);
   const section: NavModelItem = {
     ...link,
     children: filteredItems,
     menuItemType: NavMenuItemType.Section,
   };
   const items: NavModelItem[] = [section].concat(filteredItems);
+
   const onNavigate = (item: NavModelItem) => {
     const { url, target, onClick } = item;
     if (!url) {
@@ -50,15 +56,18 @@ const NavBarItem = ({
     }
 
     if (!target && url.startsWith('/')) {
-      locationService.push(url);
+      locationService.push(locationUtil.stripBaseFromUrl(url));
     } else {
       window.open(url, target);
     }
   };
 
+  const translationKey = link.id && menuItemTranslations[link.id];
+  const linkText = translationKey ? i18n._(translationKey) : link.text;
+
   return showMenu ? (
     <li className={cx(styles.container, className)}>
-      <NavBarItemMenuTrigger item={section} isActive={isActive} label={link.text}>
+      <NavBarItemMenuTrigger item={section} isActive={isActive} label={linkText}>
         <NavBarItemMenu
           items={items}
           reverseMenuDirection={reverseMenuDirection}
@@ -68,12 +77,15 @@ const NavBarItem = ({
           onNavigate={onNavigate}
         >
           {(item: NavModelItem) => {
+            const translationKey = item.id && menuItemTranslations[item.id];
+            const itemText = translationKey ? i18n._(translationKey) : item.text;
+
             if (item.menuItemType === NavMenuItemType.Section) {
               return (
                 <Item key={getNavModelItemKey(item)} textValue={item.text}>
                   <NavBarMenuItem
                     target={item.target}
-                    text={item.text}
+                    text={itemText}
                     url={item.url}
                     onClick={item.onClick}
                     styleOverrides={styles.header}
@@ -89,7 +101,7 @@ const NavBarItem = ({
                   icon={item.icon as IconName}
                   onClick={item.onClick}
                   target={item.target}
-                  text={item.text}
+                  text={itemText}
                   url={item.url}
                   styleOverrides={styles.item}
                 />
@@ -107,6 +119,7 @@ const NavBarItem = ({
       url={link.url}
       onClick={link.onClick}
       target={link.target}
+      highlightText={link.highlightText}
     >
       {children}
     </NavBarItemWithoutMenu>
@@ -115,15 +128,9 @@ const NavBarItem = ({
 
 export default NavBarItem;
 
-const getStyles = (
-  theme: GrafanaTheme2,
-  adjustHeightForBorder: boolean,
-  isActive?: boolean,
-  reverseMenuDirection?: boolean
-) => ({
+const getStyles = (theme: GrafanaTheme2, adjustHeightForBorder: boolean, isActive?: boolean) => ({
   ...getNavBarItemWithoutMenuStyles(theme, isActive),
   header: css`
-    background-color: ${theme.colors.background.secondary};
     color: ${theme.colors.text.primary};
     height: ${theme.components.sidemenu.width - (adjustHeightForBorder ? 2 : 1)}px;
     font-size: ${theme.typography.h4.fontSize};
@@ -135,12 +142,4 @@ const getStyles = (
   item: css`
     color: ${theme.colors.text.primary};
   `,
-  subtitle: css`
-      border-${reverseMenuDirection ? 'bottom' : 'top'}: 1px solid ${theme.colors.border.weak};
-      color: ${theme.colors.text.secondary};
-      font-size: ${theme.typography.bodySmall.fontSize};
-      font-weight: ${theme.typography.bodySmall.fontWeight};
-      padding: ${theme.spacing(1)} ${theme.spacing(2)} ${theme.spacing(1)};
-      white-space: nowrap;
-    `,
 });

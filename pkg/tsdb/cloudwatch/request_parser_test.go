@@ -6,7 +6,6 @@ import (
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana/pkg/components/simplejson"
-	"github.com/grafana/grafana/pkg/tsdb/legacydata"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -48,12 +47,6 @@ func TestRequestParser(t *testing.T) {
 		})
 	})
 
-	timeRange := legacydata.NewDataTimeRange("now-1h", "now-2h")
-	from, err := timeRange.ParseFrom()
-	require.NoError(t, err)
-	to, err := timeRange.ParseTo()
-	require.NoError(t, err)
-
 	t.Run("New dimensions structure", func(t *testing.T) {
 		query := simplejson.NewFromAny(map[string]interface{}{
 			"refId":      "ref1",
@@ -71,7 +64,7 @@ func TestRequestParser(t *testing.T) {
 			"hide":      false,
 		})
 
-		res, err := parseRequestQuery(query, "ref1", from, to)
+		res, err := parseRequestQuery(query, "ref1", time.Now().Add(-2*time.Hour), time.Now().Add(-time.Hour))
 		require.NoError(t, err)
 		assert.Equal(t, "us-east-1", res.Region)
 		assert.Equal(t, "ref1", res.RefId)
@@ -105,7 +98,7 @@ func TestRequestParser(t *testing.T) {
 			"hide":      false,
 		})
 
-		res, err := parseRequestQuery(query, "ref1", from, to)
+		res, err := parseRequestQuery(query, "ref1", time.Now().Add(-2*time.Hour), time.Now().Add(-time.Hour))
 		require.NoError(t, err)
 		assert.Equal(t, "us-east-1", res.Region)
 		assert.Equal(t, "ref1", res.RefId)
@@ -138,13 +131,8 @@ func TestRequestParser(t *testing.T) {
 			"hide":      false,
 		})
 		query.Set("period", "900")
-		timeRange := legacydata.NewDataTimeRange("now-1h", "now-2h")
-		from, err := timeRange.ParseFrom()
-		require.NoError(t, err)
-		to, err := timeRange.ParseTo()
-		require.NoError(t, err)
 
-		res, err := parseRequestQuery(query, "ref1", from, to)
+		res, err := parseRequestQuery(query, "ref1", time.Now().Add(-2*time.Hour), time.Now().Add(-time.Hour))
 		require.NoError(t, err)
 		assert.Equal(t, 900, res.Period)
 	})
@@ -274,16 +262,10 @@ func TestRequestParser(t *testing.T) {
 	})
 
 	t.Run("Metric query type, metric editor mode and query api mode", func(t *testing.T) {
-		timeRange := legacydata.NewDataTimeRange("now-1h", "now-2h")
-		from, err := timeRange.ParseFrom()
-		require.NoError(t, err)
-		to, err := timeRange.ParseTo()
-		require.NoError(t, err)
-
 		t.Run("when metric query type and metric editor mode is not specified", func(t *testing.T) {
 			t.Run("it should be metric search builder", func(t *testing.T) {
 				query := getBaseJsonQuery()
-				res, err := parseRequestQuery(query, "ref1", from, to)
+				res, err := parseRequestQuery(query, "ref1", time.Now().Add(-2*time.Hour), time.Now().Add(-time.Hour))
 				require.NoError(t, err)
 				assert.Equal(t, MetricQueryTypeSearch, res.MetricQueryType)
 				assert.Equal(t, MetricEditorModeBuilder, res.MetricEditorMode)
@@ -293,7 +275,7 @@ func TestRequestParser(t *testing.T) {
 			t.Run("and an expression is specified it should be metric search builder", func(t *testing.T) {
 				query := getBaseJsonQuery()
 				query.Set("expression", "SUM(a)")
-				res, err := parseRequestQuery(query, "ref1", from, to)
+				res, err := parseRequestQuery(query, "ref1", time.Now().Add(-2*time.Hour), time.Now().Add(-time.Hour))
 				require.NoError(t, err)
 				assert.Equal(t, MetricQueryTypeSearch, res.MetricQueryType)
 				assert.Equal(t, MetricEditorModeRaw, res.MetricEditorMode)
@@ -304,12 +286,29 @@ func TestRequestParser(t *testing.T) {
 		t.Run("and an expression is specified it should be metric search builder", func(t *testing.T) {
 			query := getBaseJsonQuery()
 			query.Set("expression", "SUM(a)")
-			res, err := parseRequestQuery(query, "ref1", from, to)
+			res, err := parseRequestQuery(query, "ref1", time.Now().Add(-2*time.Hour), time.Now().Add(-time.Hour))
 			require.NoError(t, err)
 			assert.Equal(t, MetricQueryTypeSearch, res.MetricQueryType)
 			assert.Equal(t, MetricEditorModeRaw, res.MetricEditorMode)
 			assert.Equal(t, GMDApiModeMathExpression, res.getGMDAPIMode())
 		})
+	})
+
+	t.Run("ID is the string `query` appended with refId if refId is a valid MetricData ID", func(t *testing.T) {
+		query := getBaseJsonQuery()
+		res, err := parseRequestQuery(query, "ref1", time.Now().Add(-2*time.Hour), time.Now().Add(-time.Hour))
+		require.NoError(t, err)
+		assert.Equal(t, "ref1", res.RefId)
+		assert.Equal(t, "queryref1", res.Id)
+	})
+
+	t.Run("Valid id is generated if ID is not provided and refId is not a valid MetricData ID", func(t *testing.T) {
+		query := getBaseJsonQuery()
+		query.Set("refId", "$$")
+		res, err := parseRequestQuery(query, "$$", time.Now().Add(-2*time.Hour), time.Now().Add(-time.Hour))
+		require.NoError(t, err)
+		assert.Equal(t, "$$", res.RefId)
+		assert.Regexp(t, validMetricDataID, res.Id)
 	})
 }
 

@@ -21,6 +21,7 @@ import (
 
 	"github.com/grafana/grafana-aws-sdk/pkg/awsds"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/gtime"
+	"github.com/grafana/grafana/pkg/tsdb/azuremonitor/azsettings"
 
 	"github.com/grafana/grafana/pkg/infra/log"
 	"github.com/grafana/grafana/pkg/util"
@@ -171,6 +172,12 @@ var (
 	// Explore UI
 	ExploreEnabled bool
 
+	// Help UI
+	HelpEnabled bool
+
+	// Profile UI
+	ProfileEnabled bool
+
 	// Grafana.NET URL
 	GrafanaComUrl string
 
@@ -254,7 +261,8 @@ type Cfg struct {
 	// CSPEnabled toggles Content Security Policy support.
 	CSPEnabled bool
 	// CSPTemplate contains the Content Security Policy template.
-	CSPTemplate string
+	CSPTemplate           string
+	AngularSupportEnabled bool
 
 	TempDataLifetime                 time.Duration
 	PluginsEnableAlpha               bool
@@ -284,6 +292,7 @@ type Cfg struct {
 	LoginMaxLifetime             time.Duration
 	TokenRotationIntervalMinutes int
 	SigV4AuthEnabled             bool
+	SigV4VerboseLogging          bool
 	BasicAuthEnabled             bool
 	AdminUser                    string
 	AdminPassword                string
@@ -294,7 +303,7 @@ type Cfg struct {
 	AWSListMetricsPageLimit int
 
 	// Azure Cloud settings
-	Azure AzureSettings
+	Azure *azsettings.AzureSettings
 
 	// Auth proxy settings
 	AuthProxyEnabled          bool
@@ -304,6 +313,7 @@ type Cfg struct {
 	AuthProxyEnableLoginToken bool
 	AuthProxyWhitelist        string
 	AuthProxyHeaders          map[string]string
+	AuthProxyHeadersEncoded   bool
 	AuthProxySyncTTL          int
 
 	// OAuth
@@ -319,6 +329,7 @@ type Cfg struct {
 	JWTAuthCacheTTL      time.Duration
 	JWTAuthKeyFile       string
 	JWTAuthJWKSetFile    string
+	JWTAuthAutoSignUp    bool
 
 	// Dataproxy
 	SendUserHeader                 bool
@@ -341,8 +352,10 @@ type Cfg struct {
 
 	ApiKeyMaxSecondsToLive int64
 
-	// Use to enable new features which may still be in alpha/beta stage.
-	FeatureToggles       map[string]bool
+	// Check if a feature toggle is enabled
+	// @deprecated
+	IsFeatureToggleEnabled func(key string) bool // filled in dynamically
+
 	AnonymousEnabled     bool
 	AnonymousOrgName     string
 	AnonymousOrgRole     string
@@ -389,9 +402,10 @@ type Cfg struct {
 	DefaultTheme string
 	HomePage     string
 
-	AutoAssignOrg     bool
-	AutoAssignOrgId   int
-	AutoAssignOrgRole string
+	AutoAssignOrg              bool
+	AutoAssignOrgId            int
+	AutoAssignOrgRole          string
+	OAuthSkipOrgRoleUpdateSync bool
 
 	// ExpressionsEnabled specifies whether expressions are enabled.
 	ExpressionsEnabled bool
@@ -414,44 +428,15 @@ type Cfg struct {
 	// Grafana.com URL
 	GrafanaComURL string
 
-	// Alerting
-
-	// AlertingBaseInterval controls the alerting base interval in seconds.
-	// Only for internal use and not user configuration.
-	AlertingBaseInterval time.Duration
-
 	// Geomap base layer config
 	GeomapDefaultBaseLayerConfig map[string]interface{}
 	GeomapEnableCustomBaseLayers bool
 
 	// Unified Alerting
 	UnifiedAlerting UnifiedAlertingSettings
-}
 
-// IsLiveConfigEnabled returns true if live should be able to save configs to SQL tables
-func (cfg Cfg) IsLiveConfigEnabled() bool {
-	return cfg.FeatureToggles["live-config"]
-}
-
-// IsTrimDefaultsEnabled returns whether the standalone trim dashboard default feature is enabled.
-func (cfg Cfg) IsTrimDefaultsEnabled() bool {
-	return cfg.FeatureToggles["trimDefaults"]
-}
-
-// IsDatabaseMetricsEnabled returns whether the database instrumentation feature is enabled.
-func (cfg Cfg) IsDatabaseMetricsEnabled() bool {
-	return cfg.FeatureToggles["database_metrics"]
-}
-
-// IsHTTPRequestHistogramDisabled returns whether the request historgrams is disabled.
-// This feature toggle will be removed in Grafana 8.x but gives the operator
-// some graceperiod to update all the monitoring tools.
-func (cfg Cfg) IsHTTPRequestHistogramDisabled() bool {
-	return cfg.FeatureToggles["disable_http_request_histogram"]
-}
-
-func (cfg Cfg) IsNewNavigationEnabled() bool {
-	return cfg.FeatureToggles["newNavigation"]
+	// Query history
+	QueryHistoryEnabled bool
 }
 
 type CommandLineArgs struct {
@@ -495,7 +480,6 @@ func RedactedValue(key, value string) string {
 		"ACCOUNT_KEY",
 		"ENCRYPTION_KEY",
 		"VAULT_TOKEN",
-		"AWSKMS_.*_TOKEN",
 	} {
 		if match, err := regexp.MatchString(pattern, uppercased); match && err == nil {
 			return RedactedPassword
@@ -793,6 +777,8 @@ func (cfg *Cfg) loadConfiguration(args CommandLineArgs) (*ini.File, error) {
 		return nil, err
 	}
 
+	cfg.Logger.Info(fmt.Sprintf("Starting %s", ApplicationName), "version", BuildVersion, "commit", BuildCommit, "branch", BuildBranch, "compiled", time.Unix(BuildStamp, 0))
+
 	return parsedFile, err
 }
 
@@ -839,6 +825,7 @@ func NewCfg() *Cfg {
 	return &Cfg{
 		Logger: log.New("settings"),
 		Raw:    ini.Empty(),
+		Azure:  &azsettings.AzureSettings{},
 	}
 }
 
@@ -963,6 +950,15 @@ func (cfg *Cfg) Load(args CommandLineArgs) error {
 
 	explore := iniFile.Section("explore")
 	ExploreEnabled = explore.Key("enabled").MustBool(true)
+
+	help := iniFile.Section("help")
+	HelpEnabled = help.Key("enabled").MustBool(true)
+
+	profile := iniFile.Section("profile")
+	ProfileEnabled = profile.Key("enabled").MustBool(true)
+
+	queryHistory := iniFile.Section("query_history")
+	cfg.QueryHistoryEnabled = queryHistory.Key("enabled").MustBool(false)
 
 	panelsSection := iniFile.Section("panels")
 	cfg.DisableSanitizeHtml = panelsSection.Key("disable_sanitize_html").MustBool(false)
@@ -1212,6 +1208,7 @@ func readSecuritySettings(iniFile *ini.File, cfg *Cfg) error {
 	cfg.StrictTransportSecuritySubDomains = security.Key("strict_transport_security_subdomains").MustBool(false)
 	cfg.CSPEnabled = security.Key("content_security_policy").MustBool(false)
 	cfg.CSPTemplate = security.Key("content_security_policy_template").MustString("")
+	cfg.AngularSupportEnabled = security.Key("angular_support_enabled").MustBool(true)
 
 	// read data source proxy whitelist
 	DataProxyWhiteList = make(map[string]bool)
@@ -1271,10 +1268,12 @@ func readAuthSettings(iniFile *ini.File, cfg *Cfg) (err error) {
 	OAuthAutoLogin = auth.Key("oauth_auto_login").MustBool(false)
 	cfg.OAuthCookieMaxAge = auth.Key("oauth_state_cookie_max_age").MustInt(600)
 	SignoutRedirectUrl = valueAsString(auth, "signout_redirect_url", "")
+	cfg.OAuthSkipOrgRoleUpdateSync = auth.Key("oauth_skip_org_role_update_sync").MustBool(false)
 
 	// SigV4
 	SigV4AuthEnabled = auth.Key("sigv4_auth_enabled").MustBool(false)
 	cfg.SigV4AuthEnabled = SigV4AuthEnabled
+	cfg.SigV4VerboseLogging = auth.Key("sigv4_verbose_logging").MustBool(false)
 
 	// anonymous access
 	AnonymousEnabled = iniFile.Section("auth.anonymous").Key("enabled").MustBool(false)
@@ -1299,6 +1298,7 @@ func readAuthSettings(iniFile *ini.File, cfg *Cfg) (err error) {
 	cfg.JWTAuthCacheTTL = authJWT.Key("cache_ttl").MustDuration(time.Minute * 60)
 	cfg.JWTAuthKeyFile = valueAsString(authJWT, "key_file", "")
 	cfg.JWTAuthJWKSetFile = valueAsString(authJWT, "jwk_set_file", "")
+	cfg.JWTAuthAutoSignUp = authJWT.Key("auto_sign_up").MustBool(false)
 
 	authProxy := iniFile.Section("auth.proxy")
 	AuthProxyEnabled = authProxy.Key("enabled").MustBool(false)
@@ -1331,6 +1331,8 @@ func readAuthSettings(iniFile *ini.File, cfg *Cfg) (err error) {
 			cfg.AuthProxyHeaders[split[0]] = split[1]
 		}
 	}
+
+	cfg.AuthProxyHeadersEncoded = authProxy.Key("headers_encoded").MustBool(false)
 
 	return nil
 }
@@ -1404,17 +1406,6 @@ func (cfg *Cfg) readRenderingSettings(iniFile *ini.File) error {
 	cfg.ImagesDir = filepath.Join(cfg.DataPath, "png")
 	cfg.CSVsDir = filepath.Join(cfg.DataPath, "csv")
 
-	return nil
-}
-
-func (cfg *Cfg) readFeatureToggles(iniFile *ini.File) error {
-	// Read and populate feature toggles list
-	featureTogglesSection := iniFile.Section("feature_toggles")
-	cfg.FeatureToggles = make(map[string]bool)
-	featuresTogglesStr := valueAsString(featureTogglesSection, "enable", "")
-	for _, feature := range util.SplitString(featuresTogglesStr) {
-		cfg.FeatureToggles[feature] = true
-	}
 	return nil
 }
 

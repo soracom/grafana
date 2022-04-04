@@ -60,6 +60,7 @@ export const PanelTypeCard: React.FC<Props> = ({
             e.stopPropagation();
             onDelete();
           }}
+          className={styles.deleteButton}
           aria-label="Delete button on panel type card"
         />
       )}
@@ -94,8 +95,8 @@ const getStyles = (theme: GrafanaTheme2) => {
       }
     `,
     itemContent: css`
+      overflow: hidden;
       position: relative;
-      width: 100%;
       padding: ${theme.spacing(0, 1)};
     `,
     current: css`
@@ -112,19 +113,19 @@ const getStyles = (theme: GrafanaTheme2) => {
     name: css`
       text-overflow: ellipsis;
       overflow: hidden;
-      white-space: nowrap;
       font-size: ${theme.typography.size.sm};
       font-weight: ${theme.typography.fontWeightMedium};
       width: 100%;
     `,
     description: css`
+      display: block;
       text-overflow: ellipsis;
       overflow: hidden;
-      white-space: nowrap;
       color: ${theme.colors.text.secondary};
       font-size: ${theme.typography.bodySmall.fontSize};
       font-weight: ${theme.typography.fontWeightLight};
       width: 100%;
+      max-height: 4.5em;
     `,
     img: css`
       max-height: 38px;
@@ -134,6 +135,9 @@ const getStyles = (theme: GrafanaTheme2) => {
     `,
     badge: css`
       background: ${theme.colors.background.primary};
+    `,
+    deleteButton: css`
+      margin-left: auto;
     `,
   };
 };

@@ -1,24 +1,30 @@
 import config from '../../core/config';
 import { extend } from 'lodash';
-import { rangeUtil } from '@grafana/data';
+import { OrgRole, rangeUtil, WithAccessControlMetadata } from '@grafana/data';
 import { AccessControlAction, UserPermission } from 'app/types';
+import { featureEnabled, getBackendSrv } from '@grafana/runtime';
+import { CurrentUserInternal } from 'app/types/config';
 
-export class User {
+export class User implements CurrentUserInternal {
+  isSignedIn: boolean;
   id: number;
-  isGrafanaAdmin: any;
-  isSignedIn: any;
-  orgRole: any;
+  login: string;
+  email: string;
+  name: string;
+  lightTheme: boolean;
+  orgCount: number;
   orgId: number;
   orgName: string;
-  login: string;
-  orgCount: number;
+  orgRole: OrgRole | '';
+  isGrafanaAdmin: boolean;
+  gravatarUrl: string;
   timezone: string;
-  fiscalYearStartMonth: number;
+  weekStart: string;
+  locale: string;
   helpFlags1: number;
-  lightTheme: boolean;
   hasEditPermissionInFolders: boolean;
-  email?: string;
   permissions?: UserPermission;
+  fiscalYearStartMonth: number;
 
   constructor() {
     this.id = 0;
@@ -34,7 +40,12 @@ export class User {
     this.helpFlags1 = 0;
     this.lightTheme = false;
     this.hasEditPermissionInFolders = false;
-    this.email = undefined;
+    this.email = '';
+    this.name = '';
+    this.locale = '';
+    this.weekStart = '';
+    this.gravatarUrl = '';
+
     if (config.bootData.user) {
       extend(this, config.bootData.user);
     }
@@ -54,7 +65,7 @@ export class ContextSrv {
 
   constructor() {
     if (!config.bootData) {
-      config.bootData = { user: {}, settings: {} };
+      config.bootData = { user: {}, settings: {} } as any;
     }
 
     this.user = new User();
@@ -63,6 +74,18 @@ export class ContextSrv {
     this.isEditor = this.hasRole('Editor') || this.hasRole('Admin');
     this.hasEditPermissionInFolders = this.user.hasEditPermissionInFolders;
     this.minRefreshInterval = config.minRefreshInterval;
+  }
+
+  async fetchUserPermissions() {
+    try {
+      if (this.accessControlEnabled()) {
+        this.user.permissions = await getBackendSrv().get('/api/access-control/user/permissions', {
+          reloadcache: true,
+        });
+      }
+    } catch (e) {
+      console.error(e);
+    }
   }
 
   /**
@@ -82,13 +105,27 @@ export class ContextSrv {
   }
 
   accessControlEnabled(): boolean {
-    return config.licenseInfo.hasLicense && config.featureToggles['accesscontrol'];
+    return Boolean(config.featureToggles['accesscontrol']);
+  }
+
+  licensedAccessControlEnabled(): boolean {
+    return featureEnabled('accesscontrol') && Boolean(config.featureToggles['accesscontrol']);
+  }
+
+  // Checks whether user has required permission
+  hasPermissionInMetadata(action: AccessControlAction | string, object: WithAccessControlMetadata): boolean {
+    // Fallback if access control disabled
+    if (!this.accessControlEnabled()) {
+      return true;
+    }
+
+    return !!object.accessControl?.[action];
   }
 
   // Checks whether user has required permission
   hasPermission(action: AccessControlAction | string): boolean {
     // Fallback if access control disabled
-    if (!config.featureToggles['accesscontrol']) {
+    if (!this.accessControlEnabled()) {
       return true;
     }
 
@@ -115,22 +152,29 @@ export class ContextSrv {
   }
 
   hasAccessToExplore() {
-    if (config.featureToggles['accesscontrol']) {
+    if (this.accessControlEnabled()) {
       return this.hasPermission(AccessControlAction.DataSourcesExplore);
     }
     return (this.isEditor || config.viewersCanEdit) && config.exploreEnabled;
   }
 
   hasAccess(action: string, fallBack: boolean) {
-    if (!config.featureToggles['accesscontrol']) {
+    if (!this.accessControlEnabled()) {
       return fallBack;
     }
     return this.hasPermission(action);
   }
 
+  hasAccessInMetadata(action: string, object: WithAccessControlMetadata, fallBack: boolean) {
+    if (!config.featureToggles['accesscontrol']) {
+      return fallBack;
+    }
+    return this.hasPermissionInMetadata(action, object);
+  }
+
   // evaluates access control permissions, granting access if the user has any of them; uses fallback if access control is disabled
   evaluatePermission(fallback: () => string[], actions: string[]) {
-    if (!config.featureToggles['accesscontrol']) {
+    if (!this.accessControlEnabled()) {
       return fallback();
     }
     if (actions.some((action) => this.hasPermission(action))) {
@@ -146,7 +190,7 @@ export { contextSrv };
 
 export const setContextSrv = (override: ContextSrv) => {
   if (process.env.NODE_ENV !== 'test') {
-    throw new Error('contextSrv can be only overriden in test environment');
+    throw new Error('contextSrv can be only overridden in test environment');
   }
   contextSrv = override;
 };

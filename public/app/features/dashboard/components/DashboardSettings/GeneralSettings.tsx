@@ -9,6 +9,8 @@ import { DeleteDashboardButton } from '../DeleteDashboard/DeleteDashboardButton'
 import { TimePickerSettings } from './TimePickerSettings';
 
 import { updateTimeZoneDashboard, updateWeekStartDashboard } from 'app/features/dashboard/state/actions';
+import { PreviewSettings } from './PreviewSettings';
+import { config } from '@grafana/runtime';
 
 interface OwnProps {
   dashboard: DashboardModel;
@@ -120,6 +122,10 @@ export function GeneralSettingsUnconnected({ dashboard, updateTimeZone, updateWe
         </Field>
       </div>
 
+      {config.featureToggles.dashboardPreviews && config.featureToggles.dashboardPreviewsAdmin && (
+        <PreviewSettings uid={dashboard.uid} />
+      )}
+
       <TimePickerSettings
         onTimeZoneChange={onTimeZoneChange}
         onWeekStartChange={onWeekStartChange}
@@ -145,7 +151,7 @@ export function GeneralSettingsUnconnected({ dashboard, updateTimeZone, updateWe
       </CollapsableSection>
 
       <div className="gf-form-button-row">
-        {dashboard.meta.canSave && <DeleteDashboardButton dashboard={dashboard} />}
+        {dashboard.meta.canDelete && <DeleteDashboardButton dashboard={dashboard} />}
       </div>
     </div>
   );

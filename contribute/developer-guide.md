@@ -39,6 +39,14 @@ For alternative ways of cloning the Grafana repository, please refer to [GitHub'
 
 **Warning:** Do not use `go get` to download Grafana. Recent versions of Go have added behavior which isn't compatible with the way the Grafana repository is structured.
 
+### Configure Editors
+
+For some IDEs, additional configuration may be needed for Typescript to work with [Yarn plug'n'play](https://yarnpkg.com/features/pnp).
+For [VSCode](https://yarnpkg.com/getting-started/editor-sdks#vscode) and [Vim](https://yarnpkg.com/getting-started/editor-sdks#vim),
+it's as easy as running `yarn dlx @yarnpkg/sdks vscode` or `yarn dlx @yarnpkg/sdks vim`, respectively.
+
+More information can be found [here](https://yarnpkg.com/getting-started/editor-sdks).
+
 ## Build Grafana
 
 Grafana consists of two components; the _frontend_, and the _backend_.
@@ -126,6 +134,20 @@ Running the backend tests on Windows currently needs some tweaking, so use the b
 
 ```
 go run build.go test
+```
+
+### Run PostgreSQL and MySQL integration tests
+
+To run PostgreSQL and MySQL integration tests locally, you need to start the docker blocks for MySQL and/or PostgreSQL test data sources by running `make devenv sources=mysql_tests,postgres_tests`. When your test data sources are running, you can execute integration tests by running:
+
+```
+GRAFANA_TEST_DB=mysql go test -covermode=atomic -tags=integration ./pkg/...
+```
+
+and/or
+
+```
+GRAFANA_TEST_DB=postgres go test -covermode=atomic -tags=integration ./pkg/...
 ```
 
 ### Run end-to-end tests

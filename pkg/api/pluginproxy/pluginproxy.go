@@ -6,9 +6,9 @@ import (
 	"net/http/httputil"
 	"net/url"
 
-	"github.com/grafana/grafana/pkg/bus"
 	"github.com/grafana/grafana/pkg/models"
 	"github.com/grafana/grafana/pkg/plugins"
+	"github.com/grafana/grafana/pkg/services/pluginsettings"
 	"github.com/grafana/grafana/pkg/services/secrets"
 	"github.com/grafana/grafana/pkg/setting"
 	"github.com/grafana/grafana/pkg/util"
@@ -22,22 +22,23 @@ type templateData struct {
 
 // NewApiPluginProxy create a plugin proxy
 func NewApiPluginProxy(ctx *models.ReqContext, proxyPath string, route *plugins.Route,
-	appID string, cfg *setting.Cfg, secretsService secrets.Service) *httputil.ReverseProxy {
+	appID string, cfg *setting.Cfg, pluginSettingsService pluginsettings.Service, secretsService secrets.Service) *httputil.ReverseProxy {
 	director := func(req *http.Request) {
-		query := models.GetPluginSettingByIdQuery{OrgId: ctx.OrgId, PluginId: appID}
-		if err := bus.DispatchCtx(ctx.Req.Context(), &query); err != nil {
+		query := pluginsettings.GetByPluginIDArgs{OrgID: ctx.OrgId, PluginID: appID}
+		ps, err := pluginSettingsService.GetPluginSettingByPluginID(ctx.Req.Context(), &query)
+		if err != nil {
 			ctx.JsonApiErr(500, "Failed to fetch plugin settings", err)
 			return
 		}
 
-		secureJsonData, err := secretsService.DecryptJsonData(ctx.Req.Context(), query.Result.SecureJsonData)
+		secureJsonData, err := secretsService.DecryptJsonData(ctx.Req.Context(), ps.SecureJSONData)
 		if err != nil {
 			ctx.JsonApiErr(500, "Failed to decrypt plugin settings", err)
 			return
 		}
 
 		data := templateData{
-			JsonData:       query.Result.JsonData,
+			JsonData:       ps.JSONData,
 			SecureJsonData: secureJsonData,
 		}
 
@@ -83,5 +84,11 @@ func NewApiPluginProxy(ctx *models.ReqContext, proxyPath string, route *plugins.
 		}
 	}
 
-	return &httputil.ReverseProxy{Director: director}
+	return &httputil.ReverseProxy{Director: director, ModifyResponse: modifyResponse}
+}
+
+func modifyResponse(resp *http.Response) error {
+	proxyutil.SetProxyResponseHeaders(resp.Header)
+
+	return nil
 }
