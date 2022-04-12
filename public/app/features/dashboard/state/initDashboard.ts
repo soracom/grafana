@@ -112,6 +112,21 @@ export function initDashboard(args: InitDashboardArgs): ThunkResult<void> {
       return;
     }
 
+    // if the dashboard is a snapshot and this snapshot forced a refresh
+    // perform a browser refresh to get it.
+    if (
+      dashDTO.meta.updatedBy &&
+      (dashDTO.meta.updatedBy === 'live-refresh' || dashDTO.meta.updatedBy === 'live-norefresh')
+    ) {
+      // Reload the page in 60 seconds
+      setTimeout(
+        () => {
+          window.location.reload();
+        },
+        dashDTO.meta.updatedBy === 'live-refresh' ? 35000 : 60000
+      );
+    }
+
     // set initializing state
     dispatch(dashboardInitServices());
 

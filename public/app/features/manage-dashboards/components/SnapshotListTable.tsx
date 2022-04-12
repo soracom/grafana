@@ -67,7 +67,14 @@ export const SnapshotListTable: FC = () => {
                 <td>
                   <a href={url}>{fullUrl}</a>
                 </td>
-                <td>{snapshot.external && <span className="query-keyword">External</span>}</td>
+                <td>
+                  {snapshot.external && <span className="query-keyword">External</span>}
+                  {snapshot.key.endsWith('-live') && (
+                    <span className="query-segment-operator" style={{ color: '#34cdd7' }}>
+                      Auto-Updating
+                    </span>
+                  )}
+                </td>
                 <td className="text-center">
                   <LinkButton href={url} variant="secondary" size="sm" icon="eye">
                     View

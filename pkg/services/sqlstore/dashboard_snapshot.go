@@ -2,6 +2,8 @@ package sqlstore
 
 import (
 	"context"
+	"fmt"
+	"strings"
 	"time"
 
 	"github.com/grafana/grafana/pkg/components/simplejson"
@@ -53,7 +55,23 @@ func (ss *SQLStore) CreateDashboardSnapshot(ctx context.Context, cmd *models.Cre
 			Created:            time.Now(),
 			Updated:            time.Now(),
 		}
-		_, err := sess.Insert(snapshot)
+
+		// Check to see if snapshot already exists, if it does update
+		var err error
+		query := &models.GetDashboardSnapshotQuery{DeleteKey: cmd.DeleteKey}
+		if strings.HasSuffix(cmd.DeleteKey, "-live") && ss.GetDashboardSnapshot(query) == nil {
+			cmd.Key = query.Result.Key
+			snapshot.Key = cmd.Key
+			snapshot.UserId = query.Result.UserId // we want to maintain the user id that created the original snapshot
+			fmt.Println("****UPDATING with key:", cmd.Key, " UserID:", query.Result.UserId)
+			cond := &models.DashboardSnapshot{
+				Key:   cmd.Key,
+				OrgId: cmd.OrgId,
+			}
+			_, err = sess.Update(snapshot, cond)
+		} else {
+			_, err = sess.Insert(snapshot)
+		}
 		cmd.Result = snapshot
 
 		return err
@@ -80,6 +98,42 @@ func (ss *SQLStore) GetDashboardSnapshot(query *models.GetDashboardSnapshotQuery
 
 	query.Result = &snapshot
 	return nil
+}
+
+// CheckDashboardSnapshotUpdateRequired looks to see if a live snapshot has been updated
+// since the specified time.  If it hasn't it sets the updated time to Now() and returns
+// true so a one-time update script/lambda/external call can be triggered by the caller
+func (ss *SQLStore) CheckDashboardSnapshotUpdateRequired(ctx context.Context, cmd *models.CheckDashboardSnapshotUpdateRequiredCommand) error {
+
+	return ss.WithTransactionalDbSession(ctx, func(sess *DBSession) error {
+		query := &models.GetDashboardSnapshotQuery{Key: cmd.Key}
+
+		err := ss.GetDashboardSnapshot(query)
+
+		if err != nil {
+			return err
+		}
+
+		snapshot := query.Result
+
+		if query.Result.Updated.After(cmd.Since) {
+			// update is already being processed
+			// this could happen if another request came in at a similar time
+			return nil
+		}
+
+		cmd.UpdateRequired = true
+
+		// reset the update time to now so we dont update again before time
+		snapshot.Updated = time.Now()
+
+		cond := &models.DashboardSnapshot{
+			Key: cmd.Key,
+		}
+		_, err = sess.Update(snapshot, cond)
+
+		return err
+	})
 }
 
 // SearchDashboardSnapshots returns a list of all snapshots for admins

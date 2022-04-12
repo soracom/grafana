@@ -12,6 +12,7 @@ type Store interface {
 	GetDataSourceStats(ctx context.Context, query *models.GetDataSourceStatsQuery) error
 	GetDataSourceAccessStats(ctx context.Context, query *models.GetDataSourceAccessStatsQuery) error
 	GetSystemStats(ctx context.Context, query *models.GetSystemStatsQuery) error
+	CheckDashboardSnapshotUpdateRequired(ctx context.Context, cmd *models.CheckDashboardSnapshotUpdateRequiredCommand) error
 	DeleteExpiredSnapshots(ctx context.Context, cmd *models.DeleteExpiredSnapshotsCommand) error
 	CreateDashboardSnapshot(ctx context.Context, cmd *models.CreateDashboardSnapshotCommand) error
 	DeleteDashboardSnapshot(ctx context.Context, cmd *models.DeleteDashboardSnapshotCommand) error

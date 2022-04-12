@@ -71,6 +71,10 @@ func (m *SQLStoreMock) GetSystemStats(ctx context.Context, query *models.GetSyst
 	return m.ExpectedError
 }
 
+func (m *SQLStoreMock) CheckDashboardSnapshotUpdateRequired(ctx context.Context, cmd *models.CheckDashboardSnapshotUpdateRequiredCommand) error {
+	return m.ExpectedError
+}
+
 func (m *SQLStoreMock) DeleteExpiredSnapshots(ctx context.Context, cmd *models.DeleteExpiredSnapshotsCommand) error {
 	return m.ExpectedError
 }
