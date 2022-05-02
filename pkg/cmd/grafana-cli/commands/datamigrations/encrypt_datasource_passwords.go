@@ -40,11 +40,6 @@ func EncryptDatasourcePasswords(c utils.CommandLine, sqlStore *sqlstore.SQLStore
 			return err
 		}
 
-		userUpdated, err := migrateColumn(session, "user")
-		if err != nil {
-			return err
-		}
-
 		logger.Info("\n")
 		if passwordsUpdated > 0 {
 			logger.Infof("%s Encrypted password field for %d datasources \n", color.GreenString("✔"), passwordsUpdated)
@@ -54,11 +49,7 @@ func EncryptDatasourcePasswords(c utils.CommandLine, sqlStore *sqlstore.SQLStore
 			logger.Infof("%s Encrypted basic_auth_password field for %d datasources \n", color.GreenString("✔"), basicAuthUpdated)
 		}
 
-		if userUpdated > 0 {
-			logger.Infof("%s Encrypted user field for %d datasources \n", color.GreenString("✔"), userUpdated)
-		}
-
-		if passwordsUpdated == 0 && basicAuthUpdated == 0 && userUpdated == 0 {
+		if passwordsUpdated == 0 && basicAuthUpdated == 0 {
 			logger.Infof("%s All datasources secrets are already encrypted\n", color.GreenString("✔"))
 		}
 
@@ -137,8 +128,6 @@ func getUpdatedSecureJSONData(row map[string][]byte, passwordFieldName string) (
 	jsonFieldName := util.ToCamelCase(passwordFieldName)
 	if jsonFieldName == "password" {
 		jsonFieldName = "authKey"
-	} else if jsonFieldName == "user" {
-		jsonFieldName = "apiKey"
 	}
 	secureJSONData[jsonFieldName] = encryptedPassword
 	return secureJSONData, nil
