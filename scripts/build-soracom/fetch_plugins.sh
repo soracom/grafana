@@ -63,11 +63,11 @@ yarn_build_repo () {
   fi
 }
 
-clone_private_repo harvest-grafana-datasource lagoon2-master
+clone_private_repo soracom-harvest-backend main
 clone_private_repo soracom-map-panel lagoon2-master
 clone_private_repo soracom-image-panel lagoon2-master
 clone_private_repo soracom-plot-panel main
-clone_private_repo soracom-dynamic-image-panel lagoon2-master
+clone_private_repo soracom-dynamic-image-panel lagoon3-master
 
 #Add any pre-built plugins to the dir
 cp -R ../pre-built-plugins/* .
