@@ -65,7 +65,7 @@ yarn_build_repo () {
 
 clone_private_repo soracom-harvest-backend main
 clone_private_repo soracom-map-panel lagoon3-master
-clone_private_repo soracom-image-panel lagoon2-master
+clone_private_repo soracom-image-panel lagoon3-master
 clone_private_repo soracom-plot-panel main
 clone_private_repo soracom-dynamic-image-panel lagoon3-master
 
