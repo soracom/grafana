@@ -12,6 +12,8 @@ env:
     sdip_idpub: "/lagoon-access/ro-deploy-key/sdip-idpub"
     spp_id: "/lagoon-access/ro-deploy-key/spp-id"
     spp_idpub: "/lagoon-access/ro-deploy-key/spp-idpub"
+    shb_id: "/lagoon-access/ro-deploy-key/shb-id"
+    shb_idpub: "/lagoon-access/ro-deploy-key/shb-idpub"
 
 phases:
   pre_build:
@@ -26,6 +28,8 @@ phases:
       - echo "$sdip_idpub" > scripts/build-soracom/deploy_keys/soracom-dynamic-image-panel/id_rsa.pub
       - echo "$spp_id" > scripts/build-soracom/deploy_keys/soracom-plot-panel/id_rsa
       - echo "$spp_idpub" > scripts/build-soracom/deploy_keys/soracom-plot-panel/id_rsa.pub
+      - echo "$shb_id" > scripts/build-soracom/deploy_keys/soracom-harvest-backend/id_rsa
+      - echo "$shb_idpub" > scripts/build-soracom/deploy_keys/soracom-harvest-backend/id_rsa.pub
       - chmod 0400 scripts/build-soracom/deploy_keys/**/id_rsa
       - $(aws ecr get-login --no-include-email --region $AWS_DEFAULT_REGION)
       - echo Setting Image tag $CODEBUILD_RESOLVED_SOURCE_VERSION
