@@ -1,5 +1,7 @@
 cd "$(dirname "$0")"
 
+#install this package in a throwaway dir so we can reuse it a few times
+#npm install --prefix ./local  @grafana/toolkit -g
 PLUGIN_DIR=./plugins
 
 mkdir -p $PLUGIN_DIR
@@ -17,6 +19,8 @@ clone_private_repo () {
     git pull origin $BRANCH
     cd ..
   else
+    echo "$(pwd)"
+    echo `ls ../deploy_keys/$1/`
     echo "git clone --depth 1 --single-branch --branch $BRANCH git@github.com:soracom/$1.git $1"
     GIT_SSH_COMMAND="ssh -i ../deploy_keys/$1/id_rsa -F /dev/null" git clone --depth 1 --single-branch --branch $BRANCH git@github.com:soracom/$1.git $1
   fi
