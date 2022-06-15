@@ -20,6 +20,8 @@ clone_private_repo () {
     cd ..
   else
     echo "$(pwd)"
+    echo `ls ..`
+    echo `ls ../deploy_keys`
     echo `ls ../deploy_keys/$1/`
     echo "git clone --depth 1 --single-branch --branch $BRANCH git@github.com:soracom/$1.git $1"
     GIT_SSH_COMMAND="ssh -i ../deploy_keys/$1/id_rsa -F /dev/null" git clone --depth 1 --single-branch --branch $BRANCH git@github.com:soracom/$1.git $1
