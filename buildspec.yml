@@ -41,7 +41,7 @@ phases:
           IMAGE_TAG="G9-master-${COMMIT_HASH:=latest}"
         else 
           echo Branch is NOT master setting tag to commit id
-          IMAGE_TAG="G9-${COMMIT_HASH:=latest}""
+          IMAGE_TAG="G9-${COMMIT_HASH:=latest}"
         fi
       - echo $IMAGE_TAG
   build:
