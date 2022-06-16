@@ -38,10 +38,10 @@ phases:
       - |
         if [ "$CODEBUILD_WEBHOOK_TRIGGER" = "branch/master" ]; then
           echo Branch is master setting tag to "latest"
-          IMAGE_TAG="master-${COMMIT_HASH:=latest}"
+          IMAGE_TAG="G9-master-${COMMIT_HASH:=latest}"
         else 
           echo Branch is NOT master setting tag to commit id
-          IMAGE_TAG=${COMMIT_HASH:=latest}
+          IMAGE_TAG="G9-${COMMIT_HASH:=latest}""
         fi
       - echo $IMAGE_TAG
   build:
