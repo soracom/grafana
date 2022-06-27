@@ -5,7 +5,7 @@ import { CustomVariableSupport, DataQueryRequest, DataQueryResponse } from '@gra
 
 import { VariableQueryEditor } from './components/VariableQueryEditor/VariableQueryEditor';
 import { CloudWatchDatasource } from './datasource';
-import { migrateVariableQuery } from './migrations';
+import { migrateVariableQuery } from './migrations/variableQueryMigrations';
 import { VariableQuery, VariableQueryType } from './types';
 
 export class CloudWatchVariableSupport extends CustomVariableSupport<CloudWatchDatasource, VariableQuery> {
@@ -45,11 +45,22 @@ export class CloudWatchVariableSupport extends CustomVariableSupport<CloudWatchD
           return this.handleResourceARNsQuery(query);
         case VariableQueryType.Statistics:
           return this.handleStatisticsQuery();
+        case VariableQueryType.LogGroups:
+          return this.handleLogGroupsQuery(query);
       }
     } catch (error) {
       console.error(`Could not run CloudWatchMetricFindQuery ${query}`, error);
       return [];
     }
+  }
+
+  async handleLogGroupsQuery({ region, logGroupPrefix }: VariableQuery) {
+    const logGroups = await this.datasource.describeLogGroups({ region, logGroupNamePrefix: logGroupPrefix });
+    return logGroups.map((s) => ({
+      text: s,
+      value: s,
+      expandable: true,
+    }));
   }
 
   async handleRegionsQuery() {

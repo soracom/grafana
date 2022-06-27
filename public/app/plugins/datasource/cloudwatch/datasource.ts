@@ -12,6 +12,7 @@ import {
   DataSourceInstanceSettings,
   DataSourceWithLogsContextSupport,
   dateMath,
+  dateTimeFormat,
   FieldType,
   LoadingState,
   LogRowModel,
@@ -22,6 +23,7 @@ import {
 import { DataSourceWithBackend, FetchError, getBackendSrv, toDataQueryResponse } from '@grafana/runtime';
 import { RowContextOptions } from '@grafana/ui/src/components/Logs/LogRowContextProvider';
 import { notifyApp } from 'app/core/actions';
+import { config } from 'app/core/config';
 import { createErrorNotification } from 'app/core/copy/appNotification';
 import { getTimeSrv, TimeSrv } from 'app/features/dashboard/services/TimeSrv';
 import { getTemplateSrv, TemplateSrv } from 'app/features/templating/template_srv';
@@ -36,6 +38,7 @@ import { isCloudWatchAnnotationQuery, isCloudWatchLogsQuery, isCloudWatchMetrics
 import { CloudWatchLanguageProvider } from './language_provider';
 import memoizedDebounce from './memoizedDebounce';
 import { MetricMathCompletionItemProvider } from './metric-math/completion/CompletionItemProvider';
+import { migrateMetricQuery } from './migrations/metricQueryMigrations';
 import {
   CloudWatchAnnotationQuery,
   CloudWatchJsonData,
@@ -130,10 +133,14 @@ export class CloudWatchDatasource
     this.annotations = CloudWatchAnnotationSupport;
   }
 
+  filterQuery(query: CloudWatchQuery) {
+    return query.hide !== true || (isCloudWatchMetricsQuery(query) && query.id !== '');
+  }
+
   query(options: DataQueryRequest<CloudWatchQuery>): Observable<DataQueryResponse> {
     options = cloneDeep(options);
 
-    let queries = options.targets.filter((item) => item.hide !== true);
+    let queries = options.targets.filter(this.filterQuery);
     const { logQueries, metricsQueries, annotationQueries } = this.getTargetsByQueryMode(queries);
 
     const dataQueryResponses: Array<Observable<DataQueryResponse>> = [];
@@ -230,6 +237,7 @@ export class CloudWatchDatasource
               options,
               this.timeSrv.timeRange(),
               this.replace.bind(this),
+              this.expandVariableToArray.bind(this),
               this.getActualRegion.bind(this),
               this.tracingDataSourceUid
             );
@@ -241,14 +249,7 @@ export class CloudWatchDatasource
     );
   };
 
-  filterQuery(query: CloudWatchQuery): boolean {
-    if (isCloudWatchLogsQuery(query)) {
-      return !!query.logGroupNames?.length;
-    } else if (isCloudWatchAnnotationQuery(query)) {
-      // annotation query validity already checked in annotationSupport
-      return true;
-    }
-
+  filterMetricQuery(query: CloudWatchMetricsQuery): boolean {
     const { region, metricQueryType, metricEditorMode, expression, metricName, namespace, sqlExpression, statistic } =
       query;
     if (!region) {
@@ -266,27 +267,43 @@ export class CloudWatchDatasource
     throw new Error('invalid metric editor mode');
   }
 
+  replaceMetricQueryVars(
+    query: CloudWatchMetricsQuery,
+    options: DataQueryRequest<CloudWatchQuery>
+  ): CloudWatchMetricsQuery {
+    query.region = this.templateSrv.replace(this.getActualRegion(query.region), options.scopedVars);
+    query.namespace = this.replace(query.namespace, options.scopedVars, true, 'namespace');
+    query.metricName = this.replace(query.metricName, options.scopedVars, true, 'metric name');
+    query.dimensions = this.convertDimensionFormat(query.dimensions ?? {}, options.scopedVars);
+    query.statistic = this.templateSrv.replace(query.statistic, options.scopedVars);
+    query.period = String(this.getPeriod(query, options)); // use string format for period in graph query, and alerting
+    query.id = this.templateSrv.replace(query.id, options.scopedVars);
+    query.expression = this.templateSrv.replace(query.expression, options.scopedVars);
+    query.sqlExpression = this.templateSrv.replace(query.sqlExpression, options.scopedVars, 'raw');
+
+    return query;
+  }
+
   handleMetricQueries = (
     metricQueries: CloudWatchMetricsQuery[],
     options: DataQueryRequest<CloudWatchQuery>
   ): Observable<DataQueryResponse> => {
+    const timezoneUTCOffset = dateTimeFormat(Date.now(), {
+      timeZone: options.timezone,
+      format: 'Z',
+    }).replace(':', '');
+
     const validMetricsQueries = metricQueries
-      .filter(this.filterQuery)
-      .map((item: CloudWatchMetricsQuery): MetricQuery => {
-        item.region = this.templateSrv.replace(this.getActualRegion(item.region), options.scopedVars);
-        item.namespace = this.replace(item.namespace, options.scopedVars, true, 'namespace');
-        item.metricName = this.replace(item.metricName, options.scopedVars, true, 'metric name');
-        item.dimensions = this.convertDimensionFormat(item.dimensions ?? {}, options.scopedVars);
-        item.statistic = this.templateSrv.replace(item.statistic, options.scopedVars);
-        item.period = String(this.getPeriod(item, options)); // use string format for period in graph query, and alerting
-        item.id = this.templateSrv.replace(item.id, options.scopedVars);
-        item.expression = this.templateSrv.replace(item.expression, options.scopedVars);
-        item.sqlExpression = this.templateSrv.replace(item.sqlExpression, options.scopedVars, 'raw');
+      .filter(this.filterMetricQuery)
+      .map((q: CloudWatchMetricsQuery): MetricQuery => {
+        const migratedQuery = migrateMetricQuery(q);
+        const migratedAndIterpolatedQuery = this.replaceMetricQueryVars(migratedQuery, options);
 
         return {
+          timezoneUTCOffset,
           intervalMs: options.intervalMs,
           maxDataPoints: options.maxDataPoints,
-          ...item,
+          ...migratedAndIterpolatedQuery,
           type: 'timeSeriesQuery',
           datasource: this.getRef(),
         };
@@ -631,9 +648,12 @@ export class CloudWatchDatasource
         for (const fieldName of fieldsToReplace) {
           if (query.hasOwnProperty(fieldName)) {
             if (Array.isArray(anyQuery[fieldName])) {
-              anyQuery[fieldName] = anyQuery[fieldName].map((val: string) =>
-                this.replace(val, options.scopedVars, true, fieldName)
-              );
+              anyQuery[fieldName] = anyQuery[fieldName].flatMap((val: string) => {
+                if (fieldName === 'logGroupNames') {
+                  return this.expandVariableToArray(val, options.scopedVars || {});
+                }
+                return this.replace(val, options.scopedVars, true, fieldName);
+              });
             } else {
               anyQuery[fieldName] = this.replace(anyQuery[fieldName], options.scopedVars, true, fieldName);
             }
@@ -660,6 +680,10 @@ export class CloudWatchDatasource
     return this.awsRequest(DS_QUERY_ENDPOINT, requestParams, headers).pipe(
       map((response) => resultsToDataFrames({ data: response })),
       catchError((err: FetchError) => {
+        if (config.featureToggles.datasourceQueryMultiStatus && err.status === 207) {
+          throw err;
+        }
+
         if (err.status === 400) {
           throw err;
         }
@@ -827,22 +851,20 @@ export class CloudWatchDatasource
         return { ...result, [key]: null };
       }
 
-      const newValues = this.getVariableValue(value, scopedVars);
+      const newValues = this.expandVariableToArray(value, scopedVars);
       return { ...result, [key]: newValues };
     }, {});
   }
 
   // get the value for a given template variable
-  getVariableValue(value: string, scopedVars: ScopedVars): string[] {
+  expandVariableToArray(value: string, scopedVars: ScopedVars): string[] {
     const variableName = this.templateSrv.getVariableName(value);
     const valueVar = this.templateSrv.getVariables().find(({ name }) => {
       return name === variableName;
     });
     if (variableName && valueVar) {
       if ((valueVar as unknown as VariableWithMultiSupport).multi) {
-        // rebuild the variable name to handle old migrated queries
-        const values = this.templateSrv.replace('$' + variableName, scopedVars, 'pipe').split('|');
-        return values;
+        return this.templateSrv.replace(value, scopedVars, 'pipe').split('|');
       }
       return [this.templateSrv.replace(value, scopedVars)];
     }
@@ -857,7 +879,7 @@ export class CloudWatchDatasource
       }
       const initialVal: string[] = [];
       const newValues = values.reduce((result, value) => {
-        const vals = this.getVariableValue(value, {});
+        const vals = this.expandVariableToArray(value, {});
         return [...result, ...vals];
       }, initialVal);
       return { ...result, [key]: newValues };
@@ -937,13 +959,7 @@ export class CloudWatchDatasource
       namespace: this.replace(query.namespace, scopedVars),
       period: this.replace(query.period, scopedVars),
       sqlExpression: this.replace(query.sqlExpression, scopedVars),
-      dimensions: Object.entries(query.dimensions ?? {}).reduce((prev, [key, value]) => {
-        if (Array.isArray(value)) {
-          return { ...prev, [key]: value };
-        }
-
-        return { ...prev, [this.replace(key, scopedVars)]: this.replace(value, scopedVars) };
-      }, {}),
+      dimensions: this.convertDimensionFormat(query.dimensions ?? {}, scopedVars),
     };
   }
 }

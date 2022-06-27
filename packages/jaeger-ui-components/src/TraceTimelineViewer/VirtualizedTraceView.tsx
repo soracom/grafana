@@ -18,7 +18,7 @@ import memoizeOne from 'memoize-one';
 import * as React from 'react';
 import { createRef, RefObject } from 'react';
 
-import { GrafanaTheme2, LinkModel } from '@grafana/data';
+import { GrafanaTheme2, LinkModel, TimeZone } from '@grafana/data';
 import { stylesFactory, withTheme2, ToolbarButton } from '@grafana/ui';
 
 import { Accessors } from '../ScrollManager';
@@ -45,7 +45,10 @@ type TExtractUiFindFromStateReturn = {
   uiFind: string | undefined;
 };
 
-const getStyles = stylesFactory(() => {
+const getStyles = stylesFactory((props: TVirtualizedTraceViewOwnProps) => {
+  const { topOfViewRefType } = props;
+  const position = topOfViewRefType === TopOfViewRefType.Explore ? 'fixed' : 'absolute';
+
   return {
     rowsWrapper: css`
       width: 100%;
@@ -60,7 +63,7 @@ const getStyles = stylesFactory(() => {
       align-items: center;
       width: 40px;
       height: 40px;
-      position: fixed;
+      position: ${position};
       bottom: 30px;
       right: 30px;
       z-index: 1;
@@ -74,13 +77,18 @@ type RowState = {
   spanIndex: number;
 };
 
+export enum TopOfViewRefType {
+  Explore = 'Explore',
+  Panel = 'Panel',
+}
+
 type TVirtualizedTraceViewOwnProps = {
   currentViewRangeTime: [number, number];
+  timeZone: TimeZone;
   findMatchesIDs: Set<string> | TNil;
   scrollToFirstVisibleSpan: () => void;
   registerAccessors: (accesors: Accessors) => void;
   trace: Trace;
-  focusSpan: (uiFind: string) => void;
   linksGetter: (span: TraceSpan, items: TraceKeyValuePair[], itemIndex: number) => TraceLink[];
   childrenToggle: (spanID: string) => void;
   clearShouldScrollToFirstUiFindMatch: () => void;
@@ -104,7 +112,8 @@ type TVirtualizedTraceViewOwnProps = {
   focusedSpanId?: string;
   focusedSpanIdForSearch: string;
   createFocusSpanLink: (traceId: string, spanId: string) => LinkModel;
-  topOfExploreViewRef?: RefObject<HTMLDivElement>;
+  topOfViewRef?: RefObject<HTMLDivElement>;
+  topOfViewRefType?: TopOfViewRefType;
 };
 
 type VirtualizedTraceViewProps = TVirtualizedTraceViewOwnProps & TExtractUiFindFromStateReturn & TTraceTimeline;
@@ -378,7 +387,6 @@ export class UnthemedVirtualizedTraceView extends React.Component<VirtualizedTra
       findMatchesIDs,
       spanNameColumnWidth,
       trace,
-      focusSpan,
       hoverIndentGuideIds,
       addHoverIndentGuideId,
       removeHoverIndentGuideId,
@@ -425,7 +433,7 @@ export class UnthemedVirtualizedTraceView extends React.Component<VirtualizedTra
       };
     }
 
-    const styles = getStyles();
+    const styles = getStyles(this.props);
     return (
       <div className={styles.row} key={key} style={style} {...attrs}>
         <SpanBarRow
@@ -446,7 +454,6 @@ export class UnthemedVirtualizedTraceView extends React.Component<VirtualizedTra
           getViewedBounds={this.getViewedBounds()}
           traceStartTime={trace.startTime}
           span={span}
-          focusSpan={focusSpan}
           hoverIndentGuideIds={hoverIndentGuideIds}
           addHoverIndentGuideId={addHoverIndentGuideId}
           removeHoverIndentGuideId={removeHoverIndentGuideId}
@@ -472,7 +479,7 @@ export class UnthemedVirtualizedTraceView extends React.Component<VirtualizedTra
       detailToggle,
       spanNameColumnWidth,
       trace,
-      focusSpan,
+      timeZone,
       hoverIndentGuideIds,
       addHoverIndentGuideId,
       removeHoverIndentGuideId,
@@ -481,13 +488,14 @@ export class UnthemedVirtualizedTraceView extends React.Component<VirtualizedTra
       createSpanLink,
       focusedSpanId,
       createFocusSpanLink,
+      topOfViewRefType,
     } = this.props;
     const detailState = detailStates.get(spanID);
     if (!trace || !detailState) {
       return null;
     }
     const color = getColorByKey(serviceName, theme);
-    const styles = getStyles();
+    const styles = getStyles(this.props);
     return (
       <div className={styles.row} key={key} style={{ ...style, zIndex: 1 }} {...attrs}>
         <SpanDetailRow
@@ -504,27 +512,28 @@ export class UnthemedVirtualizedTraceView extends React.Component<VirtualizedTra
           warningsToggle={detailWarningsToggle}
           stackTracesToggle={detailStackTracesToggle}
           span={span}
+          timeZone={timeZone}
           tagsToggle={detailTagsToggle}
           traceStartTime={trace.startTime}
-          focusSpan={focusSpan}
           hoverIndentGuideIds={hoverIndentGuideIds}
           addHoverIndentGuideId={addHoverIndentGuideId}
           removeHoverIndentGuideId={removeHoverIndentGuideId}
           createSpanLink={createSpanLink}
           focusedSpanId={focusedSpanId}
           createFocusSpanLink={createFocusSpanLink}
+          topOfViewRefType={topOfViewRefType}
         />
       </div>
     );
   }
 
   scrollToTop = () => {
-    const { topOfExploreViewRef } = this.props;
-    topOfExploreViewRef?.current?.scrollIntoView({ behavior: 'smooth' });
+    const { topOfViewRef } = this.props;
+    topOfViewRef?.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
   render() {
-    const styles = getStyles();
+    const styles = getStyles(this.props);
     const { scrollElement } = this.props;
     return (
       <>
@@ -541,7 +550,6 @@ export class UnthemedVirtualizedTraceView extends React.Component<VirtualizedTra
           windowScroller={false}
           scrollElement={scrollElement}
         />
-
         <ToolbarButton
           className={styles.scrollToTopButton}
           onClick={this.scrollToTop}

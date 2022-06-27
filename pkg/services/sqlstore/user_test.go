@@ -1,6 +1,3 @@
-//go:build integration
-// +build integration
-
 package sqlstore
 
 import (
@@ -9,13 +6,87 @@ import (
 	"testing"
 
 	"github.com/grafana/grafana/pkg/models"
-	"github.com/grafana/grafana/pkg/setting"
+	"github.com/grafana/grafana/pkg/services/sqlstore/migrator"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-func TestUserDataAccess(t *testing.T) {
+func TestIntegrationUserUpdate(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping integration test")
+	}
 
 	ss := InitTestDB(t)
+
+	users := createFiveTestUsers(t, ss, func(i int) *models.CreateUserCommand {
+		return &models.CreateUserCommand{
+			Email:      fmt.Sprint("USER", i, "@test.com"),
+			Name:       fmt.Sprint("USER", i),
+			Login:      fmt.Sprint("loginUSER", i),
+			IsDisabled: false,
+		}
+	})
+
+	ss.Cfg.CaseInsensitiveLogin = true
+
+	t.Run("Testing DB - update generates duplicate user", func(t *testing.T) {
+		err := ss.UpdateUser(context.Background(), &models.UpdateUserCommand{
+			Login:  "loginuser2",
+			UserId: users[0].Id,
+		})
+
+		require.Error(t, err)
+	})
+
+	t.Run("Testing DB - update lowercases existing user", func(t *testing.T) {
+		err := ss.UpdateUser(context.Background(), &models.UpdateUserCommand{
+			Login:  "loginUSER0",
+			Email:  "USER0@test.com",
+			UserId: users[0].Id,
+		})
+		require.NoError(t, err)
+
+		query := models.GetUserByIdQuery{Id: users[0].Id}
+		err = ss.GetUserById(context.Background(), &query)
+		require.NoError(t, err)
+
+		require.Equal(t, "loginuser0", query.Result.Login)
+		require.Equal(t, "user0@test.com", query.Result.Email)
+	})
+
+	t.Run("Testing DB - no user info provided", func(t *testing.T) {
+		err := ss.UpdateUser(context.Background(), &models.UpdateUserCommand{
+			Login:  "",
+			Email:  "",
+			Name:   "Change Name",
+			UserId: users[3].Id,
+		})
+		require.NoError(t, err)
+
+		query := models.GetUserByIdQuery{Id: users[3].Id}
+		err = ss.GetUserById(context.Background(), &query)
+		require.NoError(t, err)
+
+		// Changed
+		require.Equal(t, "Change Name", query.Result.Name)
+
+		// Unchanged
+		require.Equal(t, "loginUSER3", query.Result.Login)
+		require.Equal(t, "USER3@test.com", query.Result.Email)
+	})
+
+	ss.Cfg.CaseInsensitiveLogin = false
+}
+
+func TestIntegrationUserDataAccess(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping integration test")
+	}
+	ss := InitTestDB(t)
+	user := &models.SignedInUser{
+		OrgId:       1,
+		Permissions: map[int64]map[string][]string{1: {"users:read": {"global.users:*"}}},
+	}
 
 	t.Run("Testing DB - creates and loads user", func(t *testing.T) {
 		cmd := models.CreateUserCommand{
@@ -45,6 +116,52 @@ func TestUserDataAccess(t *testing.T) {
 		require.Len(t, query.Result.Rands, 10)
 		require.Len(t, query.Result.Salt, 10)
 		require.False(t, query.Result.IsDisabled)
+
+		t.Run("Get User by email case insensitive", func(t *testing.T) {
+			ss.Cfg.CaseInsensitiveLogin = true
+			query := models.GetUserByEmailQuery{Email: "USERtest@TEST.COM"}
+			err = ss.GetUserByEmail(context.Background(), &query)
+			require.Nil(t, err)
+
+			require.Equal(t, query.Result.Email, "usertest@test.com")
+			require.Equal(t, query.Result.Password, "")
+			require.Len(t, query.Result.Rands, 10)
+			require.Len(t, query.Result.Salt, 10)
+			require.False(t, query.Result.IsDisabled)
+
+			ss.Cfg.CaseInsensitiveLogin = false
+		})
+
+		t.Run("Get User by login - case insensitive", func(t *testing.T) {
+			ss.Cfg.CaseInsensitiveLogin = true
+
+			query := models.GetUserByLoginQuery{LoginOrEmail: "USER_test_login"}
+			err = ss.GetUserByLogin(context.Background(), &query)
+			require.Nil(t, err)
+
+			require.Equal(t, query.Result.Email, "usertest@test.com")
+			require.Equal(t, query.Result.Password, "")
+			require.Len(t, query.Result.Rands, 10)
+			require.Len(t, query.Result.Salt, 10)
+			require.False(t, query.Result.IsDisabled)
+
+			ss.Cfg.CaseInsensitiveLogin = false
+		})
+
+		t.Run("Get User by login - email fallback case insensitive", func(t *testing.T) {
+			ss.Cfg.CaseInsensitiveLogin = true
+			query := models.GetUserByLoginQuery{LoginOrEmail: "USERtest@TEST.COM"}
+			err = ss.GetUserByLogin(context.Background(), &query)
+			require.Nil(t, err)
+
+			require.Equal(t, query.Result.Email, "usertest@test.com")
+			require.Equal(t, query.Result.Password, "")
+			require.Len(t, query.Result.Rands, 10)
+			require.Len(t, query.Result.Salt, 10)
+			require.False(t, query.Result.IsDisabled)
+
+			ss.Cfg.CaseInsensitiveLogin = false
+		})
 	})
 
 	t.Run("Testing DB - creates and loads disabled user", func(t *testing.T) {
@@ -73,10 +190,10 @@ func TestUserDataAccess(t *testing.T) {
 	t.Run("Testing DB - create user assigned to other organization", func(t *testing.T) {
 		ss = InitTestDB(t)
 
-		autoAssignOrg := setting.AutoAssignOrg
-		setting.AutoAssignOrg = true
+		autoAssignOrg := ss.Cfg.AutoAssignOrg
+		ss.Cfg.AutoAssignOrg = true
 		defer func() {
-			setting.AutoAssignOrg = autoAssignOrg
+			ss.Cfg.AutoAssignOrg = autoAssignOrg
 		}()
 
 		orgCmd := &models.CreateOrgCommand{Name: "Some Test Org"}
@@ -129,7 +246,7 @@ func TestUserDataAccess(t *testing.T) {
 		})
 
 		// Return the first page of users and a total count
-		query := models.SearchUsersQuery{Query: "", Page: 1, Limit: 3}
+		query := models.SearchUsersQuery{Query: "", Page: 1, Limit: 3, SignedInUser: user}
 		err := ss.SearchUsers(context.Background(), &query)
 
 		require.Nil(t, err)
@@ -137,7 +254,7 @@ func TestUserDataAccess(t *testing.T) {
 		require.EqualValues(t, query.Result.TotalCount, 5)
 
 		// Return the second page of users and a total count
-		query = models.SearchUsersQuery{Query: "", Page: 2, Limit: 3}
+		query = models.SearchUsersQuery{Query: "", Page: 2, Limit: 3, SignedInUser: user}
 		err = ss.SearchUsers(context.Background(), &query)
 
 		require.Nil(t, err)
@@ -145,28 +262,28 @@ func TestUserDataAccess(t *testing.T) {
 		require.EqualValues(t, query.Result.TotalCount, 5)
 
 		// Return list of users matching query on user name
-		query = models.SearchUsersQuery{Query: "use", Page: 1, Limit: 3}
+		query = models.SearchUsersQuery{Query: "use", Page: 1, Limit: 3, SignedInUser: user}
 		err = ss.SearchUsers(context.Background(), &query)
 
 		require.Nil(t, err)
 		require.Len(t, query.Result.Users, 3)
 		require.EqualValues(t, query.Result.TotalCount, 5)
 
-		query = models.SearchUsersQuery{Query: "ser1", Page: 1, Limit: 3}
+		query = models.SearchUsersQuery{Query: "ser1", Page: 1, Limit: 3, SignedInUser: user}
 		err = ss.SearchUsers(context.Background(), &query)
 
 		require.Nil(t, err)
 		require.Len(t, query.Result.Users, 1)
 		require.EqualValues(t, query.Result.TotalCount, 1)
 
-		query = models.SearchUsersQuery{Query: "USER1", Page: 1, Limit: 3}
+		query = models.SearchUsersQuery{Query: "USER1", Page: 1, Limit: 3, SignedInUser: user}
 		err = ss.SearchUsers(context.Background(), &query)
 
 		require.Nil(t, err)
 		require.Len(t, query.Result.Users, 1)
 		require.EqualValues(t, query.Result.TotalCount, 1)
 
-		query = models.SearchUsersQuery{Query: "idontexist", Page: 1, Limit: 3}
+		query = models.SearchUsersQuery{Query: "idontexist", Page: 1, Limit: 3, SignedInUser: user}
 		err = ss.SearchUsers(context.Background(), &query)
 
 		require.Nil(t, err)
@@ -174,7 +291,7 @@ func TestUserDataAccess(t *testing.T) {
 		require.EqualValues(t, query.Result.TotalCount, 0)
 
 		// Return list of users matching query on email
-		query = models.SearchUsersQuery{Query: "ser1@test.com", Page: 1, Limit: 3}
+		query = models.SearchUsersQuery{Query: "ser1@test.com", Page: 1, Limit: 3, SignedInUser: user}
 		err = ss.SearchUsers(context.Background(), &query)
 
 		require.Nil(t, err)
@@ -182,7 +299,7 @@ func TestUserDataAccess(t *testing.T) {
 		require.EqualValues(t, query.Result.TotalCount, 1)
 
 		// Return list of users matching query on login name
-		query = models.SearchUsersQuery{Query: "loginuser1", Page: 1, Limit: 3}
+		query = models.SearchUsersQuery{Query: "loginuser1", Page: 1, Limit: 3, SignedInUser: user}
 		err = ss.SearchUsers(context.Background(), &query)
 
 		require.Nil(t, err)
@@ -202,7 +319,7 @@ func TestUserDataAccess(t *testing.T) {
 		})
 
 		isDisabled := false
-		query := models.SearchUsersQuery{IsDisabled: &isDisabled}
+		query := models.SearchUsersQuery{IsDisabled: &isDisabled, SignedInUser: user}
 		err := ss.SearchUsers(context.Background(), &query)
 		require.Nil(t, err)
 
@@ -249,14 +366,14 @@ func TestUserDataAccess(t *testing.T) {
 		err = ss.DeleteUser(context.Background(), &models.DeleteUserCommand{UserId: users[1].Id})
 		require.Nil(t, err)
 
-		query1 := &models.GetOrgUsersQuery{OrgId: users[0].OrgId}
+		query1 := &models.GetOrgUsersQuery{OrgId: users[0].OrgId, User: user}
 		err = ss.GetOrgUsersForTest(context.Background(), query1)
 		require.Nil(t, err)
 
 		require.Len(t, query1.Result, 1)
 
 		permQuery := &models.GetDashboardAclInfoListQuery{DashboardID: 1, OrgID: users[0].OrgId}
-		err = ss.GetDashboardAclInfoList(context.Background(), permQuery)
+		err = getDashboardAclInfoList(ss, permQuery)
 		require.Nil(t, err)
 
 		require.Len(t, permQuery.Result, 0)
@@ -312,7 +429,7 @@ func TestUserDataAccess(t *testing.T) {
 		require.Nil(t, err)
 
 		isDisabled = true
-		query5 := &models.SearchUsersQuery{IsDisabled: &isDisabled}
+		query5 := &models.SearchUsersQuery{IsDisabled: &isDisabled, SignedInUser: user}
 		err = ss.SearchUsers(context.Background(), query5)
 
 		require.Nil(t, err)
@@ -330,16 +447,119 @@ func TestUserDataAccess(t *testing.T) {
 		require.Len(t, query2.Result, 1)
 
 		permQuery = &models.GetDashboardAclInfoListQuery{DashboardID: 1, OrgID: users[0].OrgId}
-		err = ss.GetDashboardAclInfoList(context.Background(), permQuery)
+		err = getDashboardAclInfoList(ss, permQuery)
 		require.Nil(t, err)
 
 		require.Len(t, permQuery.Result, 0)
 	})
 
+	t.Run("Testing DB - return list of users that the SignedInUser has permission to read", func(t *testing.T) {
+		ss := InitTestDB(t)
+		createFiveTestUsers(t, ss, func(i int) *models.CreateUserCommand {
+			return &models.CreateUserCommand{
+				Email: fmt.Sprint("user", i, "@test.com"),
+				Name:  fmt.Sprint("user", i),
+				Login: fmt.Sprint("loginuser", i),
+			}
+		})
+
+		testUser := &models.SignedInUser{
+			OrgId:       1,
+			Permissions: map[int64]map[string][]string{1: {"users:read": {"global.users:id:1", "global.users:id:3"}}},
+		}
+		query := models.SearchUsersQuery{SignedInUser: testUser}
+		err := ss.SearchUsers(context.Background(), &query)
+		assert.Nil(t, err)
+		assert.Len(t, query.Result.Users, 2)
+	})
+
+	t.Run("Testing DB - error on case insensitive conflict", func(t *testing.T) {
+		if ss.engine.Dialect().DBType() == migrator.MySQL {
+			t.Skip("Skipping on MySQL due to case insensitive indexes")
+		}
+
+		cmd := models.CreateUserCommand{
+			Email: "confusertest@test.com",
+			Name:  "user name",
+			Login: "user_email_conflict",
+		}
+		userEmailConflict, err := ss.CreateUser(context.Background(), cmd)
+		require.NoError(t, err)
+
+		cmd = models.CreateUserCommand{
+			Email: "confusertest@TEST.COM",
+			Name:  "user name",
+			Login: "user_email_conflict_two",
+		}
+		_, err = ss.CreateUser(context.Background(), cmd)
+		require.NoError(t, err)
+
+		cmd = models.CreateUserCommand{
+			Email: "user_test_login_conflict@test.com",
+			Name:  "user name",
+			Login: "user_test_login_conflict",
+		}
+		userLoginConflict, err := ss.CreateUser(context.Background(), cmd)
+		require.NoError(t, err)
+
+		cmd = models.CreateUserCommand{
+			Email: "user_test_login_conflict_two@test.com",
+			Name:  "user name",
+			Login: "user_test_login_CONFLICT",
+		}
+		_, err = ss.CreateUser(context.Background(), cmd)
+		require.NoError(t, err)
+
+		ss.Cfg.CaseInsensitiveLogin = true
+
+		t.Run("GetUserByEmail - email conflict", func(t *testing.T) {
+			query := models.GetUserByEmailQuery{Email: "confusertest@test.com"}
+			err = ss.GetUserByEmail(context.Background(), &query)
+			require.Error(t, err)
+		})
+
+		t.Run("GetUserByEmail - login conflict", func(t *testing.T) {
+			query := models.GetUserByEmailQuery{Email: "user_test_login_conflict@test.com"}
+			err = ss.GetUserByEmail(context.Background(), &query)
+			require.Error(t, err)
+		})
+
+		t.Run("GetUserByID - email conflict", func(t *testing.T) {
+			query := models.GetUserByIdQuery{Id: userEmailConflict.Id}
+			err = ss.GetUserById(context.Background(), &query)
+			require.Error(t, err)
+		})
+
+		t.Run("GetUserByID - login conflict", func(t *testing.T) {
+			query := models.GetUserByIdQuery{Id: userLoginConflict.Id}
+			err = ss.GetUserById(context.Background(), &query)
+			require.Error(t, err)
+		})
+
+		t.Run("GetUserByLogin - email conflict", func(t *testing.T) {
+			query := models.GetUserByLoginQuery{LoginOrEmail: "user_email_conflict_two"}
+			err = ss.GetUserByLogin(context.Background(), &query)
+			require.Error(t, err)
+		})
+
+		t.Run("GetUserByLogin - login conflict", func(t *testing.T) {
+			query := models.GetUserByLoginQuery{LoginOrEmail: "user_test_login_conflict"}
+			err = ss.GetUserByLogin(context.Background(), &query)
+			require.Error(t, err)
+		})
+
+		t.Run("GetUserByLogin - login conflict by email", func(t *testing.T) {
+			query := models.GetUserByLoginQuery{LoginOrEmail: "user_test_login_conflict@test.com"}
+			err = ss.GetUserByLogin(context.Background(), &query)
+			require.Error(t, err)
+		})
+
+		ss.Cfg.CaseInsensitiveLogin = false
+	})
+
 	ss = InitTestDB(t)
 
 	t.Run("Testing DB - enable all users", func(t *testing.T) {
-
 		users := createFiveTestUsers(t, ss, func(i int) *models.CreateUserCommand {
 			return &models.CreateUserCommand{
 				Email:      fmt.Sprint("user", i, "@test.com"),
@@ -358,7 +578,7 @@ func TestUserDataAccess(t *testing.T) {
 		require.Nil(t, err)
 
 		isDisabled := false
-		query := &models.SearchUsersQuery{IsDisabled: &isDisabled}
+		query := &models.SearchUsersQuery{IsDisabled: &isDisabled, SignedInUser: user}
 		err = ss.SearchUsers(context.Background(), query)
 
 		require.Nil(t, err)
@@ -389,7 +609,7 @@ func TestUserDataAccess(t *testing.T) {
 		err := ss.BatchDisableUsers(context.Background(), &disableCmd)
 		require.Nil(t, err)
 
-		query := models.SearchUsersQuery{}
+		query := models.SearchUsersQuery{SignedInUser: user}
 		err = ss.SearchUsers(context.Background(), &query)
 
 		require.Nil(t, err)
@@ -427,7 +647,6 @@ func TestUserDataAccess(t *testing.T) {
 	})
 
 	t.Run("Testing DB - grafana admin users", func(t *testing.T) {
-
 		ss = InitTestDB(t)
 
 		createUserCmd := models.CreateUserCommand{
