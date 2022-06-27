@@ -1,9 +1,18 @@
-import { parser } from 'lezer-promql';
 import { SyntaxNode } from '@lezer/common';
+import { parser } from 'lezer-promql';
+
+import { binaryScalarOperatorToOperatorName } from './binaryScalarOperations';
+import {
+  ErrorName,
+  getAllByType,
+  getLeftMostChild,
+  getString,
+  makeBinOp,
+  makeError,
+  replaceVariables,
+} from './shared/parsingUtils';
 import { QueryBuilderLabelFilter, QueryBuilderOperation } from './shared/types';
 import { PromVisualQuery, PromVisualQueryBinary } from './types';
-import { binaryScalarDefs } from './binaryScalarOperations';
-import { ErrorName, getLeftMostChild, getString, makeBinOp, makeError, replaceVariables } from './shared/parsingUtils';
 
 /**
  * Parses a PromQL query into a visual query model.
@@ -34,9 +43,16 @@ export function buildVisualQueryFromString(expr: string): Context {
   } catch (err) {
     // Not ideal to log it here, but otherwise we would lose the stack trace.
     console.error(err);
-    context.errors.push({
-      text: err.message,
-    });
+    if (err instanceof Error) {
+      context.errors.push({
+        text: err.message,
+      });
+    }
+  }
+
+  // If we have empty query, we want to reset errors
+  if (isEmptyQuery(context.query)) {
+    context.errors = [];
   }
   return context;
 }
@@ -264,14 +280,6 @@ function updateFunctionArgs(expr: string, node: SyntaxNode | null, context: Cont
   }
 }
 
-const operatorToOpName = binaryScalarDefs.reduce((acc, def) => {
-  acc[def.sign] = {
-    id: def.id,
-    comparison: def.comparison,
-  };
-  return acc;
-}, {} as Record<string, { id: string; comparison?: boolean }>);
-
 /**
  * Right now binary expressions can be represented in 2 way in visual query. As additional operation in case it is
  * just operation with scalar or it creates a binaryQuery when it's 2 queries.
@@ -287,7 +295,7 @@ function handleBinary(expr: string, node: SyntaxNode, context: Context) {
 
   const right = node.lastChild!;
 
-  const opDef = operatorToOpName[op];
+  const opDef = binaryScalarOperatorToOperatorName[op];
 
   const leftNumber = left.getChild('NumberLiteral');
   const rightNumber = right.getChild('NumberLiteral');
@@ -366,25 +374,9 @@ function getBinaryModifier(
   }
 }
 
-/**
- * Get all nodes with type in the tree. This traverses the tree so it is safe only when you know there shouldn't be
- * too much nesting but you just want to skip some of the wrappers. For example getting function args this way would
- * not be safe is it would also find arguments of nested functions.
- * @param expr
- * @param cur
- * @param type
- */
-function getAllByType(expr: string, cur: SyntaxNode, type: string): string[] {
-  if (cur.name === type) {
-    return [getString(expr, cur)];
+function isEmptyQuery(query: PromVisualQuery) {
+  if (query.labels.length === 0 && query.operations.length === 0 && !query.metric) {
+    return true;
   }
-  const values: string[] = [];
-  let pos = 0;
-  let child = cur.childAfter(pos);
-  while (child) {
-    values.push(...getAllByType(expr, child, type));
-    pos = child.to;
-    child = cur.childAfter(pos);
-  }
-  return values;
+  return false;
 }

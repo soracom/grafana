@@ -53,6 +53,7 @@ export const markersLayer: MapLayerRegistryItem<MarkersConfig> = {
   description: 'Use markers to render each data point',
   isBaseMap: false,
   showLocation: true,
+  hideOpacity: true,
 
   /**
    * Function that configures transformation and returns a transformer
@@ -67,18 +68,18 @@ export const markersLayer: MapLayerRegistryItem<MarkersConfig> = {
       ...options?.config,
     };
 
-    const legendProps = new ReplaySubject<MarkersLegendProps>(1);
-    let legend: ReactNode = null;
-    if (config.showLegend) {
-      legend = <ObservablePropsWrapper watch={legendProps} initialSubProps={{}} child={MarkersLegend} />;
-    }
-
     const style = await getStyleConfigState(config.style);
     const location = await getLocationMatchers(options.location);
     const source = new FrameVectorSource(location);
     const vectorLayer = new VectorLayer({
       source,
     });
+
+    const legendProps = new ReplaySubject<MarkersLegendProps>(1);
+    let legend: ReactNode = null;
+    if (config.showLegend) {
+      legend = <ObservablePropsWrapper watch={legendProps} initialSubProps={{}} child={MarkersLegend} />;
+    }
 
     if (!style.fields) {
       // Set a global style
@@ -142,6 +143,7 @@ export const markersLayer: MapLayerRegistryItem<MarkersConfig> = {
               styleConfig: style,
               size: style.dims?.size,
               layerName: options.name,
+              layer: vectorLayer,
             });
           }
 

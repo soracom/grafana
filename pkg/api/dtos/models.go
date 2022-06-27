@@ -3,6 +3,7 @@ package dtos
 import (
 	"crypto/md5"
 	"fmt"
+	"net/http"
 	"regexp"
 	"strings"
 
@@ -28,6 +29,7 @@ type LoginCommand struct {
 type CurrentUser struct {
 	IsSignedIn                 bool               `json:"isSignedIn"`
 	Id                         int64              `json:"id"`
+	ExternalUserId             string             `json:"externalUserId"`
 	Login                      string             `json:"login"`
 	Email                      string             `json:"email"`
 	Name                       string             `json:"name"`
@@ -67,6 +69,18 @@ type MetricRequest struct {
 	Queries []*simplejson.Json `json:"queries"`
 	// required: false
 	Debug bool `json:"debug"`
+
+	HTTPRequest *http.Request `json:"-"`
+}
+
+func (mr *MetricRequest) CloneWithQueries(queries []*simplejson.Json) MetricRequest {
+	return MetricRequest{
+		From:        mr.From,
+		To:          mr.To,
+		Queries:     queries,
+		Debug:       mr.Debug,
+		HTTPRequest: mr.HTTPRequest,
+	}
 }
 
 func GetGravatarUrl(text string) string {
@@ -78,11 +92,20 @@ func GetGravatarUrl(text string) string {
 		return ""
 	}
 
+	hash, _ := GetGravatarHash(text)
+	return fmt.Sprintf(setting.AppSubUrl+"/avatar/%x", hash)
+}
+
+func GetGravatarHash(text string) ([]byte, bool) {
+	if text == "" {
+		return make([]byte, 0), false
+	}
+
 	hasher := md5.New()
 	if _, err := hasher.Write([]byte(strings.ToLower(text))); err != nil {
 		mlog.Warn("Failed to hash text", "err", err)
 	}
-	return fmt.Sprintf(setting.AppSubUrl+"/avatar/%x", hasher.Sum(nil))
+	return hasher.Sum(nil), true
 }
 
 func GetGravatarUrlWithDefault(text string, defaultText string) string {

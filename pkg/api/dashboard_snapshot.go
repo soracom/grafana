@@ -27,7 +27,7 @@ var client = &http.Client{
 }
 
 func GetSharingOptions(c *models.ReqContext) {
-	c.JSON(200, util.DynMap{
+	c.JSON(http.StatusOK, util.DynMap{
 		"externalSnapshotURL":  setting.ExternalSnapshotUrl,
 		"externalSnapshotName": setting.ExternalSnapshotName,
 		"externalEnabled":      setting.ExternalEnabled,
@@ -157,7 +157,7 @@ func (hs *HTTPServer) CreateDashboardSnapshot(c *models.ReqContext) response.Res
 		metrics.MApiDashboardSnapshotCreate.Inc()
 	}
 
-	if err := hs.DashboardsnapshotsService.CreateDashboardSnapshot(c.Req.Context(), &cmd); err != nil {
+	if err := hs.dashboardsnapshotsService.CreateDashboardSnapshot(c.Req.Context(), &cmd); err != nil {
 		c.JsonApiErr(500, "Failed to create snapshot", err)
 		return nil
 	}
@@ -167,7 +167,7 @@ func (hs *HTTPServer) CreateDashboardSnapshot(c *models.ReqContext) response.Res
 		url = setting.ToAbsUrl("dashboard/snapshot/" + cmd.Key)
 	}
 
-	c.JSON(200, util.DynMap{
+	c.JSON(http.StatusOK, util.DynMap{
 		"key":       cmd.Key,
 		"deleteKey": cmd.DeleteKey,
 		"url":       url,
@@ -186,7 +186,7 @@ func (hs *HTTPServer) GetDashboardSnapshot(c *models.ReqContext) response.Respon
 
 	query := &models.GetDashboardSnapshotQuery{Key: key}
 
-	err := hs.DashboardsnapshotsService.GetDashboardSnapshot(c.Req.Context(), query)
+	err := hs.dashboardsnapshotsService.GetDashboardSnapshot(c.Req.Context(), query)
 	if err != nil {
 		return response.Error(500, "Failed to get dashboard snapshot", err)
 	}
@@ -221,7 +221,7 @@ func (hs *HTTPServer) GetDashboardSnapshot(c *models.ReqContext) response.Respon
 	}
 	metrics.MApiDashboardSnapshotGet.Inc()
 
-	return response.JSON(200, dto).SetHeader("Cache-Control", fmt.Sprintf("public, max-age=%d", cacheSeconds))
+	return response.JSON(http.StatusOK, dto).SetHeader("Cache-Control", fmt.Sprintf("public, max-age=%d", cacheSeconds))
 }
 
 func deleteExternalDashboardSnapshot(externalUrl string) error {
@@ -264,7 +264,7 @@ func (hs *HTTPServer) DeleteDashboardSnapshotByDeleteKey(c *models.ReqContext) r
 	}
 
 	query := &models.GetDashboardSnapshotQuery{DeleteKey: key}
-	err := hs.DashboardsnapshotsService.GetDashboardSnapshot(c.Req.Context(), query)
+	err := hs.dashboardsnapshotsService.GetDashboardSnapshot(c.Req.Context(), query)
 	if err != nil {
 		return response.Error(500, "Failed to get dashboard snapshot", err)
 	}
@@ -278,11 +278,11 @@ func (hs *HTTPServer) DeleteDashboardSnapshotByDeleteKey(c *models.ReqContext) r
 
 	cmd := &models.DeleteDashboardSnapshotCommand{DeleteKey: query.Result.DeleteKey}
 
-	if err := hs.DashboardsnapshotsService.DeleteDashboardSnapshot(c.Req.Context(), cmd); err != nil {
+	if err := hs.dashboardsnapshotsService.DeleteDashboardSnapshot(c.Req.Context(), cmd); err != nil {
 		return response.Error(500, "Failed to delete dashboard snapshot", err)
 	}
 
-	return response.JSON(200, util.DynMap{
+	return response.JSON(http.StatusOK, util.DynMap{
 		"message": "Snapshot deleted. It might take an hour before it's cleared from any CDN caches.",
 		"id":      query.Result.Id,
 	})
@@ -297,7 +297,7 @@ func (hs *HTTPServer) DeleteDashboardSnapshot(c *models.ReqContext) response.Res
 
 	query := &models.GetDashboardSnapshotQuery{Key: key}
 
-	err := hs.DashboardsnapshotsService.GetDashboardSnapshot(c.Req.Context(), query)
+	err := hs.dashboardsnapshotsService.GetDashboardSnapshot(c.Req.Context(), query)
 	if err != nil {
 		return response.Error(500, "Failed to get dashboard snapshot", err)
 	}
@@ -326,11 +326,11 @@ func (hs *HTTPServer) DeleteDashboardSnapshot(c *models.ReqContext) response.Res
 
 	cmd := &models.DeleteDashboardSnapshotCommand{DeleteKey: query.Result.DeleteKey}
 
-	if err := hs.DashboardsnapshotsService.DeleteDashboardSnapshot(c.Req.Context(), cmd); err != nil {
+	if err := hs.dashboardsnapshotsService.DeleteDashboardSnapshot(c.Req.Context(), cmd); err != nil {
 		return response.Error(500, "Failed to delete dashboard snapshot", err)
 	}
 
-	return response.JSON(200, util.DynMap{
+	return response.JSON(http.StatusOK, util.DynMap{
 		"message": "Snapshot deleted. It might take an hour before it's cleared from any CDN caches.",
 		"id":      query.Result.Id,
 	})
@@ -352,7 +352,7 @@ func (hs *HTTPServer) SearchDashboardSnapshots(c *models.ReqContext) response.Re
 		SignedInUser: c.SignedInUser,
 	}
 
-	err := hs.DashboardsnapshotsService.SearchDashboardSnapshots(c.Req.Context(), &searchQuery)
+	err := hs.dashboardsnapshotsService.SearchDashboardSnapshots(c.Req.Context(), &searchQuery)
 	if err != nil {
 		return response.Error(500, "Search failed", err)
 	}
@@ -373,5 +373,5 @@ func (hs *HTTPServer) SearchDashboardSnapshots(c *models.ReqContext) response.Re
 		}
 	}
 
-	return response.JSON(200, dtos)
+	return response.JSON(http.StatusOK, dtos)
 }

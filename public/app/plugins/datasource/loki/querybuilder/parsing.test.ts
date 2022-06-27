@@ -2,6 +2,15 @@ import { buildVisualQueryFromString } from './parsing';
 import { LokiVisualQuery } from './types';
 
 describe('buildVisualQueryFromString', () => {
+  it('creates no errors for empty query', () => {
+    expect(buildVisualQueryFromString('')).toEqual(
+      noErrors({
+        labels: [],
+        operations: [],
+      })
+    );
+  });
+
   it('parses simple query with label-values', () => {
     expect(buildVisualQueryFromString('{app="frontend"}')).toEqual(
       noErrors({
@@ -67,6 +76,18 @@ describe('buildVisualQueryFromString', () => {
     );
   });
 
+  it('returns error for query with ip matching line filter', () => {
+    const context = buildVisualQueryFromString('{app="frontend"} |= ip("192.168.4.5/16")');
+    expect(context.errors).toEqual([
+      {
+        text: 'Matching ip addresses not supported in query builder: |= ip("192.168.4.5/16")',
+        from: 17,
+        to: 40,
+        parentType: 'LineFilters',
+      },
+    ]);
+  });
+
   it('parses query with matcher label filter', () => {
     expect(buildVisualQueryFromString('{app="frontend"} | bar="baz"')).toEqual(
       noErrors({
@@ -127,6 +148,30 @@ describe('buildVisualQueryFromString', () => {
     );
   });
 
+  it('returns error for query with "and", "or", "comma" in label filter', () => {
+    const context = buildVisualQueryFromString('{app="frontend"} | logfmt | level="error" and job="grafana"');
+    expect(context.errors).toEqual([
+      {
+        text: 'Label filter with comma, "and", "or" not supported in query builder: level="error" and job="grafana"',
+        from: 28,
+        to: 59,
+        parentType: 'PipelineStage',
+      },
+    ]);
+  });
+
+  it('returns error for query with ip label filter', () => {
+    const context = buildVisualQueryFromString('{app="frontend"} | logfmt | address=ip("192.168.4.5/16")');
+    expect(context.errors).toEqual([
+      {
+        text: 'IpLabelFilter not supported in query builder: address=ip("192.168.4.5/16")',
+        from: 28,
+        to: 56,
+        parentType: 'PipelineStage',
+      },
+    ]);
+  });
+
   it('parses query with with parser', () => {
     expect(buildVisualQueryFromString('{app="frontend"} | json')).toEqual(
       noErrors({
@@ -140,6 +185,97 @@ describe('buildVisualQueryFromString', () => {
         operations: [{ id: 'json', params: [] }],
       })
     );
+  });
+
+  it('returns error for query with JSON expression parser', () => {
+    const context = buildVisualQueryFromString('{app="frontend"} | json label="value" ');
+    expect(context.errors).toEqual([
+      {
+        text: 'JsonExpressionParser not supported in visual query builder: json label="value"',
+        from: 19,
+        to: 37,
+        parentType: 'PipelineStage',
+      },
+    ]);
+  });
+
+  it('parses query with with simple unwrap', () => {
+    expect(
+      buildVisualQueryFromString('sum_over_time({app="frontend"} | logfmt | unwrap bytes_processed [1m])')
+    ).toEqual(
+      noErrors({
+        labels: [
+          {
+            op: '=',
+            value: 'frontend',
+            label: 'app',
+          },
+        ],
+        operations: [
+          { id: 'logfmt', params: [] },
+          { id: 'unwrap', params: ['bytes_processed'] },
+          { id: 'sum_over_time', params: ['1m'] },
+        ],
+      })
+    );
+  });
+
+  it('parses query with with unwrap and error filter', () => {
+    expect(
+      buildVisualQueryFromString('sum_over_time({app="frontend"} | logfmt | unwrap duration | __error__="" [1m])')
+    ).toEqual(
+      noErrors({
+        labels: [
+          {
+            op: '=',
+            value: 'frontend',
+            label: 'app',
+          },
+        ],
+        operations: [
+          { id: 'logfmt', params: [] },
+          { id: 'unwrap', params: ['duration'] },
+          { id: '__label_filter_no_errors', params: [] },
+          { id: 'sum_over_time', params: ['1m'] },
+        ],
+      })
+    );
+  });
+
+  it('parses query with with unwrap and label filter', () => {
+    expect(
+      buildVisualQueryFromString('sum_over_time({app="frontend"} | logfmt | unwrap duration | label="value" [1m])')
+    ).toEqual(
+      noErrors({
+        labels: [
+          {
+            op: '=',
+            value: 'frontend',
+            label: 'app',
+          },
+        ],
+        operations: [
+          { id: 'logfmt', params: [] },
+          { id: 'unwrap', params: ['duration'] },
+          { id: '__label_filter', params: ['label', '=', 'value'] },
+          { id: 'sum_over_time', params: ['1m'] },
+        ],
+      })
+    );
+  });
+
+  it('returns error for query with unwrap and conversion operation', () => {
+    const context = buildVisualQueryFromString(
+      'sum_over_time({app="frontend"} | logfmt | unwrap duration(label) [5m])'
+    );
+    expect(context.errors).toEqual([
+      {
+        text: 'Unwrap with conversion operator not supported in query builder: | unwrap duration(label)',
+        from: 40,
+        to: 64,
+        parentType: 'LogRangeExpr',
+      },
+    ]);
   });
 
   it('parses metrics query with function', () => {
@@ -179,6 +315,44 @@ describe('buildVisualQueryFromString', () => {
     );
   });
 
+  it('parses metrics query with function and aggregation with grouping', () => {
+    expect(buildVisualQueryFromString('sum by (job,name) (rate({app="frontend"} | json [5m]))')).toEqual(
+      noErrors({
+        labels: [
+          {
+            op: '=',
+            value: 'frontend',
+            label: 'app',
+          },
+        ],
+        operations: [
+          { id: 'json', params: [] },
+          { id: 'rate', params: ['5m'] },
+          { id: '__sum_by', params: ['job', 'name'] },
+        ],
+      })
+    );
+  });
+
+  it('parses metrics query with function and aggregation with grouping at the end', () => {
+    expect(buildVisualQueryFromString('sum(rate({app="frontend"} | json [5m])) without(job,name)')).toEqual(
+      noErrors({
+        labels: [
+          {
+            op: '=',
+            value: 'frontend',
+            label: 'app',
+          },
+        ],
+        operations: [
+          { id: 'json', params: [] },
+          { id: 'rate', params: ['5m'] },
+          { id: '__sum_without', params: ['job', 'name'] },
+        ],
+      })
+    );
+  });
+
   it('parses metrics query with function and aggregation and filters', () => {
     expect(buildVisualQueryFromString('sum(rate({app="frontend"} |~ `abc` | json | bar="baz" [5m]))')).toEqual(
       noErrors({
@@ -195,6 +369,29 @@ describe('buildVisualQueryFromString', () => {
           { id: '__label_filter', params: ['bar', '=', 'baz'] },
           { id: 'rate', params: ['5m'] },
           { id: 'sum', params: [] },
+        ],
+      })
+    );
+  });
+
+  it('parses metrics query with vector aggregation with number', () => {
+    expect(
+      buildVisualQueryFromString('topk(10, sum(count_over_time({app="frontend"} | logfmt | __error__=`` [5m])))')
+    ).toEqual(
+      noErrors({
+        labels: [
+          {
+            op: '=',
+            value: 'frontend',
+            label: 'app',
+          },
+        ],
+        operations: [
+          { id: 'logfmt', params: [] },
+          { id: '__label_filter_no_errors', params: [] },
+          { id: 'count_over_time', params: ['5m'] },
+          { id: 'sum', params: [] },
+          { id: 'topk', params: [10] },
         ],
       })
     );
@@ -264,7 +461,7 @@ describe('buildVisualQueryFromString', () => {
             label: 'app',
           },
         ],
-        operations: [{ id: 'label_format', params: ['newLabel', '=', 'oldLabel'] }],
+        operations: [{ id: 'label_format', params: ['newLabel', 'oldLabel'] }],
       })
     );
   });
@@ -280,8 +477,8 @@ describe('buildVisualQueryFromString', () => {
           },
         ],
         operations: [
-          { id: 'label_format', params: ['newLabel', '=', 'oldLabel'] },
-          { id: 'label_format', params: ['bar', '=', 'baz'] },
+          { id: 'label_format', params: ['newLabel', 'oldLabel'] },
+          { id: 'label_format', params: ['bar', 'baz'] },
         ],
       })
     );

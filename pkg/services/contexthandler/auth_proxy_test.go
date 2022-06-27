@@ -79,13 +79,13 @@ func getContextHandler(t *testing.T) *ContextHandler {
 	userAuthTokenSvc := auth.NewFakeUserAuthTokenService()
 	renderSvc := &fakeRenderService{}
 	authJWTSvc := models.NewFakeJWTService()
-	tracer, err := tracing.InitializeTracerForTest()
-	require.NoError(t, err)
+	tracer := tracing.InitializeTracerForTest()
 
 	loginService := loginservice.LoginServiceMock{ExpectedUser: &models.User{Id: userID}}
 	authProxy := authproxy.ProvideAuthProxy(cfg, remoteCacheSvc, loginService, &FakeGetSignUserStore{})
+	authenticator := &fakeAuthenticator{}
 
-	return ProvideService(cfg, userAuthTokenSvc, authJWTSvc, remoteCacheSvc, renderSvc, sqlStore, tracer, authProxy)
+	return ProvideService(cfg, userAuthTokenSvc, authJWTSvc, remoteCacheSvc, renderSvc, sqlStore, tracer, authProxy, loginService, authenticator)
 }
 
 type FakeGetSignUserStore struct {
@@ -101,5 +101,11 @@ func (f *FakeGetSignUserStore) GetSignedInUser(ctx context.Context, query *model
 		UserId: userID,
 		OrgId:  orgID,
 	}
+	return nil
+}
+
+type fakeAuthenticator struct{}
+
+func (fa *fakeAuthenticator) AuthenticateUser(c context.Context, query *models.LoginUserQuery) error {
 	return nil
 }
