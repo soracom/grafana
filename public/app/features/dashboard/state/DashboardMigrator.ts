@@ -24,6 +24,7 @@ import {
   ValueMapping,
 } from '@grafana/data';
 import { getDataSourceSrv, setDataSourceSrv } from '@grafana/runtime';
+import { isExpressionReference } from '@grafana/runtime/src/utils/DataSourceWithBackend';
 import { AxisPlacement, GraphFieldConfig } from '@grafana/ui';
 import { getAllOptionEditors, getAllStandardFieldConfigs } from 'app/core/components/editors/registry';
 import { config } from 'app/core/config';
@@ -761,7 +762,7 @@ export class DashboardMigrator {
             }
 
             for (const target of panel.targets) {
-              if (target.datasource && panelDataSourceWasDefault) {
+              if (target.datasource && panelDataSourceWasDefault && !isExpressionReference(target.datasource)) {
                 // We can have situations when default ds changed and the panel level data source is different from the queries
                 // In this case we use the query level data source as source for truth
                 panel.datasource = target.datasource as DataSourceRef;

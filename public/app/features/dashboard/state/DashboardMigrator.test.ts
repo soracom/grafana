@@ -1964,6 +1964,18 @@ describe('DashboardModel', () => {
               },
             ],
           },
+          {
+            id: 4,
+            datasource: null,
+            targets: [
+              {
+                refId: 'A',
+              },
+              {
+                datasource: '__expr__',
+              },
+            ],
+          },
         ],
         schemaVersion: 35,
       });
@@ -1987,6 +1999,10 @@ describe('DashboardModel', () => {
 
     it('should update panel datasource props even when undefined', () => {
       expect(model.panels[1].datasource).toEqual({ type: 'prometheus', uid: 'prom2-uid' });
+    });
+
+    it('should update panel datasource to default and ignore expression datasource', () => {
+      expect(model.panels[2].datasource).toEqual({ type: 'prometheus', uid: 'prom2-uid' });
     });
 
     it('should update target datasource props to refs', () => {
