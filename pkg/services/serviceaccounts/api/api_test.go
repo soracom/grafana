@@ -17,7 +17,6 @@ import (
 	"github.com/grafana/grafana/pkg/services/accesscontrol"
 	accesscontrolmock "github.com/grafana/grafana/pkg/services/accesscontrol/mock"
 	"github.com/grafana/grafana/pkg/services/contexthandler/ctxkey"
-	"github.com/grafana/grafana/pkg/services/featuremgmt"
 	"github.com/grafana/grafana/pkg/services/serviceaccounts"
 	"github.com/grafana/grafana/pkg/services/serviceaccounts/database"
 	"github.com/grafana/grafana/pkg/services/serviceaccounts/tests"
@@ -74,7 +73,7 @@ func TestServiceAccountsAPI_CreateServiceAccount(t *testing.T) {
 		{
 			desc:      "not ok - duplicate name",
 			body:      map[string]interface{}{"name": "New SA"},
-			wantError: "service account name already in use",
+			wantError: "service account already exists",
 			acmock: tests.SetupMockAccesscontrol(
 				t,
 				func(c context.Context, siu *models.SignedInUser, _ accesscontrol.Options) ([]accesscontrol.Permission, error) {
@@ -226,7 +225,7 @@ func setupTestServer(t *testing.T, svc *tests.ServiceAccountMock,
 	acmock *accesscontrolmock.Mock,
 	sqlStore *sqlstore.SQLStore, saStore serviceaccounts.Store) (*web.Mux, *ServiceAccountsAPI) {
 	a := NewServiceAccountsAPI(setting.NewCfg(), svc, acmock, routerRegister, saStore)
-	a.RegisterAPIEndpoints(featuremgmt.WithFeatures(featuremgmt.FlagServiceAccounts))
+	a.RegisterAPIEndpoints()
 
 	a.cfg.ApiKeyMaxSecondsToLive = -1 // disable api key expiration
 
