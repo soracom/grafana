@@ -16,6 +16,7 @@ import (
 
 	"github.com/grafana/grafana/pkg/infra/log"
 	"github.com/grafana/grafana/pkg/models"
+	"github.com/grafana/grafana/pkg/services/dashboardsnapshots"
 	"github.com/grafana/grafana/pkg/services/sqlstore"
 )
 
@@ -125,13 +126,13 @@ func GetOrgAccessKey(sqlstore sqlstore.Store, ctx context.Context, orgID int64) 
 	return "", errors.New("could not find access key")
 }
 
-func TriggerLiveSnapshotIfNecessary(sqlstore sqlstore.Store, ctx context.Context, snapshot *models.DashboardSnapshot) (int64, error) {
+func TriggerLiveSnapshotIfNecessary(snapsvc dashboardsnapshots.Service, ctx context.Context, snapshot *dashboardsnapshots.DashboardSnapshot) (int64, error) {
 	// if this is a live snapshot and it hasnt been updated for a while, put that in motion
 	if strings.HasSuffix(snapshot.Key, "-live") {
 		since := time.Now().Add(-1 * time.Minute)
 		if snapshot.Updated.Before(since) {
-			cmd := &models.CheckDashboardSnapshotUpdateRequiredCommand{Key: snapshot.Key, Since: since}
-			err := sqlstore.CheckDashboardSnapshotUpdateRequired(ctx, cmd)
+			cmd := &dashboardsnapshots.CheckDashboardSnapshotUpdateRequiredCommand{Key: snapshot.Key, Since: since}
+			err := snapsvc.CheckDashboardSnapshotUpdateRequired(ctx, cmd)
 			if err != nil {
 				return 60, err
 			}

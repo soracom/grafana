@@ -209,7 +209,7 @@ func (hs *HTTPServer) GetDashboardSnapshot(c *models.ReqContext) response.Respon
 		},
 	}
 
-	cacheSeconds, err := lagoon.TriggerLiveSnapshotIfNecessary(hs.SQLStore, c.Req.Context(), snapshot)
+	cacheSeconds, err := lagoon.TriggerLiveSnapshotIfNecessary(hs.dashboardsnapshotsService, c.Req.Context(), snapshot)
 	if err != nil {
 		return response.Error(500, "Failed to get update status for live dashboard snapshot", err)
 	}

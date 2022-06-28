@@ -73,13 +73,13 @@ func (d *DashboardSnapshotStore) CreateDashboardSnapshot(ctx context.Context, cm
 
 		// Check to see if snapshot already exists, if it does update
 		var err error
-		query := &models.GetDashboardSnapshotQuery{DeleteKey: cmd.DeleteKey}
+		query := &dashboardsnapshots.GetDashboardSnapshotQuery{DeleteKey: cmd.DeleteKey}
 		if strings.HasSuffix(cmd.DeleteKey, "-live") && d.GetDashboardSnapshot(ctx, query) == nil {
 			cmd.Key = query.Result.Key
 			snapshot.Key = cmd.Key
 			snapshot.UserId = query.Result.UserId // we want to maintain the user id that created the original snapshot
 			fmt.Println("****UPDATING with key:", cmd.Key, " UserID:", query.Result.UserId)
-			cond := &models.DashboardSnapshot{
+			cond := &dashboardsnapshots.DashboardSnapshot{
 				Key:   cmd.Key,
 				OrgId: cmd.OrgId,
 			}
@@ -120,10 +120,10 @@ func (d *DashboardSnapshotStore) GetDashboardSnapshot(ctx context.Context, query
 // CheckDashboardSnapshotUpdateRequired looks to see if a live snapshot has been updated
 // since the specified time.  If it hasn't it sets the updated time to Now() and returns
 // true so a one-time update script/lambda/external call can be triggered by the caller
-func (d *DashboardSnapshotStore) CheckDashboardSnapshotUpdateRequired(ctx context.Context, cmd *models.CheckDashboardSnapshotUpdateRequiredCommand) error {
+func (d *DashboardSnapshotStore) CheckDashboardSnapshotUpdateRequired(ctx context.Context, cmd *dashboardsnapshots.CheckDashboardSnapshotUpdateRequiredCommand) error {
 
 	return d.store.WithTransactionalDbSession(ctx, func(sess *sqlstore.DBSession) error {
-		query := &models.GetDashboardSnapshotQuery{Key: cmd.Key}
+		query := &dashboardsnapshots.GetDashboardSnapshotQuery{Key: cmd.Key}
 
 		err := d.GetDashboardSnapshot(ctx, query)
 
@@ -144,7 +144,7 @@ func (d *DashboardSnapshotStore) CheckDashboardSnapshotUpdateRequired(ctx contex
 		// reset the update time to now so we dont update again before time
 		snapshot.Updated = time.Now()
 
-		cond := &models.DashboardSnapshot{
+		cond := &dashboardsnapshots.DashboardSnapshot{
 			Key: cmd.Key,
 		}
 		_, err = sess.Update(snapshot, cond)
