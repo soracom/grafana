@@ -3232,9 +3232,9 @@ exports[`better eslint`] = {
       [120, 15, 41, "Do not use any type assertions.", "1904113237"],
       [137, 15, 41, "Do not use any type assertions.", "1904113237"]
     ],
-    "public/app/core/components/NavBar/NavBarMenu.tsx:2778426907": [
+    "public/app/core/components/NavBar/NavBarMenu.tsx:1393000908": [
       [245, 54, 26, "Do not use any type assertions.", "1541386804"],
-      [463, 23, 21, "Do not use any type assertions.", "1121249950"]
+      [464, 23, 21, "Do not use any type assertions.", "1121249950"]
     ],
     "public/app/core/components/OptionsUI/DashboardPicker.tsx:3166151962": [
       [11, 85, 3, "Unexpected any. Specify a different type.", "193409811"]

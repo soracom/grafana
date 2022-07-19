@@ -8,7 +8,7 @@ import CSSTransition from 'react-transition-group/CSSTransition';
 import { useLocalStorage } from 'react-use';
 
 import { GrafanaTheme2, NavModelItem } from '@grafana/data';
-import { reportInteraction } from '@grafana/runtime';
+import { config, reportInteraction } from '@grafana/runtime';
 import { CollapsableSection, CustomScrollbar, Icon, IconButton, IconName, useStyles2, useTheme2 } from '@grafana/ui';
 
 import { Branding } from '../Branding/Branding';
@@ -459,7 +459,8 @@ function linkHasChildren(link: NavModelItem): link is NavModelItem & { children:
 
 function getLinkIcon(link: NavModelItem) {
   if (link.id === 'home') {
-    return <Branding.MenuLogo />;
+    const operatorId = config.bootData.user.orgName || '';
+    return <Branding.MenuLogo operatorId={operatorId} />;
   } else if (link.icon) {
     return <Icon name={link.icon as IconName} size="xl" />;
   } else {

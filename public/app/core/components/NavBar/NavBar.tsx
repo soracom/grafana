@@ -86,6 +86,8 @@ export const NavBar = React.memo(() => {
 
   const activeItem = isSearchActive(location) ? searchItem : getActiveItem(navTree, location.pathname);
 
+  const operatorId = config.bootData.user.orgName || '';
+
   if (kiosk !== KioskMode.Off) {
     return null;
   }
@@ -121,7 +123,7 @@ export const NavBar = React.memo(() => {
               url={homeItem.url}
               onClick={homeItem.onClick}
             >
-              <Branding.MenuLogo />
+              <Branding.MenuLogo operatorId={operatorId} />
             </NavBarItemWithoutMenu>
 
             <NavBarScrollContainer>
