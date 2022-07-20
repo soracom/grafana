@@ -6,9 +6,11 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/grafana/grafana/pkg/api/dtos"
+	"github.com/grafana/grafana/pkg/api/lagoon"
 	"github.com/grafana/grafana/pkg/api/response"
 	"github.com/grafana/grafana/pkg/components/simplejson"
 	"github.com/grafana/grafana/pkg/infra/metrics"
@@ -112,6 +114,29 @@ func (hs *HTTPServer) CreateDashboardSnapshot(c *models.ReqContext) response.Res
 
 		metrics.MApiDashboardSnapshotExternal.Inc()
 	} else {
+		//restrict snapshots to pro plans only
+		if lagoon.GetPlan(hs.SQLStore, c.Req.Context(), c.OrgId) != lagoon.PlanPro {
+			c.JsonApiErr(500, "Failed to create snapshot", errors.New("ERROR: Only PRO plans can make snapshots"))
+			return nil
+		}
+
+		if strings.HasSuffix(cmd.Key, "-live") {
+			hash, err := lagoon.HashWithOrgAccessKey(hs.SQLStore, c.Req.Context(), c.OrgId, cmd.Key)
+
+			if err != nil {
+				c.JsonApiErr(500, "Could not hash delete key", err)
+				return nil
+			}
+
+			cmd.DeleteKey = hash + "-live"
+			cmd.Key, err = util.GetRandomString(32)
+			if err != nil {
+				c.JsonApiErr(500, "Could not generate random string", err)
+				return nil
+			}
+			cmd.Key = cmd.Key + "-live"
+		}
+
 		if cmd.Key == "" {
 			var err error
 			cmd.Key, err = util.GetRandomString(32)
@@ -130,14 +155,17 @@ func (hs *HTTPServer) CreateDashboardSnapshot(c *models.ReqContext) response.Res
 			}
 		}
 
-		url = setting.ToAbsUrl("dashboard/snapshot/" + cmd.Key)
-
 		metrics.MApiDashboardSnapshotCreate.Inc()
 	}
 
 	if err := hs.dashboardsnapshotsService.CreateDashboardSnapshot(c.Req.Context(), &cmd); err != nil {
 		c.JsonApiErr(500, "Failed to create snapshot", err)
 		return nil
+	}
+
+	// move url creation to here as we may have fetched the Key from an existing record
+	if url == "" {
+		url = setting.ToAbsUrl("dashboard/snapshot/" + cmd.Key)
 	}
 
 	c.JSON(http.StatusOK, util.DynMap{
@@ -181,9 +209,20 @@ func (hs *HTTPServer) GetDashboardSnapshot(c *models.ReqContext) response.Respon
 		},
 	}
 
+	cacheSeconds, err := lagoon.TriggerLiveSnapshotIfNecessary(hs.dashboardsnapshotsService, c.Req.Context(), snapshot)
+	if err != nil {
+		return response.Error(500, "Failed to get update status for live dashboard snapshot", err)
+	}
+	// If the cache time is exactly 30 seconds this request caused a refresh, so we should let the
+	// front end know
+	if cacheSeconds == 30 {
+		dto.Meta.UpdatedBy = "live-refresh"
+	} else if cacheSeconds < 3600 {
+		dto.Meta.UpdatedBy = "live-norefresh"
+	}
 	metrics.MApiDashboardSnapshotGet.Inc()
 
-	return response.JSON(http.StatusOK, dto).SetHeader("Cache-Control", "public, max-age=3600")
+	return response.JSON(http.StatusOK, dto).SetHeader("Cache-Control", fmt.Sprintf("public, max-age=%d", cacheSeconds))
 }
 
 func deleteExternalDashboardSnapshot(externalUrl string) error {

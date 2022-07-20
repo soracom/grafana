@@ -147,7 +147,9 @@ export const DashNav = React.memo<Props>((props) => {
                   onDismiss: hideModal,
                 });
               }}
-            />
+            >
+              <span id="sharebutton" />
+            </DashNavButton>
           )}
         </ModalsController>
       );
