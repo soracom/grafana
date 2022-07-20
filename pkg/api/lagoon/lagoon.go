@@ -17,6 +17,7 @@ import (
 	"github.com/grafana/grafana/pkg/infra/log"
 	"github.com/grafana/grafana/pkg/models"
 	"github.com/grafana/grafana/pkg/services/dashboardsnapshots"
+	"github.com/grafana/grafana/pkg/services/datasources"
 	"github.com/grafana/grafana/pkg/services/sqlstore"
 )
 
@@ -108,7 +109,7 @@ func HashWithOrgAccessKey(sqlstore sqlstore.Store, ctx context.Context, orgID in
 // This returns the first harvest access key it finds for the Org
 func GetOrgAccessKey(sqlstore sqlstore.Store, ctx context.Context, orgID int64) (string, error) {
 
-	query := models.GetDataSourcesQuery{OrgId: orgID, DataSourceLimit: 5}
+	query := datasources.GetDataSourcesQuery{OrgId: orgID, DataSourceLimit: 5}
 	err := sqlstore.GetDataSources(ctx, &query)
 
 	if err != nil {
