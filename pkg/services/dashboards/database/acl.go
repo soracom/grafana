@@ -63,15 +63,20 @@ func (d *DashboardStore) GetDashboardAclInfoList(ctx context.Context, query *mod
 				d.is_folder,
 				CASE WHEN (da.dashboard_id = -1 AND d.folder_id > 0) OR da.dashboard_id = d.folder_id THEN ` + d.dialect.BooleanStr(true) + ` ELSE ` + falseStr + ` END AS inherited
 			FROM dashboard as d
+				-- get folder dashboards for reference purposes
 				LEFT JOIN dashboard folder on folder.id = d.folder_id
+				-- get the acls under the following conditions
 				LEFT JOIN dashboard_acl AS da ON
+				-- if it is for this dashboard
 				da.dashboard_id = d.id OR
+				-- or if it is for the parent folder
 				da.dashboard_id = d.folder_id OR
 				(
-					-- include default permissions -->
-					da.org_id = -1 AND (
-					  (folder.id IS NOT NULL AND folder.has_acl = ` + falseStr + `) OR
-					  (folder.id IS NULL AND d.has_acl = ` + falseStr + `)
+					-- include default permissions if dashboard has no acl AND ((folder is set without acl)
+					-- OR ( folder is NOT set and dashboard has no acl set ))
+					da.org_id = -1 AND d.has_acl = ` + falseStr + ` AND (
+						(folder.id IS NOT NULL AND folder.has_acl = ` + falseStr + `) OR
+				  		(folder.id IS NULL)
 					)
 				)
 				LEFT JOIN ` + d.dialect.Quote("user") + ` AS u ON u.id = da.user_id

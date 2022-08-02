@@ -12,8 +12,9 @@ import (
 )
 
 var (
-	ErrGuardianPermissionExists = errors.New("permission already exists")
-	ErrGuardianOverride         = errors.New("you can only override a permission to be higher")
+	ErrGuardianPermissionExists  = errors.New("permission already exists")
+	ErrGuardianOverride          = errors.New("you can only override a permission to be higher")
+	ErrGuardianOverrideDuplicate = errors.New("you can not override with duplicate permissions")
 )
 
 // DashboardGuardian to be used for guard against operations without access on dashboard and acl
@@ -205,9 +206,15 @@ func (g *dashboardGuardianImpl) CheckPermissionBeforeUpdate(permission models.Pe
 				continue
 			}
 
-			if a.IsDuplicateOf(existingPerm) && a.Permission <= existingPerm.Permission {
-				return false, ErrGuardianOverride
+			if a.IsDuplicateOf(existingPerm) {
+				return false, ErrGuardianOverrideDuplicate
 			}
+			// Disabling the following check because it goes against the way we are using permissions https://soracom.slack.com/archives/C9PHDH1QB/p1555664739066900
+			// existing permissions returned by GetAcl above include default parent folder permissions if this dashboard has never had permissions set before
+			// and is inside a folder.  That could possibly cause an error _before_ we are able to set the permissions catch 22.
+			// if a.Permission <= existingPerm.Permission {
+			// 	return false, ErrGuardianOverride
+			// }
 		}
 	}
 

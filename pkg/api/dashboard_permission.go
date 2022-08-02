@@ -126,6 +126,10 @@ func (hs *HTTPServer) UpdateDashboardPermissions(c *models.ReqContext) response.
 				return response.Error(400, err.Error(), err)
 			}
 
+			if err == guardian.ErrGuardianOverrideDuplicate {
+				return response.Error(409, err.Error(), err)
+			}
+
 			return response.Error(500, "Error while checking dashboard permissions", err)
 		}
 

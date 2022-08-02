@@ -201,6 +201,8 @@ func (d *DashboardStore) UpdateDashboardACL(ctx context.Context, dashboardID int
 			return fmt.Errorf("deleting from dashboard_acl failed: %w", err)
 		}
 
+		hasAcl := false
+
 		for _, item := range items {
 			if item.UserID == 0 && item.TeamID == 0 && (item.Role == nil || !item.Role.IsValid()) {
 				return models.ErrDashboardAclInfoMissing
@@ -214,10 +216,12 @@ func (d *DashboardStore) UpdateDashboardACL(ctx context.Context, dashboardID int
 			if _, err := sess.Insert(item); err != nil {
 				return err
 			}
+
+			hasAcl = true
 		}
 
 		// Update dashboard HasAcl flag
-		dashboard := models.Dashboard{HasAcl: true}
+		dashboard := models.Dashboard{HasAcl: hasAcl}
 		_, err = sess.Cols("has_acl").Where("id=?", dashboardID).Update(&dashboard)
 		return err
 	})
