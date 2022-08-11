@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
+	"os"
 	"sync"
 	"time"
 
@@ -533,6 +534,12 @@ func (sch *schedule) ruleRoutine(grafanaCtx context.Context, key ngmodels.AlertR
 	evalTotalFailures := sch.metrics.EvalFailures.WithLabelValues(orgID)
 
 	notify := func(alerts definitions.PostableAlerts, logger log.Logger) {
+		if os.Getenv("LAGOON_SEND_NOTIFICATIONS") != "true" {
+			if len(alerts.PostableAlerts) > 0 {
+				logger.Info("DISABLED_NOTIFICATIONS", "alerts", alerts)
+			}
+			return
+		}
 		if len(alerts.PostableAlerts) == 0 {
 			logger.Debug("no alerts to put in the notifier or to send to external Alertmanager(s)")
 			return
