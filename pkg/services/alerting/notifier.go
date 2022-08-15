@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/grafana/grafana/pkg/components/imguploader"
@@ -142,10 +143,14 @@ func (n *notificationService) sendAndMarkAsComplete(evalContext *EvalContext, no
 		n.log.Error("failed trying to evaluate notification template fields", "uid", notifier.GetNotifierUID(), "error", err)
 	}
 
-	if err := notifier.Notify(evalContext); err != nil {
-		n.log.Error("failed to send notification", "uid", notifier.GetNotifierUID(), "error", err)
-		metrics.MAlertingNotificationFailed.WithLabelValues(notifier.GetType()).Inc()
-		return err
+	if os.Getenv("LAGOON_SEND_NOTIFICATIONS") == "true" {
+		if err := notifier.Notify(evalContext); err != nil {
+			n.log.Error("failed to send notification", "uid", notifier.GetNotifierUID(), "error", err)
+			metrics.MAlertingNotificationFailed.WithLabelValues(notifier.GetType()).Inc()
+			return err
+		}
+	} else {
+		n.log.Info("NOT sending notification", "notification_type", notifier.GetType())
 	}
 
 	if evalContext.IsTestRun {
