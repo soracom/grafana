@@ -88,7 +88,7 @@ COPY --from=go-builder /grafana/bin/*/grafana-server /grafana/bin/*/grafana-cli 
 COPY --from=js-builder /grafana/public ./public
 COPY --from=js-builder /grafana/tools ./tools
 
-# Copy plugin dependencies.
+# Copy plugin dependencies
 RUN pwd && ls -las
 
 COPY ./scripts/build-soracom/plugins/. ${GF_PATHS_PLUGINS}/
