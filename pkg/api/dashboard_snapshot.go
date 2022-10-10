@@ -209,9 +209,9 @@ func (hs *HTTPServer) GetDashboardSnapshot(c *models.ReqContext) response.Respon
 		},
 	}
 
-	cacheSeconds, err := lagoon.TriggerLiveSnapshotIfNecessary(hs.dashboardsnapshotsService, c.Req.Context(), snapshot)
+	cacheSeconds, err := lagoon.TriggerLiveSnapshotIfNecessary(hs.dashboardService, hs.dashboardsnapshotsService, c.Req.Context(), snapshot)
 	if err != nil {
-		return response.Error(500, "Failed to get update status for live dashboard snapshot", err)
+		return response.Error(500, "Live Snapshot: "+err.Error(), err)
 	}
 	// If the cache time is exactly 30 seconds this request caused a refresh, so we should let the
 	// front end know

@@ -16,6 +16,7 @@ import (
 
 	"github.com/grafana/grafana/pkg/infra/log"
 	"github.com/grafana/grafana/pkg/models"
+	"github.com/grafana/grafana/pkg/services/dashboards"
 	"github.com/grafana/grafana/pkg/services/dashboardsnapshots"
 	"github.com/grafana/grafana/pkg/services/datasources"
 	"github.com/grafana/grafana/pkg/services/sqlstore"
@@ -127,9 +128,20 @@ func GetOrgAccessKey(sqlstore sqlstore.Store, ctx context.Context, orgID int64) 
 	return "", errors.New("could not find access key")
 }
 
-func TriggerLiveSnapshotIfNecessary(snapsvc dashboardsnapshots.Service, ctx context.Context, snapshot *dashboardsnapshots.DashboardSnapshot) (int64, error) {
+func TriggerLiveSnapshotIfNecessary(dashsvc dashboards.DashboardService, snapsvc dashboardsnapshots.Service, ctx context.Context, snapshot *dashboardsnapshots.DashboardSnapshot) (int64, error) {
 	// if this is a live snapshot and it hasnt been updated for a while, put that in motion
 	if strings.HasSuffix(snapshot.Key, "-live") {
+		uid, err := snapshot.Dashboard.Get("uid").String()
+		if err != nil {
+			fmt.Println(err)
+			return 60, errors.New("failed to extract original dashboard uid")
+		}
+		getdashcmd := &models.GetDashboardQuery{Uid: uid}
+		err = dashsvc.GetDashboard(ctx, getdashcmd)
+		if err != nil {
+			lagoonLogger.Info("Snapshot original dashboard not found", "uid", uid, "org", snapshot.OrgId)
+			return 60, errors.New("original dashboard not found")
+		}
 		since := time.Now().Add(-1 * time.Minute)
 		if snapshot.Updated.Before(since) {
 			cmd := &dashboardsnapshots.CheckDashboardSnapshotUpdateRequiredCommand{Key: snapshot.Key, Since: since}
