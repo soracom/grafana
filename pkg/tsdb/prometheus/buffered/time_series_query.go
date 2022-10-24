@@ -26,7 +26,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 )
 
-//Internal interval and range variables
+// Internal interval and range variables
 const (
 	varInterval     = "$__interval"
 	varIntervalMs   = "$__interval_ms"
@@ -36,8 +36,8 @@ const (
 	varRateInterval = "$__rate_interval"
 )
 
-//Internal interval and range variables with {} syntax
-//Repetitive code, we should have functionality to unify these
+// Internal interval and range variables with {} syntax
+// Repetitive code, we should have functionality to unify these
 const (
 	varIntervalAlt     = "${__interval}"
 	varIntervalMsAlt   = "${__interval_ms}"
@@ -96,7 +96,14 @@ func New(roundTripper http.RoundTripper, tracer tracing.Tracer, settings backend
 func (b *Buffered) ExecuteTimeSeriesQuery(ctx context.Context, req *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
 	// Add headers from the request to context so they are added later on by a context middleware. This is because
 	// prom client does not allow us to do this directly.
-	ctxWithHeaders := sdkHTTPClient.WithContextualMiddleware(ctx, middleware.ReqHeadersMiddleware(req.Headers))
+
+	addHeaders := make(map[string]string)
+
+	if req.Headers["FromAlert"] == "true" {
+		addHeaders["FromAlert"] = "true"
+	}
+
+	ctxWithHeaders := sdkHTTPClient.WithContextualMiddleware(ctx, middleware.ReqHeadersMiddleware(addHeaders))
 
 	queries, err := b.parseTimeSeriesQuery(req)
 	if err != nil {
@@ -328,7 +335,7 @@ func calculateRateInterval(interval time.Duration, scrapeInterval string, interv
 		return time.Duration(0)
 	}
 
-	rateInterval := time.Duration(int(math.Max(float64(interval+scrapeIntervalDuration), float64(4)*float64(scrapeIntervalDuration))))
+	rateInterval := time.Duration(int64(math.Max(float64(interval+scrapeIntervalDuration), float64(4)*float64(scrapeIntervalDuration))))
 	return rateInterval
 }
 
@@ -368,15 +375,11 @@ func matrixToDataFrames(matrix model.Matrix, query *PrometheusQuery, frames data
 			tags[string(k)] = string(v)
 		}
 		timeField := data.NewFieldFromFieldType(data.FieldTypeTime, len(v.Values))
-		valueField := data.NewFieldFromFieldType(data.FieldTypeNullableFloat64, len(v.Values))
+		valueField := data.NewFieldFromFieldType(data.FieldTypeFloat64, len(v.Values))
 
 		for i, k := range v.Values {
 			timeField.Set(i, k.Timestamp.Time().UTC())
-			value := float64(k.Value)
-
-			if !math.IsNaN(value) {
-				valueField.Set(i, &value)
-			}
+			valueField.Set(i, float64(k.Value))
 		}
 
 		name := formatLegend(v.Metric, query)
@@ -560,6 +563,10 @@ func exemplarToDataFrames(response []apiv1.ExemplarQueryResult, query *Prometheu
 			}
 		}
 	}
+
+	sort.SliceStable(sampleExemplars, func(i, j int) bool {
+		return sampleExemplars[i].Time.Before(sampleExemplars[j].Time)
+	})
 
 	// Create DF from sampled exemplars
 	timeField := data.NewFieldFromFieldType(data.FieldTypeTime, len(sampleExemplars))

@@ -15,7 +15,7 @@ title: What's new in Grafana v9.0
 weight: -33
 ---
 
-# What’s new in Grafana v9.0
+# What's new in Grafana v9.0
 
 As tradition goes, GrafanaCon — our yearly community event for Grafana open source users — is also where we launch the latest software release of Grafana. Keeping up with tradition, we are excited to be announcing Grafana v9.0: a release that elevates Grafana’s ease of use, discovery of data through new and improved visualizations and a default Grafana Alerting experience.
 
@@ -173,9 +173,9 @@ Reporting is all about convenience - getting info to eyeballs as quickly as poss
 
 {{< figure src="/static/img/docs/dashboards/report-embedded-image.png" max-width="750px" caption="Embed report" >}}
 
-## Breaking Changes
+## Breaking changes
 
-This is a partial list of notable breaking changes. For the complete list, see our [Release Notes](LINK-TO-9.0-RELEASE-NOTES).
+This is a partial list of notable breaking changes. For the complete list, see our [Release Notes]({{< relref "../release-notes/release-notes-9-0-0/" >}}).
 
 ### Role-based access control: changes for general release
 
