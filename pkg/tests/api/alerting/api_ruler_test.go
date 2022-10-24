@@ -3,7 +3,7 @@ package alerting
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"math/rand"
 	"net/http"
 	"testing"
@@ -13,10 +13,11 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/grafana/grafana/pkg/models"
-	acdb "github.com/grafana/grafana/pkg/services/accesscontrol/database"
+	"github.com/grafana/grafana/pkg/services/accesscontrol/resourcepermissions"
 	apimodels "github.com/grafana/grafana/pkg/services/ngalert/api/tooling/definitions"
 	ngmodels "github.com/grafana/grafana/pkg/services/ngalert/models"
+	"github.com/grafana/grafana/pkg/services/org"
+	"github.com/grafana/grafana/pkg/services/user"
 	"github.com/grafana/grafana/pkg/tests/testinfra"
 	"github.com/grafana/grafana/pkg/util"
 )
@@ -31,11 +32,11 @@ func TestAlertRulePermissions(t *testing.T) {
 	})
 
 	grafanaListedAddr, store := testinfra.StartGrafana(t, dir, path)
-	permissionsStore := acdb.ProvideService(store)
+	permissionsStore := resourcepermissions.NewStore(store)
 
 	// Create a user to make authenticated requests
-	userID := createUser(t, store, models.CreateUserCommand{
-		DefaultOrgRole: string(models.ROLE_EDITOR),
+	userID := createUser(t, store, user.CreateUserCommand{
+		DefaultOrgRole: string(org.RoleEditor),
 		Password:       "password",
 		Login:          "grafana",
 	})
@@ -46,8 +47,6 @@ func TestAlertRulePermissions(t *testing.T) {
 	apiClient.CreateFolder(t, "folder1", "folder1")
 	// Create the namespace we'll save our alerts to.
 	apiClient.CreateFolder(t, "folder2", "folder2")
-
-	reloadCachedPermissions(t, grafanaListedAddr, "grafana", "password")
 
 	// Create rule under folder1
 	createRule(t, apiClient, "folder1")
@@ -65,7 +64,7 @@ func TestAlertRulePermissions(t *testing.T) {
 			err := resp.Body.Close()
 			require.NoError(t, err)
 		})
-		b, err := ioutil.ReadAll(resp.Body)
+		b, err := io.ReadAll(resp.Body)
 		require.NoError(t, err)
 
 		assert.Equal(t, resp.StatusCode, 200)
@@ -177,8 +176,8 @@ func TestAlertRulePermissions(t *testing.T) {
 		assert.JSONEq(t, expectedGetNamespaceResponseBody, body)
 
 		// remove permissions from folder2
-		removeFolderPermission(t, permissionsStore, 1, userID, models.ROLE_EDITOR, "folder2")
-		reloadCachedPermissions(t, grafanaListedAddr, "grafana", "password")
+		removeFolderPermission(t, permissionsStore, 1, userID, org.RoleEditor, "folder2")
+		apiClient.ReloadCachedPermissions(t)
 
 		// make sure that folder2 is not included in the response
 		// nolint:gosec
@@ -188,7 +187,7 @@ func TestAlertRulePermissions(t *testing.T) {
 			err := resp.Body.Close()
 			require.NoError(t, err)
 		})
-		b, err = ioutil.ReadAll(resp.Body)
+		b, err = io.ReadAll(resp.Body)
 		require.NoError(t, err)
 
 		assert.Equal(t, resp.StatusCode, 200)
@@ -251,8 +250,8 @@ func TestAlertRulePermissions(t *testing.T) {
 	}
 
 	// Remove permissions from folder1.
-	removeFolderPermission(t, permissionsStore, 1, userID, models.ROLE_EDITOR, "folder1")
-	reloadCachedPermissions(t, grafanaListedAddr, "grafana", "password")
+	removeFolderPermission(t, permissionsStore, 1, userID, org.RoleEditor, "folder1")
+	apiClient.ReloadCachedPermissions(t)
 	{
 		u := fmt.Sprintf("http://grafana:password@%s/api/ruler/grafana/api/v1/rules", grafanaListedAddr)
 		// nolint:gosec
@@ -262,7 +261,7 @@ func TestAlertRulePermissions(t *testing.T) {
 			err := resp.Body.Close()
 			require.NoError(t, err)
 		})
-		b, err := ioutil.ReadAll(resp.Body)
+		b, err := io.ReadAll(resp.Body)
 		require.NoError(t, err)
 
 		assert.Equal(t, resp.StatusCode, 200)
@@ -275,14 +274,14 @@ func createRule(t *testing.T, client apiClient, folder string) {
 
 	interval, err := model.ParseDuration("1m")
 	require.NoError(t, err)
-
+	doubleInterval := 2 * interval
 	rules := apimodels.PostableRuleGroupConfig{
 		Name:     "arulegroup",
 		Interval: interval,
 		Rules: []apimodels.PostableExtendedRuleNode{
 			{
 				ApiRuleNode: &apimodels.ApiRuleNode{
-					For:         2 * interval,
+					For:         &doubleInterval,
 					Labels:      map[string]string{"label1": "val1"},
 					Annotations: map[string]string{"annotation1": "val1"},
 				},
@@ -326,8 +325,8 @@ func TestAlertRuleConflictingTitle(t *testing.T) {
 	grafanaListedAddr, store := testinfra.StartGrafana(t, dir, path)
 
 	// Create user
-	createUser(t, store, models.CreateUserCommand{
-		DefaultOrgRole: string(models.ROLE_ADMIN),
+	createUser(t, store, user.CreateUserCommand{
+		DefaultOrgRole: string(org.RoleAdmin),
 		Password:       "admin",
 		Login:          "admin",
 	})
@@ -393,8 +392,8 @@ func TestRulerRulesFilterByDashboard(t *testing.T) {
 	grafanaListedAddr, store := testinfra.StartGrafana(t, dir, path)
 
 	// Create a user to make authenticated requests
-	createUser(t, store, models.CreateUserCommand{
-		DefaultOrgRole: string(models.ROLE_EDITOR),
+	createUser(t, store, user.CreateUserCommand{
+		DefaultOrgRole: string(org.RoleEditor),
 		Password:       "password",
 		Login:          "grafana",
 	})
@@ -404,8 +403,6 @@ func TestRulerRulesFilterByDashboard(t *testing.T) {
 	dashboardUID := "default"
 	// Create the namespace under default organisation (orgID = 1) where we'll save our alerts to.
 	apiClient.CreateFolder(t, "default", "default")
-
-	reloadCachedPermissions(t, grafanaListedAddr, "grafana", "password")
 
 	interval, err := model.ParseDuration("10s")
 	require.NoError(t, err)
@@ -417,7 +414,7 @@ func TestRulerRulesFilterByDashboard(t *testing.T) {
 			Rules: []apimodels.PostableExtendedRuleNode{
 				{
 					ApiRuleNode: &apimodels.ApiRuleNode{
-						For:    interval,
+						For:    &interval,
 						Labels: map[string]string{},
 						Annotations: map[string]string{
 							"__dashboardUid__": dashboardUID,
@@ -516,6 +513,7 @@ func TestRulerRulesFilterByDashboard(t *testing.T) {
 			}
 		}, {
 			"expr": "",
+			"for":"0s",
 			"grafana_alert": {
 				"id": 2,
 				"orgId": 1,
@@ -606,7 +604,7 @@ func TestRulerRulesFilterByDashboard(t *testing.T) {
 			err := resp.Body.Close()
 			require.NoError(t, err)
 		})
-		b, err := ioutil.ReadAll(resp.Body)
+		b, err := io.ReadAll(resp.Body)
 		require.NoError(t, err)
 		require.Equal(t, 200, resp.StatusCode)
 
@@ -624,7 +622,7 @@ func TestRulerRulesFilterByDashboard(t *testing.T) {
 			err := resp.Body.Close()
 			require.NoError(t, err)
 		})
-		b, err := ioutil.ReadAll(resp.Body)
+		b, err := io.ReadAll(resp.Body)
 		require.NoError(t, err)
 		require.Equal(t, 200, resp.StatusCode)
 
@@ -642,7 +640,7 @@ func TestRulerRulesFilterByDashboard(t *testing.T) {
 			err := resp.Body.Close()
 			require.NoError(t, err)
 		})
-		b, err := ioutil.ReadAll(resp.Body)
+		b, err := io.ReadAll(resp.Body)
 		require.NoError(t, err)
 		require.Equal(t, 200, resp.StatusCode)
 
@@ -659,7 +657,7 @@ func TestRulerRulesFilterByDashboard(t *testing.T) {
 			err := resp.Body.Close()
 			require.NoError(t, err)
 		})
-		b, err := ioutil.ReadAll(resp.Body)
+		b, err := io.ReadAll(resp.Body)
 		require.NoError(t, err)
 		require.Equal(t, 200, resp.StatusCode)
 
@@ -677,7 +675,7 @@ func TestRulerRulesFilterByDashboard(t *testing.T) {
 			err := resp.Body.Close()
 			require.NoError(t, err)
 		})
-		b, err := ioutil.ReadAll(resp.Body)
+		b, err := io.ReadAll(resp.Body)
 		require.NoError(t, err)
 		require.Equal(t, 200, resp.StatusCode)
 
@@ -695,7 +693,7 @@ func TestRulerRulesFilterByDashboard(t *testing.T) {
 			require.NoError(t, err)
 		})
 		require.Equal(t, http.StatusBadRequest, resp.StatusCode)
-		b, err := ioutil.ReadAll(resp.Body)
+		b, err := io.ReadAll(resp.Body)
 		require.NoError(t, err)
 		var res map[string]interface{}
 		require.NoError(t, json.Unmarshal(b, &res))
@@ -713,7 +711,7 @@ func TestRulerRulesFilterByDashboard(t *testing.T) {
 			require.NoError(t, err)
 		})
 		require.Equal(t, http.StatusBadRequest, resp.StatusCode)
-		b, err := ioutil.ReadAll(resp.Body)
+		b, err := io.ReadAll(resp.Body)
 		require.NoError(t, err)
 		var res map[string]interface{}
 		require.NoError(t, json.Unmarshal(b, &res))
@@ -732,8 +730,8 @@ func TestRuleGroupSequence(t *testing.T) {
 	grafanaListedAddr, store := testinfra.StartGrafana(t, dir, path)
 
 	// Create a user to make authenticated requests
-	createUser(t, store, models.CreateUserCommand{
-		DefaultOrgRole: string(models.ROLE_EDITOR),
+	createUser(t, store, user.CreateUserCommand{
+		DefaultOrgRole: string(org.RoleEditor),
 		Password:       "password",
 		Login:          "grafana",
 	})
@@ -741,8 +739,6 @@ func TestRuleGroupSequence(t *testing.T) {
 	client := newAlertingApiClient(grafanaListedAddr, "grafana", "password")
 	folder1Title := "folder1"
 	client.CreateFolder(t, util.GenerateShortUID(), folder1Title)
-
-	reloadCachedPermissions(t, grafanaListedAddr, "grafana", "password")
 
 	group1 := generateAlertRuleGroup(5, alertRuleGen())
 	group2 := generateAlertRuleGroup(5, alertRuleGen())
@@ -819,13 +815,55 @@ func TestRuleGroupSequence(t *testing.T) {
 	})
 }
 
+func TestRuleUpdate(t *testing.T) {
+	// Setup Grafana and its Database
+	dir, path := testinfra.CreateGrafDir(t, testinfra.GrafanaOpts{
+		DisableLegacyAlerting: true,
+		EnableUnifiedAlerting: true,
+		DisableAnonymous:      true,
+		AppModeProduction:     true,
+	})
+	grafanaListedAddr, store := testinfra.StartGrafana(t, dir, path)
+
+	// Create a user to make authenticated requests
+	createUser(t, store, user.CreateUserCommand{
+		DefaultOrgRole: string(org.RoleEditor),
+		Password:       "password",
+		Login:          "grafana",
+	})
+
+	client := newAlertingApiClient(grafanaListedAddr, "grafana", "password")
+	folder1Title := "folder1"
+	client.CreateFolder(t, util.GenerateShortUID(), folder1Title)
+
+	t.Run("should be able to reset 'for' to 0", func(t *testing.T) {
+		group := generateAlertRuleGroup(1, alertRuleGen())
+		expected := model.Duration(10 * time.Second)
+		group.Rules[0].ApiRuleNode.For = &expected
+
+		status, body := client.PostRulesGroup(t, folder1Title, &group)
+		require.Equalf(t, http.StatusAccepted, status, "failed to post rule group. Response: %s", body)
+		getGroup := client.GetRulesGroup(t, folder1Title, group.Name)
+		require.Equal(t, expected, *getGroup.Rules[0].ApiRuleNode.For)
+
+		group = convertGettableRuleGroupToPostable(getGroup.GettableRuleGroupConfig)
+		expected = 0
+		group.Rules[0].ApiRuleNode.For = &expected
+		status, body = client.PostRulesGroup(t, folder1Title, &group)
+		require.Equalf(t, http.StatusAccepted, status, "failed to post rule group. Response: %s", body)
+
+		getGroup = client.GetRulesGroup(t, folder1Title, group.Name)
+		require.Equal(t, expected, *getGroup.Rules[0].ApiRuleNode.For)
+	})
+}
+
 func newTestingRuleConfig(t *testing.T) apimodels.PostableRuleGroupConfig {
 	interval, err := model.ParseDuration("1m")
 	require.NoError(t, err)
 
 	firstRule := apimodels.PostableExtendedRuleNode{
 		ApiRuleNode: &apimodels.ApiRuleNode{
-			For:         interval,
+			For:         &interval,
 			Labels:      map[string]string{"label1": "val1"},
 			Annotations: map[string]string{"annotation1": "val1"},
 		},
@@ -852,7 +890,7 @@ func newTestingRuleConfig(t *testing.T) apimodels.PostableRuleGroupConfig {
 	}
 	secondRule := apimodels.PostableExtendedRuleNode{
 		ApiRuleNode: &apimodels.ApiRuleNode{
-			For:         interval,
+			For:         &interval,
 			Labels:      map[string]string{"label1": "val1"},
 			Annotations: map[string]string{"annotation1": "val1"},
 		},

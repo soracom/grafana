@@ -15,7 +15,7 @@ title: What's new in Grafana v7.5
 weight: -32
 ---
 
-# What’s new in Grafana v7.5
+# What's new in Grafana v7.5
 
 This topic includes the release notes for Grafana v7.5. For all details, read the full [CHANGELOG.md](https://github.com/grafana/grafana/blob/master/CHANGELOG.md).
 
@@ -29,7 +29,7 @@ Grafana 7.5 adds a beta version of the next-generation pie chart panel.
 
 ![Pie chart panel](/static/img/docs/pie-chart-panel/pie-chart-panel-7-5.png)
 
-For more information, refer to [Pie chart panel]({{< relref "../visualizations/pie-chart-panel/" >}}).
+For more information, refer to [Pie chart panel]({{< relref "../panels-visualizations/visualizations/pie-chart/" >}}).
 
 ### Alerting for Loki
 
@@ -131,7 +131,7 @@ If you have created dashboards with template variables, then you can choose whic
 
 Enable this feature in configuration settings using the `templateVariables` flag.
 
-For more information, refer to [Reporting]({{< relref "../enterprise/reporting/#choose-template-variables" >}}).
+For more information, refer to [Reporting]({{< relref "../dashboards/share-dashboards-panels/#choose-template-variables" >}}).
 
 ### Active user limits
 
@@ -153,7 +153,7 @@ Each Grafana Enterprise user will be limited to three concurrent user sessions. 
 
 A new session is created when you sign in to Grafana from a different device or a different browser. Multiple windows and tabs in the same browser are all part of the same session, so having many Grafana tabs open will not cause any issues.
 
-For more information on Grafana Enterprise licensing and restrictions, refer to [License restrictions]({{< relref "../enterprise/license/license-restrictions/" >}}).
+For more information on Grafana Enterprise licensing and restrictions, refer to [License restrictions]({{< relref "../administration/enterprise-licensing#license-restrictions" >}}).
 
 ## Breaking changes
 

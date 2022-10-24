@@ -20,6 +20,7 @@ const paddingSide: PaddingSide = (u, side, sidesWithAxes) => {
 };
 
 export const DEFAULT_PLOT_CONFIG: Partial<Options> = {
+  ms: 1,
   focus: {
     alpha: 1,
   },
@@ -116,18 +117,7 @@ export function getStackingGroups(frame: DataFrame) {
     let vals = values.toArray();
     let transform = custom.transform;
     let firstValue = vals.find((v) => v != null);
-    let stackDir =
-      transform === GraphTransform.Constant
-        ? firstValue >= 0
-          ? StackDirection.Pos
-          : StackDirection.Neg
-        : transform === GraphTransform.NegativeY
-        ? firstValue >= 0
-          ? StackDirection.Neg
-          : StackDirection.Pos
-        : firstValue >= 0
-        ? StackDirection.Pos
-        : StackDirection.Neg;
+    let stackDir = getStackDirection(transform, firstValue);
 
     let drawStyle = custom.drawStyle as GraphDrawStyle;
     let drawStyle2 =
@@ -216,7 +206,10 @@ export function preparePlotData2(
 
     // apply transforms
     if (custom.transform === GraphTransform.Constant) {
-      vals = Array(vals.length).fill(vals[0]);
+      let firstValIdx = vals.findIndex((v) => v != null);
+      let firstVal = vals[firstValIdx];
+      vals = Array(vals.length).fill(undefined);
+      vals[firstValIdx] = firstVal;
     } else {
       vals = vals.slice();
 
@@ -283,7 +276,7 @@ export function preparePlotData2(
 
         if (v != null) {
           // v / accum will always be pos, so properly (re)sign by group stacking dir
-          stacked[i] = group.dir * (v / accum[i]);
+          stacked[i] = accum[i] === 0 ? 0 : group.dir * (v / accum[i]);
         }
       }
     }
@@ -346,6 +339,15 @@ export function findMidPointYPosition(u: uPlot, idx: number) {
   }
 
   return y;
+}
+
+function getStackDirection(transform: GraphTransform, firstValue: number) {
+  // Check if first value is negative zero. This can happen with a binary operation transform.
+  const isNegativeZero = Object.is(firstValue, -0);
+  if (transform === GraphTransform.NegativeY) {
+    return !isNegativeZero && firstValue >= 0 ? StackDirection.Neg : StackDirection.Pos;
+  }
+  return !isNegativeZero && firstValue >= 0 ? StackDirection.Pos : StackDirection.Neg;
 }
 
 // Dev helpers

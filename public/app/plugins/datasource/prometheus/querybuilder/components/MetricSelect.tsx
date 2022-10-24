@@ -1,11 +1,9 @@
 import { css } from '@emotion/css';
 import React, { useCallback, useState } from 'react';
-// @ts-ignore
 import Highlighter from 'react-highlight-words';
 
 import { SelectableValue, toOption, GrafanaTheme2 } from '@grafana/data';
-import { EditorField, EditorFieldGroup } from '@grafana/experimental';
-import { Select, FormatOptionLabelMeta, useStyles2 } from '@grafana/ui';
+import { Select, FormatOptionLabelMeta, useStyles2, EditorField, EditorFieldGroup } from '@grafana/ui';
 
 import { PromVisualQuery } from '../types';
 
@@ -66,6 +64,7 @@ export function MetricSelect({ query, onChange, onGetMetrics }: Props) {
           className={styles.select}
           value={query.metric ? toOption(query.metric) : undefined}
           placeholder="Select metric"
+          virtualized
           allowCustomValue
           formatOptionLabel={formatOptionLabel}
           filterOption={customFilterOption}

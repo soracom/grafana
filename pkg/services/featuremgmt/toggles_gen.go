@@ -7,6 +7,10 @@
 package featuremgmt
 
 const (
+	// FlagAlertingBigTransactions
+	// Use big transactions for alerting database writes
+	FlagAlertingBigTransactions = "alertingBigTransactions"
+
 	// FlagTrimDefaults
 	// Use cue schema to remove values that will be applied automatically
 	FlagTrimDefaults = "trimDefaults"
@@ -47,17 +51,9 @@ const (
 	// Search for dashboards using panel title
 	FlagPanelTitleSearch = "panelTitleSearch"
 
-	// FlagTempoServiceGraph
-	// show service
-	FlagTempoServiceGraph = "tempoServiceGraph"
-
 	// FlagTempoApmTable
 	// Show APM table
 	FlagTempoApmTable = "tempoApmTable"
-
-	// FlagPrometheusAzureAuth
-	// Experimental. Azure authentication for Prometheus datasource
-	FlagPrometheusAzureAuth = "prometheus_azure_auth"
 
 	// FlagPrometheusAzureOverrideAudience
 	// Experimental. Allow override default AAD audience for Azure Prometheus endpoint
@@ -83,6 +79,10 @@ const (
 	// use experimental loki api for websocket streaming (early prototype)
 	FlagLokiDataframeApi = "lokiDataframeApi"
 
+	// FlagLokiMonacoEditor
+	// Access to Monaco query editor for Loki
+	FlagLokiMonacoEditor = "lokiMonacoEditor"
+
 	// FlagSwaggerUi
 	// Serves swagger UI
 	FlagSwaggerUi = "swaggerUi"
@@ -107,13 +107,13 @@ const (
 	// Configurable storage for dashboards, datasources, and resources
 	FlagStorage = "storage"
 
+	// FlagDashboardsFromStorage
+	// Load dashboards from the generic storage interface
+	FlagDashboardsFromStorage = "dashboardsFromStorage"
+
 	// FlagExport
 	// Export grafana instance (to git, etc)
 	FlagExport = "export"
-
-	// FlagStorageLocalUpload
-	// allow uploads to local storage
-	FlagStorageLocalUpload = "storageLocalUpload"
 
 	// FlagAzureMonitorResourcePickerForMetrics
 	// New UI for Azure Monitor Metrics Query
@@ -123,6 +123,10 @@ const (
 	// Experimental Explore to Dashboard workflow
 	FlagExplore2Dashboard = "explore2Dashboard"
 
+	// FlagExploreMixedDatasource
+	// Enable mixed datasource in Explore
+	FlagExploreMixedDatasource = "exploreMixedDatasource"
+
 	// FlagTracing
 	// Adds trace ID to error notifications
 	FlagTracing = "tracing"
@@ -131,9 +135,9 @@ const (
 	// Enable command palette
 	FlagCommandPalette = "commandPalette"
 
-	// FlagSavedItems
-	// Enable Saved Items in the navbar.
-	FlagSavedItems = "savedItems"
+	// FlagCorrelations
+	// Correlations page
+	FlagCorrelations = "correlations"
 
 	// FlagCloudWatchDynamicLabels
 	// Use dynamic labels instead of alias patterns in CloudWatch datasource
@@ -143,10 +147,6 @@ const (
 	// Introduce HTTP 207 Multi Status for api/ds/query
 	FlagDatasourceQueryMultiStatus = "datasourceQueryMultiStatus"
 
-	// FlagAzureMonitorExperimentalUI
-	// Use grafana-experimental UI in Azure Monitor
-	FlagAzureMonitorExperimentalUI = "azureMonitorExperimentalUI"
-
 	// FlagTraceToMetrics
 	// Enable trace to metrics links
 	FlagTraceToMetrics = "traceToMetrics"
@@ -154,6 +154,10 @@ const (
 	// FlagPrometheusStreamingJSONParser
 	// Enable streaming JSON parser for Prometheus datasource
 	FlagPrometheusStreamingJSONParser = "prometheusStreamingJSONParser"
+
+	// FlagPrometheusStreamingJSONParserTest
+	// Run both old and streaming requests and log differences
+	FlagPrometheusStreamingJSONParserTest = "prometheusStreamingJSONParserTest"
 
 	// FlagValidateDashboardsOnSave
 	// Validate dashboard JSON POSTed to api/dashboards/db
@@ -171,20 +175,24 @@ const (
 	// Allow elements nesting
 	FlagCanvasPanelNesting = "canvasPanelNesting"
 
+	// FlagScenes
+	// Experimental framework to build interactive dashboards
+	FlagScenes = "scenes"
+
 	// FlagUseLegacyHeatmapPanel
 	// Continue to use the angular/flot based heatmap panel
 	FlagUseLegacyHeatmapPanel = "useLegacyHeatmapPanel"
 
-	// FlagCloudMonitoringExperimentalUI
-	// Use grafana-experimental UI in Cloud Monitoring
-	FlagCloudMonitoringExperimentalUI = "cloudMonitoringExperimentalUI"
+	// FlagDisableSecretsCompatibility
+	// Disable duplicated secret storage in legacy tables
+	FlagDisableSecretsCompatibility = "disableSecretsCompatibility"
 
 	// FlagLogRequestsInstrumentedAsUnknown
 	// Logs the path for requests that are instrumented as unknown
 	FlagLogRequestsInstrumentedAsUnknown = "logRequestsInstrumentedAsUnknown"
 
 	// FlagDataConnectionsConsole
-	// Enables a new top-level page called Data Connections. This page is an experiment for better grouping of installing / configuring data sources and other plugins.
+	// Enables a new top-level page called Connections. This page is an experiment for better grouping of installing / configuring data sources and other plugins.
 	FlagDataConnectionsConsole = "dataConnectionsConsole"
 
 	// FlagInternationalization
@@ -195,7 +203,55 @@ const (
 	// New top nav and page layouts
 	FlagTopnav = "topnav"
 
-	// FlagCustomBranding
-	// Replaces whitelabeling with the new custom branding feature
-	FlagCustomBranding = "customBranding"
+	// FlagGrpcServer
+	// Run GRPC server
+	FlagGrpcServer = "grpcServer"
+
+	// FlagObjectStore
+	// SQL based object store
+	FlagObjectStore = "objectStore"
+
+	// FlagTraceqlEditor
+	// Show the TraceQL editor in the explore page
+	FlagTraceqlEditor = "traceqlEditor"
+
+	// FlagFlameGraph
+	// Show the flame graph
+	FlagFlameGraph = "flameGraph"
+
+	// FlagRedshiftAsyncQueryDataSupport
+	// Enable async query data support for Redshift
+	FlagRedshiftAsyncQueryDataSupport = "redshiftAsyncQueryDataSupport"
+
+	// FlagAthenaAsyncQueryDataSupport
+	// Enable async query data support for Athena
+	FlagAthenaAsyncQueryDataSupport = "athenaAsyncQueryDataSupport"
+
+	// FlagIncreaseInMemDatabaseQueryCache
+	// Enable more in memory caching for database queries
+	FlagIncreaseInMemDatabaseQueryCache = "increaseInMemDatabaseQueryCache"
+
+	// FlagInterFont
+	// Switch to inter font
+	FlagInterFont = "interFont"
+
+	// FlagNewPanelChromeUI
+	// Show updated look and feel of grafana-ui PanelChrome: panel header, icons, and menu
+	FlagNewPanelChromeUI = "newPanelChromeUI"
+
+	// FlagQueryLibrary
+	// Reusable query library
+	FlagQueryLibrary = "queryLibrary"
+
+	// FlagShowDashboardValidationWarnings
+	// Show warnings when Dashboards do not validate against the schema
+	FlagShowDashboardValidationWarnings = "showDashboardValidationWarnings"
+
+	// FlagMysqlAnsiQuotes
+	// Use double quote to escape keyword in Mysql query
+	FlagMysqlAnsiQuotes = "mysqlAnsiQuotes"
+
+	// FlagAccessControlOnCall
+	// Access control primitives for OnCall
+	FlagAccessControlOnCall = "accessControlOnCall"
 )
