@@ -2,11 +2,10 @@
 import React, { memo } from 'react';
 
 import { AnnotationQuery } from '@grafana/data';
-import { EditorRow, EditorField } from '@grafana/experimental';
-import { Input } from '@grafana/ui';
+import { EditorField, EditorRow, Input } from '@grafana/ui';
 
 // Types
-import { getNormalizedLokiQuery } from '../query_utils';
+import { getNormalizedLokiQuery } from '../queryUtils';
 import { LokiQuery, LokiQueryType } from '../types';
 
 import { LokiOptionFields } from './LokiOptionFields';
@@ -29,7 +28,7 @@ export const LokiAnnotationsQueryEditor = memo(function LokiAnnotationQueryEdito
   const onChangeQuery = (query: LokiQuery) => {
     // the current version of annotations only stores an optional boolean
     // field `instant` to handle the instant/range switch.
-    // we need to maintain compatiblity for now, so we do the same.
+    // we need to maintain compatibility for now, so we do the same.
     // we explicitly call `getNormalizedLokiQuery` to make sure `queryType`
     // is set up correctly.
     const instant = getNormalizedLokiQuery(query).queryType === LokiQueryType.Instant;

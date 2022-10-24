@@ -13,11 +13,15 @@ describe('Heatmap Migrations', () => {
   });
 
   it('simple heatmap', () => {
-    const old: any = {
-      angular: oldHeatmap,
-    };
     const panel = {} as PanelModel;
-    panel.options = heatmapChangedHandler(panel, 'heatmap', old, prevFieldConfig);
+    panel.options = heatmapChangedHandler(
+      panel,
+      'heatmap',
+      {
+        angular: oldHeatmap,
+      },
+      prevFieldConfig
+    );
     expect(panel).toMatchInlineSnapshot(`
       Object {
         "fieldConfig": Object {
@@ -51,6 +55,7 @@ describe('Heatmap Migrations', () => {
             "max": 100,
             "min": 5,
             "mode": "scheme",
+            "reverse": true,
             "scale": "exponential",
             "scheme": "BuGn",
             "steps": 128,
@@ -84,6 +89,32 @@ describe('Heatmap Migrations', () => {
         },
       }
     `);
+  });
+
+  it('Cell padding defaults', () => {
+    // zero becomes 1
+    expect(
+      heatmapChangedHandler(
+        {} as PanelModel,
+        'heatmap',
+        {
+          angular: { cards: { cardPadding: 0 } },
+        },
+        prevFieldConfig
+      ).cellGap
+    ).toEqual(1);
+
+    // missing is 2
+    expect(
+      heatmapChangedHandler(
+        {} as PanelModel,
+        'heatmap',
+        {
+          angular: {},
+        },
+        prevFieldConfig
+      ).cellGap
+    ).toEqual(2);
   });
 });
 
@@ -125,8 +156,8 @@ const oldHeatmap = {
     colorScale: 'sqrt',
     exponent: 0.5,
     colorScheme: 'interpolateBuGn',
-    min: 5,
-    max: 100,
+    min: 100,
+    max: 5,
   },
   legend: {
     show: true,
