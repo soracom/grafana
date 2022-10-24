@@ -59,7 +59,7 @@ func TestPrometheus_ExecuteTimeSeriesQuery(t *testing.T) {
 
 		_, err = buffered.ExecuteTimeSeriesQuery(context.Background(), &backend.QueryDataRequest{
 			PluginContext: backend.PluginContext{},
-			// This header should end up in the outgoing request to prometheus
+			// This header is dropped, as only FromAlert header will be added to outgoing requests
 			Headers: map[string]string{"foo": "bar"},
 			Queries: []backend.DataQuery{{
 				JSON: []byte(`{"expr": "metric{label=\"test\"}", "rangeQuery": true}`),
@@ -67,7 +67,7 @@ func TestPrometheus_ExecuteTimeSeriesQuery(t *testing.T) {
 		})
 		require.NoError(t, err)
 		require.NotNil(t, rt.Req)
-		require.Equal(t, http.Header{"Content-Type": []string{"application/x-www-form-urlencoded"}, "foo": []string{"bar"}}, rt.Req.Header)
+		require.Equal(t, http.Header{"Content-Type": []string{"application/x-www-form-urlencoded"}, "Idempotency-Key": []string(nil)}, rt.Req.Header)
 	})
 }
 
@@ -778,8 +778,8 @@ func TestPrometheus_parseTimeSeriesResponse(t *testing.T) {
 		require.Equal(t, time.Unix(1, 0).UTC(), res[0].Fields[0].At(0))
 		require.Equal(t, time.Unix(4, 0).UTC(), res[0].Fields[0].At(1))
 		require.Equal(t, res[0].Fields[1].Len(), 2)
-		require.Equal(t, float64(1), *res[0].Fields[1].At(0).(*float64))
-		require.Equal(t, float64(4), *res[0].Fields[1].At(1).(*float64))
+		require.Equal(t, float64(1), res[0].Fields[1].At(0).(float64))
+		require.Equal(t, float64(4), res[0].Fields[1].At(1).(float64))
 	})
 
 	t.Run("matrix response with from alerting missed data points should be parsed correctly", func(t *testing.T) {
@@ -835,9 +835,8 @@ func TestPrometheus_parseTimeSeriesResponse(t *testing.T) {
 		res, err := parseTimeSeriesResponse(value, query)
 		require.NoError(t, err)
 
-		var nilPointer *float64
-		require.Equal(t, res[0].Fields[1].Name, "Value")
-		require.Equal(t, res[0].Fields[1].At(0), nilPointer)
+		require.Equal(t, "Value", res[0].Fields[1].Name)
+		require.True(t, math.IsNaN(res[0].Fields[1].At(0).(float64)))
 	})
 
 	t.Run("vector response should be parsed normally", func(t *testing.T) {

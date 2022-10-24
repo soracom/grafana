@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"github.com/grafana/grafana/pkg/components/simplejson"
-	"github.com/grafana/grafana/pkg/models"
+	"github.com/grafana/grafana/pkg/services/user"
 )
 
 // DashboardSnapshot model
@@ -109,7 +109,7 @@ type GetDashboardSnapshotsQuery struct {
 	Name         string
 	Limit        int
 	OrgId        int64
-	SignedInUser *models.SignedInUser
+	SignedInUser *user.SignedInUser
 
 	Result DashboardSnapshotsList
 }

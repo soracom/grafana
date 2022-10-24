@@ -7,12 +7,15 @@ import (
 	"testing"
 
 	"github.com/go-kit/log"
-	"github.com/grafana/grafana/pkg/infra/log/level"
+	"github.com/go-kit/log/level"
 	"github.com/grafana/grafana/pkg/models"
+	"github.com/grafana/grafana/pkg/services/login"
 	"github.com/grafana/grafana/pkg/services/login/logintest"
-	"github.com/grafana/grafana/pkg/services/quota"
-	"github.com/grafana/grafana/pkg/services/sqlstore/mockstore"
+	"github.com/grafana/grafana/pkg/services/org"
+	"github.com/grafana/grafana/pkg/services/org/orgtest"
+	"github.com/grafana/grafana/pkg/services/quota/quotaimpl"
 	"github.com/grafana/grafana/pkg/services/user"
+	"github.com/grafana/grafana/pkg/services/user/usertest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -22,15 +25,12 @@ func Test_syncOrgRoles_doesNotBreakWhenTryingToRemoveLastOrgAdmin(t *testing.T) 
 	externalUser := createSimpleExternalUser()
 	authInfoMock := &logintest.AuthInfoServiceFake{}
 
-	store := &mockstore.SQLStoreMock{
-		ExpectedUserOrgList:     createUserOrgDTO(),
-		ExpectedOrgListResponse: createResponseWithOneErrLastOrgAdminItem(),
-	}
-
 	login := Implementation{
-		QuotaService:    &quota.QuotaService{},
+		QuotaService:    &quotaimpl.Service{},
 		AuthInfoService: authInfoMock,
-		SQLStore:        store,
+		SQLStore:        nil,
+		userService:     usertest.NewUserServiceFake(),
+		orgService:      orgtest.NewOrgServiceFake(),
 	}
 
 	err := login.syncOrgRoles(context.Background(), &user, &externalUser)
@@ -46,15 +46,16 @@ func Test_syncOrgRoles_whenTryingToRemoveLastOrgLogsError(t *testing.T) {
 
 	authInfoMock := &logintest.AuthInfoServiceFake{}
 
-	store := &mockstore.SQLStoreMock{
-		ExpectedUserOrgList:     createUserOrgDTO(),
-		ExpectedOrgListResponse: createResponseWithOneErrLastOrgAdminItem(),
-	}
+	orgService := orgtest.NewOrgServiceFake()
+	orgService.ExpectedUserOrgDTO = createUserOrgDTO()
+	orgService.ExpectedOrgListResponse = createResponseWithOneErrLastOrgAdminItem()
 
 	login := Implementation{
-		QuotaService:    &quota.QuotaService{},
+		QuotaService:    &quotaimpl.Service{},
 		AuthInfoService: authInfoMock,
-		SQLStore:        store,
+		SQLStore:        nil,
+		userService:     usertest.NewUserServiceFake(),
+		orgService:      orgService,
 	}
 
 	err := login.syncOrgRoles(context.Background(), &user, &externalUser)
@@ -65,14 +66,16 @@ func Test_syncOrgRoles_whenTryingToRemoveLastOrgLogsError(t *testing.T) {
 func Test_teamSync(t *testing.T) {
 	authInfoMock := &logintest.AuthInfoServiceFake{}
 	login := Implementation{
-		QuotaService:    &quota.QuotaService{},
+		QuotaService:    &quotaimpl.Service{},
 		AuthInfoService: authInfoMock,
 	}
 
-	upserCmd := &models.UpsertUserCommand{ExternalUser: &models.ExternalUserInfo{Email: "test_user@example.org"}}
+	email := "test_user@example.org"
+	upserCmd := &models.UpsertUserCommand{ExternalUser: &models.ExternalUserInfo{Email: email},
+		UserLookupParams: models.UserLookupParams{Email: &email}}
 	expectedUser := &user.User{
 		ID:    1,
-		Email: "test_user@example.org",
+		Email: email,
 		Name:  "test_user",
 		Login: "test_user",
 	}
@@ -119,22 +122,22 @@ func createSimpleUser() user.User {
 	return user
 }
 
-func createUserOrgDTO() []*models.UserOrgDTO {
-	users := []*models.UserOrgDTO{
+func createUserOrgDTO() []*org.UserOrgDTO {
+	users := []*org.UserOrgDTO{
 		{
-			OrgId: 1,
+			OrgID: 1,
 			Name:  "Bar",
-			Role:  models.ROLE_VIEWER,
+			Role:  org.RoleViewer,
 		},
 		{
-			OrgId: 10,
+			OrgID: 10,
 			Name:  "Foo",
-			Role:  models.ROLE_ADMIN,
+			Role:  org.RoleAdmin,
 		},
 		{
-			OrgId: 11,
+			OrgID: 11,
 			Name:  "Stuff",
-			Role:  models.ROLE_VIEWER,
+			Role:  org.RoleViewer,
 		},
 	}
 	return users
@@ -142,23 +145,23 @@ func createUserOrgDTO() []*models.UserOrgDTO {
 
 func createSimpleExternalUser() models.ExternalUserInfo {
 	externalUser := models.ExternalUserInfo{
-		AuthModule: "ldap",
-		OrgRoles: map[int64]models.RoleType{
-			1: models.ROLE_VIEWER,
+		AuthModule: login.LDAPAuthModule,
+		OrgRoles: map[int64]org.RoleType{
+			1: org.RoleViewer,
 		},
 	}
 
 	return externalUser
 }
 
-func createResponseWithOneErrLastOrgAdminItem() mockstore.OrgListResponse {
-	remResp := mockstore.OrgListResponse{
+func createResponseWithOneErrLastOrgAdminItem() orgtest.OrgListResponse {
+	remResp := orgtest.OrgListResponse{
 		{
-			OrgId:    10,
+			OrgID:    10,
 			Response: models.ErrLastOrgAdmin,
 		},
 		{
-			OrgId:    11,
+			OrgID:    11,
 			Response: nil,
 		},
 	}

@@ -4,25 +4,43 @@ import (
 	"context"
 	"testing"
 
+	"github.com/prometheus/alertmanager/config"
+	"github.com/stretchr/testify/require"
+
 	"github.com/grafana/grafana/pkg/components/simplejson"
+	"github.com/grafana/grafana/pkg/infra/db"
 	"github.com/grafana/grafana/pkg/infra/log"
 	"github.com/grafana/grafana/pkg/services/ngalert/api/tooling/definitions"
 	"github.com/grafana/grafana/pkg/services/ngalert/models"
 	"github.com/grafana/grafana/pkg/services/secrets"
 	"github.com/grafana/grafana/pkg/services/secrets/database"
 	"github.com/grafana/grafana/pkg/services/secrets/manager"
-	"github.com/grafana/grafana/pkg/services/sqlstore"
-	"github.com/prometheus/alertmanager/config"
-	"github.com/stretchr/testify/require"
 )
 
 func TestContactPointService(t *testing.T) {
-	sqlStore := sqlstore.InitTestDB(t)
+	sqlStore := db.InitTestDB(t)
 	secretsService := manager.SetupTestService(t, database.ProvideSecretsStore(sqlStore))
 	t.Run("service gets contact points from AM config", func(t *testing.T) {
 		sut := createContactPointServiceSut(secretsService)
 
-		cps, err := sut.GetContactPoints(context.Background(), 1)
+		cps, err := sut.GetContactPoints(context.Background(), cpsQuery(1))
+		require.NoError(t, err)
+
+		require.Len(t, cps, 1)
+		require.Equal(t, "email receiver", cps[0].Name)
+	})
+
+	t.Run("service filters contact points by name", func(t *testing.T) {
+		sut := createContactPointServiceSut(secretsService)
+		newCp := createTestContactPoint()
+		_, err := sut.CreateContactPoint(context.Background(), 1, newCp, models.ProvenanceAPI)
+		require.NoError(t, err)
+
+		q := ContactPointQuery{
+			OrgID: 1,
+			Name:  "email receiver",
+		}
+		cps, err := sut.GetContactPoints(context.Background(), q)
 		require.NoError(t, err)
 
 		require.Len(t, cps, 1)
@@ -36,14 +54,14 @@ func TestContactPointService(t *testing.T) {
 		_, err := sut.CreateContactPoint(context.Background(), 1, newCp, models.ProvenanceAPI)
 		require.NoError(t, err)
 
-		cps, err := sut.GetContactPoints(context.Background(), 1)
+		cps, err := sut.GetContactPoints(context.Background(), cpsQuery(1))
 		require.NoError(t, err)
 		require.Len(t, cps, 2)
 		require.Equal(t, "test-contact-point", cps[1].Name)
 		require.Equal(t, "slack", cps[1].Type)
 	})
 
-	t.Run("it's possbile to use a custom uid", func(t *testing.T) {
+	t.Run("it's possible to use a custom uid", func(t *testing.T) {
 		customUID := "1337"
 		sut := createContactPointServiceSut(secretsService)
 		newCp := createTestContactPoint()
@@ -52,13 +70,13 @@ func TestContactPointService(t *testing.T) {
 		_, err := sut.CreateContactPoint(context.Background(), 1, newCp, models.ProvenanceAPI)
 		require.NoError(t, err)
 
-		cps, err := sut.GetContactPoints(context.Background(), 1)
+		cps, err := sut.GetContactPoints(context.Background(), cpsQuery(1))
 		require.NoError(t, err)
 		require.Len(t, cps, 2)
 		require.Equal(t, customUID, cps[1].UID)
 	})
 
-	t.Run("it's not possbile to use the same uid twice", func(t *testing.T) {
+	t.Run("it's not possible to use the same uid twice", func(t *testing.T) {
 		customUID := "1337"
 		sut := createContactPointServiceSut(secretsService)
 		newCp := createTestContactPoint()
@@ -120,7 +138,7 @@ func TestContactPointService(t *testing.T) {
 	t.Run("default provenance of contact points is none", func(t *testing.T) {
 		sut := createContactPointServiceSut(secretsService)
 
-		cps, err := sut.GetContactPoints(context.Background(), 1)
+		cps, err := sut.GetContactPoints(context.Background(), cpsQuery(1))
 		require.NoError(t, err)
 
 		require.Equal(t, models.ProvenanceNone, models.Provenance(cps[0].Provenance))
@@ -133,7 +151,7 @@ func TestContactPointService(t *testing.T) {
 		newCp, err := sut.CreateContactPoint(context.Background(), 1, newCp, models.ProvenanceNone)
 		require.NoError(t, err)
 
-		cps, err := sut.GetContactPoints(context.Background(), 1)
+		cps, err := sut.GetContactPoints(context.Background(), cpsQuery(1))
 		require.NoError(t, err)
 		require.Equal(t, newCp.UID, cps[1].UID)
 		require.Equal(t, models.ProvenanceNone, models.Provenance(cps[1].Provenance))
@@ -141,7 +159,7 @@ func TestContactPointService(t *testing.T) {
 		err = sut.UpdateContactPoint(context.Background(), 1, newCp, models.ProvenanceAPI)
 		require.NoError(t, err)
 
-		cps, err = sut.GetContactPoints(context.Background(), 1)
+		cps, err = sut.GetContactPoints(context.Background(), cpsQuery(1))
 		require.NoError(t, err)
 		require.Equal(t, newCp.UID, cps[1].UID)
 		require.Equal(t, models.ProvenanceAPI, models.Provenance(cps[1].Provenance))
@@ -154,7 +172,7 @@ func TestContactPointService(t *testing.T) {
 		newCp, err := sut.CreateContactPoint(context.Background(), 1, newCp, models.ProvenanceNone)
 		require.NoError(t, err)
 
-		cps, err := sut.GetContactPoints(context.Background(), 1)
+		cps, err := sut.GetContactPoints(context.Background(), cpsQuery(1))
 		require.NoError(t, err)
 		require.Equal(t, newCp.UID, cps[1].UID)
 		require.Equal(t, models.ProvenanceNone, models.Provenance(cps[1].Provenance))
@@ -162,7 +180,7 @@ func TestContactPointService(t *testing.T) {
 		err = sut.UpdateContactPoint(context.Background(), 1, newCp, models.ProvenanceFile)
 		require.NoError(t, err)
 
-		cps, err = sut.GetContactPoints(context.Background(), 1)
+		cps, err = sut.GetContactPoints(context.Background(), cpsQuery(1))
 		require.NoError(t, err)
 		require.Equal(t, newCp.UID, cps[1].UID)
 		require.Equal(t, models.ProvenanceFile, models.Provenance(cps[1].Provenance))
@@ -175,7 +193,7 @@ func TestContactPointService(t *testing.T) {
 		newCp, err := sut.CreateContactPoint(context.Background(), 1, newCp, models.ProvenanceFile)
 		require.NoError(t, err)
 
-		cps, err := sut.GetContactPoints(context.Background(), 1)
+		cps, err := sut.GetContactPoints(context.Background(), cpsQuery(1))
 		require.NoError(t, err)
 		require.Equal(t, newCp.UID, cps[1].UID)
 		require.Equal(t, models.ProvenanceFile, models.Provenance(cps[1].Provenance))
@@ -191,7 +209,7 @@ func TestContactPointService(t *testing.T) {
 		newCp, err := sut.CreateContactPoint(context.Background(), 1, newCp, models.ProvenanceAPI)
 		require.NoError(t, err)
 
-		cps, err := sut.GetContactPoints(context.Background(), 1)
+		cps, err := sut.GetContactPoints(context.Background(), cpsQuery(1))
 		require.NoError(t, err)
 		require.Equal(t, newCp.UID, cps[1].UID)
 		require.Equal(t, models.ProvenanceAPI, models.Provenance(cps[1].Provenance))
@@ -269,6 +287,12 @@ func createTestContactPoint() definitions.EmbeddedContactPoint {
 	}
 }
 
+func cpsQuery(orgID int64) ContactPointQuery {
+	return ContactPointQuery{
+		OrgID: orgID,
+	}
+}
+
 func TestStitchReceivers(t *testing.T) {
 	type testCase struct {
 		name        string
@@ -296,6 +320,16 @@ func TestStitchReceivers(t *testing.T) {
 			},
 			expModified: true,
 			expCfg: definitions.PostableApiAlertingConfig{
+				Config: definitions.Config{
+					Route: &definitions.Route{
+						Receiver: "receiver-1",
+						Routes: []*definitions.Route{
+							{
+								Receiver: "receiver-1",
+							},
+						},
+					},
+				},
 				Receivers: []*definitions.PostableApiReceiver{
 					{
 						Receiver: config.Receiver{
@@ -339,7 +373,7 @@ func TestStitchReceivers(t *testing.T) {
 			},
 		},
 		{
-			name: "rename with only one receiver in group, renames group",
+			name: "rename with only one receiver in group, renames group and references",
 			new: &definitions.PostableGrafanaReceiver{
 				UID:  "abc",
 				Name: "new-receiver",
@@ -347,6 +381,16 @@ func TestStitchReceivers(t *testing.T) {
 			},
 			expModified: true,
 			expCfg: definitions.PostableApiAlertingConfig{
+				Config: definitions.Config{
+					Route: &definitions.Route{
+						Receiver: "new-receiver",
+						Routes: []*definitions.Route{
+							{
+								Receiver: "new-receiver",
+							},
+						},
+					},
+				},
 				Receivers: []*definitions.PostableApiReceiver{
 					{
 						Receiver: config.Receiver{
@@ -398,6 +442,16 @@ func TestStitchReceivers(t *testing.T) {
 			},
 			expModified: true,
 			expCfg: definitions.PostableApiAlertingConfig{
+				Config: definitions.Config{
+					Route: &definitions.Route{
+						Receiver: "receiver-1",
+						Routes: []*definitions.Route{
+							{
+								Receiver: "receiver-1",
+							},
+						},
+					},
+				},
 				Receivers: []*definitions.PostableApiReceiver{
 					{
 						Receiver: config.Receiver{
@@ -449,6 +503,16 @@ func TestStitchReceivers(t *testing.T) {
 			},
 			expModified: true,
 			expCfg: definitions.PostableApiAlertingConfig{
+				Config: definitions.Config{
+					Route: &definitions.Route{
+						Receiver: "receiver-1",
+						Routes: []*definitions.Route{
+							{
+								Receiver: "receiver-1",
+							},
+						},
+					},
+				},
 				Receivers: []*definitions.PostableApiReceiver{
 					{
 						Receiver: config.Receiver{
@@ -510,6 +574,16 @@ func TestStitchReceivers(t *testing.T) {
 			},
 			expModified: true,
 			expCfg: definitions.PostableApiAlertingConfig{
+				Config: definitions.Config{
+					Route: &definitions.Route{
+						Receiver: "receiver-1",
+						Routes: []*definitions.Route{
+							{
+								Receiver: "receiver-1",
+							},
+						},
+					},
+				},
 				Receivers: []*definitions.PostableApiReceiver{
 					{
 						Receiver: config.Receiver{
@@ -581,6 +655,16 @@ func TestStitchReceivers(t *testing.T) {
 func createTestConfigWithReceivers() *definitions.PostableUserConfig {
 	return &definitions.PostableUserConfig{
 		AlertmanagerConfig: definitions.PostableApiAlertingConfig{
+			Config: definitions.Config{
+				Route: &definitions.Route{
+					Receiver: "receiver-1",
+					Routes: []*definitions.Route{
+						{
+							Receiver: "receiver-1",
+						},
+					},
+				},
+			},
 			Receivers: []*definitions.PostableApiReceiver{
 				{
 					Receiver: config.Receiver{
@@ -629,6 +713,16 @@ func createTestConfigWithReceivers() *definitions.PostableUserConfig {
 func createInconsistentTestConfigWithReceivers() *definitions.PostableUserConfig {
 	return &definitions.PostableUserConfig{
 		AlertmanagerConfig: definitions.PostableApiAlertingConfig{
+			Config: definitions.Config{
+				Route: &definitions.Route{
+					Receiver: "receiver-1",
+					Routes: []*definitions.Route{
+						{
+							Receiver: "receiver-1",
+						},
+					},
+				},
+			},
 			Receivers: []*definitions.PostableApiReceiver{
 				{
 					Receiver: config.Receiver{

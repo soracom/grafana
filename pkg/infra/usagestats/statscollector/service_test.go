@@ -121,6 +121,24 @@ func TestFeatureUsageStats(t *testing.T) {
 
 func TestCollectingUsageStats(t *testing.T) {
 	sqlStore := mockstore.NewSQLStoreMock()
+	expectedDataSources := []*datasources.DataSource{
+		{
+			JsonData: simplejson.NewFromAny(map[string]interface{}{
+				"esVersion": "2.0.0",
+			}),
+		},
+		{
+			JsonData: simplejson.NewFromAny(map[string]interface{}{
+				"esVersion": "2.0.0",
+			}),
+		},
+		{
+			JsonData: simplejson.NewFromAny(map[string]interface{}{
+				"esVersion": "70.1.1",
+			}),
+		},
+	}
+
 	s := createService(t, &setting.Cfg{
 		ReportingEnabled:     true,
 		BuildVersion:         "5.0.0",
@@ -130,7 +148,8 @@ func TestCollectingUsageStats(t *testing.T) {
 		AuthProxyEnabled:     true,
 		Packaging:            "deb",
 		ReportingDistributor: "hosted-grafana",
-	}, sqlStore)
+	}, sqlStore,
+		withDatasources(mockDatasourceService{datasources: expectedDataSources}))
 
 	s.startTime = time.Now().Add(-1 * time.Minute)
 
@@ -182,6 +201,45 @@ func TestCollectingUsageStats(t *testing.T) {
 	assert.InDelta(t, int64(65), metrics["stats.uptime"], 6)
 }
 
+func TestElasticStats(t *testing.T) {
+	sqlStore := mockstore.NewSQLStoreMock()
+
+	expectedDataSources := []*datasources.DataSource{
+		{
+			JsonData: simplejson.NewFromAny(map[string]interface{}{
+				"esVersion": "2.0.0",
+			}),
+		},
+		{
+			JsonData: simplejson.NewFromAny(map[string]interface{}{
+				"esVersion": "2.0.0",
+			}),
+		},
+		{
+			JsonData: simplejson.NewFromAny(map[string]interface{}{
+				"esVersion": "70.1.1",
+			}),
+		},
+	}
+
+	s := createService(t, &setting.Cfg{
+		ReportingEnabled:     true,
+		BuildVersion:         "5.0.0",
+		AnonymousEnabled:     true,
+		BasicAuthEnabled:     true,
+		LDAPEnabled:          true,
+		AuthProxyEnabled:     true,
+		Packaging:            "deb",
+		ReportingDistributor: "hosted-grafana",
+	}, sqlStore,
+		withDatasources(mockDatasourceService{datasources: expectedDataSources}))
+
+	metrics, err := s.collectElasticStats(context.Background())
+	require.NoError(t, err)
+
+	assert.EqualValues(t, 2, metrics["stats.ds."+datasources.DS_ES+".v2_0_0.count"])
+	assert.EqualValues(t, 1, metrics["stats.ds."+datasources.DS_ES+".v70_1_1.count"])
+}
 func TestDatasourceStats(t *testing.T) {
 	sqlStore := mockstore.NewSQLStoreMock()
 	s := createService(t, &setting.Cfg{}, sqlStore)
@@ -207,7 +265,7 @@ func TestDatasourceStats(t *testing.T) {
 		},
 	}
 
-	sqlStore.ExpectedDataSources = []*datasources.DataSource{
+	_ = []*datasources.DataSource{
 		{
 			JsonData: simplejson.NewFromAny(map[string]interface{}{
 				"esVersion": 2,
@@ -366,50 +424,17 @@ func (m *mockSocial) GetOAuthProviders() map[string]bool {
 	return m.OAuthProviders
 }
 
-type fakePluginStore struct {
-	plugins.Store
-
-	plugins map[string]plugins.PluginDTO
-}
-
-func (pr fakePluginStore) Plugin(_ context.Context, pluginID string) (plugins.PluginDTO, bool) {
-	p, exists := pr.plugins[pluginID]
-
-	return p, exists
-}
-
 func setupSomeDataSourcePlugins(t *testing.T, s *Service) {
 	t.Helper()
 
-	s.plugins = &fakePluginStore{
-		plugins: map[string]plugins.PluginDTO{
-			datasources.DS_ES: {
-				Signature: "internal",
-			},
-			datasources.DS_PROMETHEUS: {
-				Signature: "internal",
-			},
-			datasources.DS_GRAPHITE: {
-				Signature: "internal",
-			},
-			datasources.DS_MYSQL: {
-				Signature: "internal",
-			},
+	s.plugins = &plugins.FakePluginStore{
+		PluginList: []plugins.PluginDTO{
+			{JSONData: plugins.JSONData{ID: datasources.DS_ES}, Signature: "internal"},
+			{JSONData: plugins.JSONData{ID: datasources.DS_PROMETHEUS}, Signature: "internal"},
+			{JSONData: plugins.JSONData{ID: datasources.DS_GRAPHITE}, Signature: "internal"},
+			{JSONData: plugins.JSONData{ID: datasources.DS_MYSQL}, Signature: "internal"},
 		},
 	}
-}
-
-func (pr fakePluginStore) Plugins(_ context.Context, pluginTypes ...plugins.Type) []plugins.PluginDTO {
-	var result []plugins.PluginDTO
-	for _, v := range pr.plugins {
-		for _, t := range pluginTypes {
-			if v.Type == t {
-				result = append(result, v)
-			}
-		}
-	}
-
-	return result
 }
 
 func createService(t testing.TB, cfg *setting.Cfg, store sqlstore.Store, opts ...func(*serviceOptions)) *Service {
@@ -426,7 +451,7 @@ func createService(t testing.TB, cfg *setting.Cfg, store sqlstore.Store, opts ..
 		cfg,
 		store,
 		&mockSocial{},
-		&fakePluginStore{},
+		&plugins.FakePluginStore{},
 		featuremgmt.WithFeatures("feature1", "feature2"),
 		o.datasources,
 		httpclient.NewProvider(),
