@@ -1,8 +1,7 @@
-import React, { useEffect, useState, useRef } from 'react';
+import { intersection } from 'lodash';
+import React, { useState, useMemo } from 'react';
 
-import { EditorRows, EditorRow, EditorFieldGroup } from '@grafana/experimental';
-import { config } from '@grafana/runtime';
-import { InlineFieldRow } from '@grafana/ui';
+import { EditorFieldGroup, EditorRow, EditorRows } from '@grafana/ui';
 
 import Datasource from '../../datasource';
 import { AzureMonitorErrorish, AzureMonitorOption, AzureMonitorQuery } from '../../types';
@@ -20,6 +19,28 @@ interface ArgQueryEditorProps {
 }
 
 const ERROR_SOURCE = 'arg-subscriptions';
+
+function selectSubscriptions(
+  fetchedSubscriptions: string[],
+  currentSubscriptions?: string[],
+  currentSubscription?: string
+) {
+  let querySubscriptions = currentSubscriptions || [];
+  if (querySubscriptions.length === 0 && currentSubscription) {
+    querySubscriptions = [currentSubscription];
+  }
+  if (querySubscriptions.length === 0 && fetchedSubscriptions.length) {
+    querySubscriptions = [fetchedSubscriptions[0]];
+  }
+  const commonSubscriptions = intersection(querySubscriptions, fetchedSubscriptions);
+  if (fetchedSubscriptions.length && querySubscriptions.length > commonSubscriptions.length) {
+    // If not all of the query subscriptions are in the list of fetched subscriptions, then
+    // select only the ones present (or the first one if none is present)
+    querySubscriptions = commonSubscriptions.length > 0 ? commonSubscriptions : [fetchedSubscriptions[0]];
+  }
+  return querySubscriptions;
+}
+
 const ArgQueryEditor: React.FC<ArgQueryEditorProps> = ({
   query,
   datasource,
@@ -28,88 +49,57 @@ const ArgQueryEditor: React.FC<ArgQueryEditorProps> = ({
   onChange,
   setError,
 }) => {
-  const fetchedRef = useRef(false);
   const [subscriptions, setSubscriptions] = useState<AzureMonitorOption[]>([]);
-
-  useEffect(() => {
-    if (fetchedRef.current) {
-      return;
-    }
-
-    fetchedRef.current = true;
-    datasource.azureMonitorDatasource
+  useMemo(() => {
+    datasource
       .getSubscriptions()
       .then((results) => {
         const fetchedSubscriptions = results.map((v) => ({ label: v.text, value: v.value, description: v.value }));
         setSubscriptions(fetchedSubscriptions);
         setError(ERROR_SOURCE, undefined);
 
-        if (!query.subscriptions?.length && fetchedSubscriptions?.length) {
-          onChange({
-            ...query,
-            subscriptions: [query.subscription ?? fetchedSubscriptions[0].value],
-          });
-        }
+        onChange({
+          ...query,
+          subscriptions: selectSubscriptions(
+            fetchedSubscriptions.map((v) => v.value),
+            query.subscriptions,
+            query.subscription
+          ),
+        });
       })
       .catch((err) => setError(ERROR_SOURCE, err));
-  }, [datasource, onChange, query, setError]);
+    // We are only interested in re-fetching subscriptions if the data source changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [datasource]);
 
-  if (config.featureToggles.azureMonitorExperimentalUI) {
-    return (
-      <span data-testid="azure-monitor-arg-query-editor-with-experimental-ui">
-        <EditorRows>
-          <EditorRow>
-            <EditorFieldGroup>
-              <SubscriptionField
-                multiSelect
-                subscriptions={subscriptions}
-                query={query}
-                datasource={datasource}
-                subscriptionId={subscriptionId}
-                variableOptionGroup={variableOptionGroup}
-                onQueryChange={onChange}
-                setError={setError}
-              />
-            </EditorFieldGroup>
-          </EditorRow>
-        </EditorRows>
-        <QueryField
-          query={query}
-          datasource={datasource}
-          subscriptionId={subscriptionId}
-          variableOptionGroup={variableOptionGroup}
-          onQueryChange={onChange}
-          setError={setError}
-        />
-      </span>
-    );
-  } else {
-    return (
-      <div data-testid="azure-monitor-arg-query-editor">
-        <InlineFieldRow>
-          <SubscriptionField
-            multiSelect
-            subscriptions={subscriptions}
-            query={query}
-            datasource={datasource}
-            subscriptionId={subscriptionId}
-            variableOptionGroup={variableOptionGroup}
-            onQueryChange={onChange}
-            setError={setError}
-          />
-        </InlineFieldRow>
-
-        <QueryField
-          query={query}
-          datasource={datasource}
-          subscriptionId={subscriptionId}
-          variableOptionGroup={variableOptionGroup}
-          onQueryChange={onChange}
-          setError={setError}
-        />
-      </div>
-    );
-  }
+  return (
+    <span data-testid="azure-monitor-arg-query-editor-with-experimental-ui">
+      <EditorRows>
+        <EditorRow>
+          <EditorFieldGroup>
+            <SubscriptionField
+              multiSelect
+              subscriptions={subscriptions}
+              query={query}
+              datasource={datasource}
+              subscriptionId={subscriptionId}
+              variableOptionGroup={variableOptionGroup}
+              onQueryChange={onChange}
+              setError={setError}
+            />
+          </EditorFieldGroup>
+        </EditorRow>
+      </EditorRows>
+      <QueryField
+        query={query}
+        datasource={datasource}
+        subscriptionId={subscriptionId}
+        variableOptionGroup={variableOptionGroup}
+        onQueryChange={onChange}
+        setError={setError}
+      />
+    </span>
+  );
 };
 
 export default ArgQueryEditor;

@@ -100,15 +100,15 @@ func (kn *KafkaNotifier) Notify(ctx context.Context, as ...*types.Alert) (bool, 
 	bodyJSON.Set("alert_state", state)
 	bodyJSON.Set("description", tmpl(DefaultMessageTitleEmbed))
 	bodyJSON.Set("client", "Grafana")
-	bodyJSON.Set("details", tmpl(`{{ template "default.message" . }}`))
+	bodyJSON.Set("details", tmpl(DefaultMessageEmbed))
 
 	ruleURL := joinUrlPath(kn.tmpl.ExternalURL.String(), "/alerting/list", kn.log)
 	bodyJSON.Set("client_url", ruleURL)
 
 	var contexts []interface{}
 	_ = withStoredImages(ctx, kn.log, kn.images,
-		func(index int, image *ngmodels.Image) error {
-			if image != nil && image.URL != "" {
+		func(_ int, image ngmodels.Image) error {
+			if image.URL != "" {
 				imageJSON := simplejson.New()
 				imageJSON.Set("type", "image")
 				imageJSON.Set("src", image.URL)
@@ -140,7 +140,7 @@ func (kn *KafkaNotifier) Notify(ctx context.Context, as ...*types.Alert) (bool, 
 	topicURL := strings.TrimRight(kn.Endpoint, "/") + "/topics/" + tmpl(kn.Topic)
 
 	if tmplErr != nil {
-		kn.log.Warn("failed to template Kafka message", "err", tmplErr.Error())
+		kn.log.Warn("failed to template Kafka message", "error", tmplErr.Error())
 	}
 
 	cmd := &models.SendWebhookSync{
