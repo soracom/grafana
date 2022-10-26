@@ -138,13 +138,13 @@ func (hs *HTTPServer) CreateDashboardSnapshot(c *models.ReqContext) response.Res
 		}
 
 		//restrict snapshots to pro plans only
-		if lagoon.GetPlan(hs.SQLStore, c.Req.Context(), c.OrgId) != lagoon.PlanPro {
+		if lagoon.GetPlan(hs.orgService, c.Req.Context(), c.OrgID) != lagoon.PlanPro {
 			c.JsonApiErr(500, "Failed to create snapshot", errors.New("ERROR: Only PRO plans can make snapshots"))
 			return nil
 		}
 
 		if strings.HasSuffix(cmd.Key, "-live") {
-			hash, err := lagoon.HashWithOrgAccessKey(hs.SQLStore, c.Req.Context(), c.OrgId, cmd.Key)
+			hash, err := lagoon.HashWithOrgAccessKey(hs.DataSourcesService, c.Req.Context(), c.OrgID, cmd.Key)
 
 			if err != nil {
 				c.JsonApiErr(500, "Could not hash delete key", err)
@@ -241,7 +241,7 @@ func (hs *HTTPServer) GetDashboardSnapshot(c *models.ReqContext) response.Respon
 		},
 	}
 
-	cacheSeconds, err := lagoon.TriggerLiveSnapshotIfNecessary(hs.dashboardService, hs.dashboardsnapshotsService, c.Req.Context(), snapshot)
+	cacheSeconds, err := lagoon.TriggerLiveSnapshotIfNecessary(hs.DashboardService, hs.dashboardsnapshotsService, c.Req.Context(), snapshot)
 	if err != nil {
 		return response.Error(500, "Live Snapshot: "+err.Error(), err)
 	}

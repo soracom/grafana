@@ -121,7 +121,7 @@ func (d *DashboardSnapshotStore) GetDashboardSnapshot(ctx context.Context, query
 // true so a one-time update script/lambda/external call can be triggered by the caller
 func (d *DashboardSnapshotStore) CheckDashboardSnapshotUpdateRequired(ctx context.Context, cmd *dashboardsnapshots.CheckDashboardSnapshotUpdateRequiredCommand) error {
 
-	return d.store.WithTransactionalDbSession(ctx, func(sess *sqlstore.DBSession) error {
+	return d.store.WithTransactionalDbSession(ctx, func(sess *db.Session) error {
 		query := &dashboardsnapshots.GetDashboardSnapshotQuery{Key: cmd.Key}
 
 		err := d.GetDashboardSnapshot(ctx, query)

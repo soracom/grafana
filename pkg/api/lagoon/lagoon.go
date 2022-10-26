@@ -19,7 +19,7 @@ import (
 	"github.com/grafana/grafana/pkg/services/dashboards"
 	"github.com/grafana/grafana/pkg/services/dashboardsnapshots"
 	"github.com/grafana/grafana/pkg/services/datasources"
-	"github.com/grafana/grafana/pkg/services/sqlstore"
+	"github.com/grafana/grafana/pkg/services/org"
 )
 
 var (
@@ -39,16 +39,15 @@ const (
 )
 
 // GetPlan returns the Lagoon plan the current org is on
-func GetPlan(sqlstore sqlstore.Store, ctx context.Context, orgID int64) Plan {
-	query := models.GetOrgByIdQuery{Id: orgID}
-	err := sqlstore.GetOrgById(ctx, &query)
+func GetPlan(orgservice org.Service, ctx context.Context, orgID int64) Plan {
+
+	query := org.GetOrgByIdQuery{ID: orgID}
+	org, err := orgservice.GetByID(ctx, &query)
 
 	if err != nil {
 		lagoonLogger.Warn("Failed to get Org ", "orgID", orgID, "error", err)
 		return PlanFree
 	}
-
-	org := query.Result
 
 	if strings.HasSuffix(org.Name, "-"+string(PlanFree)) {
 		return PlanFree
@@ -60,8 +59,8 @@ func GetPlan(sqlstore sqlstore.Store, ctx context.Context, orgID int64) Plan {
 }
 
 // AlertFrequency returns the fastest possible refresh rate for alert evaluation
-func AlertFrequency(sqlstore sqlstore.Store, ctx context.Context, orgID int64) int64 {
-	plan := GetPlan(sqlstore, ctx, orgID)
+func AlertFrequency(orgservice org.Service, ctx context.Context, orgID int64) int64 {
+	plan := GetPlan(orgservice, ctx, orgID)
 
 	switch plan {
 	case PlanFree:
@@ -93,9 +92,9 @@ func IsMakerPlan(orgName string) bool {
 	return len(orgName) > 0
 }
 
-func HashWithOrgAccessKey(sqlstore sqlstore.Store, ctx context.Context, orgID int64, hashme string) (string, error) {
+func HashWithOrgAccessKey(dsService datasources.DataSourceService, ctx context.Context, orgID int64, hashme string) (string, error) {
 
-	ak, err := GetOrgAccessKey(sqlstore, ctx, orgID)
+	ak, err := GetOrgAccessKey(dsService, ctx, orgID)
 
 	if err != nil {
 		return "", err
@@ -108,12 +107,10 @@ func HashWithOrgAccessKey(sqlstore sqlstore.Store, ctx context.Context, orgID in
 }
 
 // This returns the first harvest access key it finds for the Org
-func GetOrgAccessKey(sqlstore sqlstore.Store, ctx context.Context, orgID int64) (string, error) {
-
+func GetOrgAccessKey(dsService datasources.DataSourceService, ctx context.Context, orgID int64) (string, error) {
 	query := datasources.GetDataSourcesQuery{OrgId: orgID, DataSourceLimit: 5}
-	err := sqlstore.GetDataSources(ctx, &query)
 
-	if err != nil {
+	if err := dsService.GetDataSources(ctx, &query); err != nil {
 		return "", err
 	}
 
