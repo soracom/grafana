@@ -64,6 +64,10 @@ func (s *ServiceImpl) GetDashboardSnapshot(ctx context.Context, query *dashboard
 	return err
 }
 
+func (s *ServiceImpl) CheckDashboardSnapshotUpdateRequired(ctx context.Context, cmd *dashboardsnapshots.CheckDashboardSnapshotUpdateRequiredCommand) error {
+	return s.store.CheckDashboardSnapshotUpdateRequired(ctx, cmd)
+}
+
 func (s *ServiceImpl) DeleteDashboardSnapshot(ctx context.Context, cmd *dashboardsnapshots.DeleteDashboardSnapshotCommand) error {
 	return s.store.DeleteDashboardSnapshot(ctx, cmd)
 }

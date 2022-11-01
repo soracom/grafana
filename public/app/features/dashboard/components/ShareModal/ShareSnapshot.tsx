@@ -1,8 +1,8 @@
 import React, { PureComponent } from 'react';
 
-import { SelectableValue } from '@grafana/data';
+import { dateMath, SelectableValue } from '@grafana/data';
 import { getBackendSrv, reportInteraction } from '@grafana/runtime';
-import { Button, ClipboardButton, Field, Input, LinkButton, Modal, Select, Spinner } from '@grafana/ui';
+import { Button, ClipboardButton, Field, Input, LinkButton, Modal, Select, Spinner, Switch } from '@grafana/ui';
 import { t, Trans } from 'app/core/internationalization';
 import { getTimeSrv } from 'app/features/dashboard/services/TimeSrv';
 import { DashboardModel, PanelModel } from 'app/features/dashboard/state';
@@ -26,6 +26,7 @@ interface State {
   timeoutSeconds: number;
   externalEnabled: boolean;
   sharingButtonText: string;
+  snapshotAutoUpdate: boolean;
 }
 
 export class ShareSnapshot extends PureComponent<Props, State> {
@@ -64,6 +65,7 @@ export class ShareSnapshot extends PureComponent<Props, State> {
       deleteUrl: '',
       externalEnabled: false,
       sharingButtonText: '',
+      snapshotAutoUpdate: false,
     };
   }
 
@@ -81,7 +83,7 @@ export class ShareSnapshot extends PureComponent<Props, State> {
   }
 
   createSnapshot = (external?: boolean) => () => {
-    const { timeoutSeconds } = this.state;
+    let { snapshotAutoUpdate, timeoutSeconds } = this.state;
     this.dashboard.snapshot = {
       timestamp: new Date(),
     };
@@ -90,15 +92,39 @@ export class ShareSnapshot extends PureComponent<Props, State> {
       this.dashboard.snapshot.originalUrl = window.location.href;
     }
 
+    // For live snapshots any time ranges not relative or greater than 24 hours use the default last 6 hours range.
+    if (snapshotAutoUpdate) {
+      // we want to make sure we have enough time if being run as lambda
+      timeoutSeconds = 10;
+      let nextRange;
+      const fromMoment = dateMath.parse(this.dashboard.time.from);
+      const toMoment = dateMath.parse(this.dashboard.time.to);
+      if (this.dashboard.time.to !== 'now') {
+        nextRange = {
+          from: 'now-6h',
+          to: 'now',
+        };
+      } else if (!toMoment || !fromMoment || toMoment?.diff(fromMoment, 'hours') > 24) {
+        nextRange = {
+          from: 'now-24h',
+          to: 'now',
+        };
+      }
+
+      if (nextRange) {
+        getTimeSrv().setTime(nextRange);
+      }
+    }
+
     this.setState({ isLoading: true });
     this.dashboard.startRefresh();
 
     setTimeout(() => {
-      this.saveSnapshot(this.dashboard, external);
+      this.saveSnapshot(this.dashboard, external, snapshotAutoUpdate);
     }, timeoutSeconds * 1000);
   };
 
-  saveSnapshot = async (dashboard: DashboardModel, external?: boolean) => {
+  saveSnapshot = async (dashboard: DashboardModel, external?: boolean, live?: boolean) => {
     const { snapshotExpires } = this.state;
     const dash = this.dashboard.getSaveModelClone();
     this.scrubDashboard(dash);
@@ -108,7 +134,11 @@ export class ShareSnapshot extends PureComponent<Props, State> {
       name: dash.title,
       expires: snapshotExpires,
       external: external,
+      key: '',
     };
+    if (live) {
+      cmdData.key = this.dashboard.uid + '-live';
+    }
 
     try {
       const results: { deleteUrl: string; url: string } = await getBackendSrv().post(snapshotApiUrl, cmdData);
@@ -210,10 +240,21 @@ export class ShareSnapshot extends PureComponent<Props, State> {
     });
   };
 
+  onSnapshotAutoUpdateChange = () => {
+    this.setState({ snapshotAutoUpdate: !this.state.snapshotAutoUpdate });
+  };
+
   renderStep1() {
     const { onDismiss } = this.props;
-    const { snapshotName, selectedExpireOption, timeoutSeconds, isLoading, sharingButtonText, externalEnabled } =
-      this.state;
+    const {
+      snapshotName,
+      snapshotAutoUpdate,
+      selectedExpireOption,
+      timeoutSeconds,
+      isLoading,
+      sharingButtonText,
+      externalEnabled,
+    } = this.state;
 
     const snapshotNameTranslation = t('share-modal.snapshot.name', `Snapshot name`);
     const expireTranslation = t('share-modal.snapshot.expire', `Expire`);
@@ -255,6 +296,39 @@ export class ShareSnapshot extends PureComponent<Props, State> {
         <Field label={timeoutTranslation} description={timeoutDescriptionTranslation}>
           <Input id="timeout-input" type="number" width={21} value={timeoutSeconds} onChange={this.onTimeoutChange} />
         </Field>
+        <Field
+          label="Automatically Update (Beta)"
+          description="Enabling this will automatically update the snapshot to most recent data whenever possible."
+        >
+          <Switch id="auto-update-snapshot" value={snapshotAutoUpdate} onChange={this.onSnapshotAutoUpdateChange} />
+        </Field>
+        {snapshotAutoUpdate && (
+          <div id="auto-update-snapshot-message">
+            Updating Snapshot Notes:
+            <ul className="share-modal-info-text" style={{ marginLeft: '20px' }}>
+              <li>
+                Selected <strong>timerange may change</strong> if greater than 24 hours or not relative to the current
+                time.
+              </li>
+              <li>
+                Snapshots will <strong>fail to update</strong> if the original dashboard is deleted.
+              </li>
+              <li>
+                High data queries <strong>may time out</strong> and result in an error. If this occurs please reduce the
+                time range and try again.
+              </li>
+            </ul>
+          </div>
+        )}
+        {!snapshotAutoUpdate && (
+          <Field
+            label="Timeout (seconds)"
+            description="You may need to configure the timeout value if it takes a long time to collect your dashboard's
+            metrics."
+          >
+            <Input type="number" width={21} value={timeoutSeconds} onChange={this.onTimeoutChange} />
+          </Field>
+        )}
 
         <Modal.ButtonRow>
           <Button variant="secondary" onClick={onDismiss} fill="outline">

@@ -96,6 +96,13 @@ type GetDashboardSnapshotQuery struct {
 	Result *DashboardSnapshot
 }
 
+type CheckDashboardSnapshotUpdateRequiredCommand struct {
+	Key   string
+	Since time.Time
+
+	UpdateRequired bool
+}
+
 type DashboardSnapshotsList []*DashboardSnapshotDTO
 
 type GetDashboardSnapshotsQuery struct {

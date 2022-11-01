@@ -5,6 +5,7 @@ import (
 )
 
 type Store interface {
+	CheckDashboardSnapshotUpdateRequired(context.Context, *CheckDashboardSnapshotUpdateRequiredCommand) error
 	CreateDashboardSnapshot(context.Context, *CreateDashboardSnapshotCommand) error
 	DeleteDashboardSnapshot(context.Context, *DeleteDashboardSnapshotCommand) error
 	DeleteExpiredSnapshots(context.Context, *DeleteExpiredSnapshotsCommand) error
