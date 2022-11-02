@@ -39,7 +39,7 @@ RUN go mod verify
 RUN make build-go
 
 # Final stage
-FROM public.ecr.aws/docker/library/node:alpine3.15.6
+FROM public.ecr.aws/docker/library/node:alpine3.15
 
 LABEL maintainer="Grafana team <hello@grafana.com>"
 
