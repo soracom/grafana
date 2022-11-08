@@ -31,7 +31,7 @@ type Service interface {
 }
 
 var mailTemplates *template.Template
-var tmplResetPassword = "reset_password"
+var tmplResetPassword = "lagoon_reset_password"
 var tmplSignUpStarted = "signup_started"
 var tmplWelcomeOnSignUp = "welcome_on_signup"
 
