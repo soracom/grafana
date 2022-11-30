@@ -220,7 +220,11 @@ func (hs *HTTPServer) getFrontendSettingsMap(c *models.ReqContext) (map[string]i
 
 	features, ok := jsonObj["featureToggles"].(map[string]bool)
 	if ok {
-		features["publicDashboards"] = lagoon.PublicDashboardsEnabledForPlan(plan)
+		if pdEnabled, ok := features["publicDashboards"]; ok {
+			if pdEnabled {
+				features["publicDashboards"] = lagoon.PublicDashboardsEnabledForPlan(plan)
+			}
+		}
 	}
 	// Lagoon Custom Settings End
 
