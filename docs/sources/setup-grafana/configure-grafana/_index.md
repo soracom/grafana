@@ -71,6 +71,9 @@ client_secret = 0ldS3cretKey
 
 [plugin.grafana-image-renderer]
 rendering_ignore_https_errors = true
+
+[feature_toggles]
+enable = newNavigation
 ```
 
 You can override them on Linux machines with:
@@ -80,6 +83,7 @@ export GF_DEFAULT_INSTANCE_NAME=my-instance
 export GF_SECURITY_ADMIN_USER=owner
 export GF_AUTH_GOOGLE_CLIENT_SECRET=newS3cretKey
 export GF_PLUGIN_GRAFANA_IMAGE_RENDERER_RENDERING_IGNORE_HTTPS_ERRORS=true
+export GF_FEATURE_TOGGLES_ENABLE=newNavigation
 ```
 
 ## Variable expansion
@@ -257,9 +261,20 @@ Path to the certificate file (if `protocol` is set to `https` or `h2`).
 
 Path to the certificate key file (if `protocol` is set to `https` or `h2`).
 
+### socket_gid
+
+GID where the socket should be set when `protocol=socket`.
+Make sure that the target group is in the group of Grafana process and that Grafana process is the file owner before you change this setting.
+It is recommended to set the gid as http server user gid.
+Not set when the value is -1.
+
+### socket_mode
+
+Mode where the socket should be set when `protocol=socket`. Make sure that Grafana process is the file owner before you change this setting.
+
 ### socket
 
-Path where the socket should be created when `protocol=socket`. Make sure that Grafana has appropriate permissions before you change this setting.
+Path where the socket should be created when `protocol=socket`. Make sure Grafana has appropriate permissions for that path before you change this setting.
 
 ### cdn_url
 
@@ -542,7 +557,7 @@ Default is `admin`.
 
 The password of the default Grafana Admin. Set once on first-run. Default is `admin`.
 
-# admin_email
+### admin_email
 
 The email of the default Grafana Admin, created on startup. Default is `admin@localhost`.
 
@@ -1746,6 +1761,10 @@ Storage account key
 ### container_name
 
 Container name where to store "Blob" images with random names. Creating the blob container beforehand is required. Only public containers are supported.
+
+### sas_token_expiration_days
+
+Number of days for SAS token validity. If specified SAS token will be attached to image URL. Allow storing images in private containers.
 
 <hr>
 
