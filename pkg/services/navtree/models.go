@@ -67,6 +67,8 @@ type NavLink struct {
 	HighlightText    string     `json:"highlightText,omitempty"`
 	HighlightID      string     `json:"highlightId,omitempty"`
 	EmptyMessageId   string     `json:"emptyMessageId,omitempty"`
+	PluginID         string     `json:"pluginId,omitempty"` // (Optional) The ID of the plugin that registered nav link (e.g. as a standalone plugin page)
+	IsCreateAction   bool       `json:"isCreateAction,omitempty"`
 }
 
 func (node *NavLink) Sort() {
