@@ -20,7 +20,7 @@ COPY emails emails
 ENV NODE_ENV production
 RUN yarn build
 
-FROM public.ecr.aws/docker/library/golang:1.19.2-alpine3.15 as go-builder
+FROM public.ecr.aws/docker/library/golang:1.19.3-alpine3.15 as go-builder
 
 RUN apk add --no-cache gcc g++ make
 
@@ -34,6 +34,7 @@ COPY pkg pkg
 COPY scripts scripts
 COPY cue.mod cue.mod
 COPY .bingo .bingo
+COPY kinds kinds
 
 RUN go mod verify
 RUN make build-go
@@ -58,8 +59,6 @@ ENV PATH="/usr/share/grafana/bin:$PATH" \
 WORKDIR $GF_PATHS_HOME
 
 RUN apk add --no-cache ca-certificates bash tzdata musl-utils
-RUN apk add --no-cache openssl ncurses-libs ncurses-terminfo-base --repository=http://dl-cdn.alpinelinux.org/alpine/edge/main
-RUN apk upgrade ncurses-libs ncurses-terminfo-base --repository=http://dl-cdn.alpinelinux.org/alpine/edge/main
 RUN apk info -vv | sort
 
 COPY conf ./conf
