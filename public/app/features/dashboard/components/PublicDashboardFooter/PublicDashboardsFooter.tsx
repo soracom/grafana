@@ -31,9 +31,9 @@ export function setPublicDashboardFooterConfigFn(fn: typeof getPublicDashboardFo
 }
 export let getPublicDashboardFooterConfig = (): PublicDashboardFooterCfg => ({
   hide: false,
-  text: 'powered by Grafana',
-  logo: 'public/img/grafana_icon.svg',
-  link: 'https://grafana.com/',
+  text: 'powered by SORACOM Lagoon',
+  logo: 'public/img/lagoon-logo-cl.svg',
+  link: 'https://soracom.jp/',
 });
 
 const getStyles = (theme: GrafanaTheme2) => ({
