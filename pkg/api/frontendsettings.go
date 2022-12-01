@@ -219,7 +219,7 @@ func (hs *HTTPServer) getFrontendSettingsMap(c *models.ReqContext) (map[string]i
 	jsonObj["alertingMinInterval"] = minRefresh
 
 	features, ok := jsonObj["featureToggles"].(map[string]bool)
-	if ok {
+	if ok && !c.IsPublicDashboardView {
 		features["publicDashboards"] = lagoon.PublicDashboardsEnabledForPlan(plan)
 	}
 	// Lagoon Custom Settings End
