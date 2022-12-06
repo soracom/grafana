@@ -42,7 +42,8 @@ function getTabs(props: Props) {
   const linkLabel = t('share-modal.tab-title.link', 'Link');
   const tabs: ShareModalTabModel[] = [{ label: linkLabel, value: 'link', component: ShareLink }];
 
-  if (contextSrv.isSignedIn) {
+  const operatorId = config.bootData.user.orgName || '';
+  if (contextSrv.isSignedIn && operatorId.endsWith('-PRO')) {
     const snapshotLabel = t('share-modal.tab-title.snapshot', 'Snapshot');
     tabs.push({ label: snapshotLabel, value: 'snapshot', component: ShareSnapshot });
   }

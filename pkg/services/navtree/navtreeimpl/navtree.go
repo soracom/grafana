@@ -7,6 +7,7 @@ import (
 	"github.com/grafana/grafana/pkg/api/dtos"
 	"github.com/grafana/grafana/pkg/infra/kvstore"
 	"github.com/grafana/grafana/pkg/infra/log"
+	"github.com/grafana/grafana/pkg/lagoon"
 	"github.com/grafana/grafana/pkg/models"
 	"github.com/grafana/grafana/pkg/plugins"
 	ac "github.com/grafana/grafana/pkg/services/accesscontrol"
@@ -370,7 +371,7 @@ func (s *ServiceImpl) buildDashboardNavLinks(c *models.ReqContext, hasEditPerm b
 		Text: "Playlists", SubTitle: "Groups of dashboards that are displayed in a sequence", Id: "dashboards/playlists", Url: s.cfg.AppSubURL + "/playlists", Icon: "presentation-play",
 	})
 
-	if c.IsSignedIn {
+	if c.IsSignedIn && lagoon.IsProPlan(c.OrgName) {
 		dashboardChildNavs = append(dashboardChildNavs, &navtree.NavLink{
 			Text:     "Snapshots",
 			SubTitle: "Interactive, publically available, point-in-time representations of dashboards",
