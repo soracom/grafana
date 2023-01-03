@@ -236,7 +236,7 @@ func (s *ServiceImpl) getHomeNode(c *models.ReqContext, prefs *pref.Preference) 
 
 func (s *ServiceImpl) addHelpLinks(treeRoot *navtree.NavTreeRoot, c *models.ReqContext) {
 	if setting.HelpEnabled {
-		helpVersion := fmt.Sprintf(`%s v%s (%s)`, setting.ApplicationName, setting.BuildVersion, setting.BuildCommit)
+		helpVersion := fmt.Sprintf(`%s v%s (%s)`, setting.ApplicationName, "3", setting.BuildCommit)
 		if s.cfg.AnonymousHideVersion && !c.IsSignedIn {
 			helpVersion = setting.ApplicationName
 		}
