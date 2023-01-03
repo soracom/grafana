@@ -48,7 +48,7 @@ const (
 	Dev              = "development"
 	Prod             = "production"
 	Test             = "test"
-	ApplicationName  = "Grafana"
+	ApplicationName  = "Lagoon"
 )
 
 // zoneInfo names environment variable for setting the path to look for the timezone database in go
