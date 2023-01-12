@@ -442,12 +442,12 @@ func (st DBstore) GetAlertRulesForScheduling(ctx context.Context, query *ngmodel
 	}
 	var rules []*ngmodels.AlertRule
 	return st.SQLStore.WithDbSession(ctx, func(sess *db.Session) error {
-		foldersSql := "SELECT D.uid, D.title FROM dashboard AS D WHERE is_folder IS TRUE AND EXISTS (SELECT 1 FROM alert_rule AS A WHERE D.uid = A.namespace_uid)"
-		alertRulesSql := "SELECT * FROM alert_rule"
+		foldersSql := "SELECT D.uid, D.title FROM dashboard AS D WHERE is_folder IS TRUE AND EXISTS (SELECT 1 FROM alert_rule AS A WHERE D.uid = A.namespace_uid AND A.labels NOT LIKE '%ALERT_DISABLED%')"
+		alertRulesSql := "SELECT * FROM alert_rule WHERE labels NOT LIKE '%ALERT_DISABLED%'"
 		filter, args := st.getFilterByOrgsString()
 		if filter != "" {
 			foldersSql += " AND " + filter
-			alertRulesSql += " WHERE " + filter
+			alertRulesSql += " AND " + filter
 		}
 
 		if err := sess.SQL(alertRulesSql, args...).Find(&rules); err != nil {
@@ -463,6 +463,7 @@ func (st DBstore) GetAlertRulesForScheduling(ctx context.Context, query *ngmodel
 				query.ResultFoldersTitles[folder.Uid] = folder.Title
 			}
 		}
+		fmt.Println("Alerts found:", len(rules), " Folders:", len(folders))
 		return nil
 	})
 }
