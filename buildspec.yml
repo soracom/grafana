@@ -18,6 +18,7 @@ env:
 phases:
   pre_build:
     commands:
+      - ./scripts/build-soracom/precheck.sh
       - echo "$hgd_id" > scripts/build-soracom/deploy_keys/harvest-grafana-datasource/id_rsa
       - echo "$hgd_idpub" > scripts/build-soracom/deploy_keys/harvest-grafana-datasource/id_rsa.pub
       - echo "$smp_id" > scripts/build-soracom/deploy_keys/soracom-map-panel/id_rsa
