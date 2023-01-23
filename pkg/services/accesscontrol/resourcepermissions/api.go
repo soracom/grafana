@@ -3,7 +3,9 @@ package resourcepermissions
 import (
 	"fmt"
 	"net/http"
+	"os"
 	"strconv"
+	"strings"
 
 	"github.com/grafana/grafana/pkg/api/dtos"
 	"github.com/grafana/grafana/pkg/api/response"
@@ -133,7 +135,37 @@ func (a *api) getPermissions(c *models.ReqContext) response.Response {
 		}
 	}
 
+	if !c.SignedInUser.IsGrafanaAdmin {
+		dto = filterAdminUsers(dto)
+	}
+
+	//need to add a filter here
 	return response.JSON(http.StatusOK, dto)
+}
+
+func filterAdminUsers(inDTOs []resourcePermissionDTO) []resourcePermissionDTO {
+
+	outDTOs := []resourcePermissionDTO{}
+	for _, dto := range inDTOs {
+		if dto.BuiltInRole == "Admin" || isSoracomAdminUser(dto.UserLogin) {
+			continue
+		}
+		outDTOs = append(outDTOs, dto)
+	}
+	return outDTOs
+}
+
+var adminUsers = os.Getenv("LAGOON_ADMIN_USERNAMES")
+
+func isSoracomAdminUser(user string) bool {
+	users := strings.Split(adminUsers, ",")
+
+	for _, adminName := range users {
+		if user == adminName {
+			return true
+		}
+	}
+	return false
 }
 
 type setPermissionCommand struct {
