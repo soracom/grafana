@@ -12,14 +12,19 @@ Hash: SHA512
     "https://jp-v2.lagoon.soracom.io/",
     "https://jp-v2-staging.lagoon.soracom.io/",
     "https://jp-v2-dev.lagoon.soracom.io/",
-    "https://g-v2.lagoon.soracom.io/",
+    "https://jp-v3.lagoon.soracom.io/",
+    "https://jp-v3-dev.lagoon.soracom.io/",
+    "https://jp-v3-staging.lagoon.soracom.io/",
+    "https://g.lagoon.soracom.io/",
     "https://g-v2.lagoon.soracom.io/",
     "https://g-v2-staging.lagoon.soracom.io/",
+    "https://g-v3.lagoon.soracom.io/",
+    "https://g-v3-staging.lagoon.soracom.io/",
     "http://localhost:3000/"
   ],
   "plugin": "grafana-clock-panel",
   "version": "1.1.0-dev",
-  "time": 1617245890944,
+  "time": 1674548249335,
   "keyId": "7e4d0c6a708866e7",
   "files": {
     "LICENSE": "b46400c1ab5630edeb4e43b240a027d203375ebe5a9efb7de88c604c5c5cace0",
@@ -36,12 +41,13 @@ Hash: SHA512
   }
 }
 -----BEGIN PGP SIGNATURE-----
-Version: OpenPGP.js v4.10.1
+Version: OpenPGP.js v4.10.10
 Comment: https://openpgpjs.org
 
-wqEEARMKAAYFAmBlNsMACgkQfk0ManCIZuehlgIJAUHScHgUj3VaAlqfuSds
-T8VIlL35eJJi2wP952YOJCk4xhgPbw/WCZ/VO3eZlSF7Z+4uCABzO+Yr9YYY
-SDMLQoQcAgdDxbQcQHbSdCJg313AGkwMTY9OeMUOnmiRKs5mvt9g8a+mEGxj
-k+uv6WJ8W03ap6QILeXcCo7w/6UBDphBpKqmDg==
-=PtBj
+wrcEARMKAAYFAmPPlBkAIQkQfk0ManCIZucWIQTzOyW2kQdOhGNlcPN+TQxq
+cIhm5/OvAgQIQ6TlNYm/JD+F7j60a1PKOiBtoJkUUDTyzBO/Rw/a4DO6JGQR
+Cn7TF8hKJdLIaTBlitFqE6R55bipC3bENugUdgIHbu2z1XmJzj3hQedzfBAW
+yZpr8V/3+ne2Js7DWj4YCm6ruOT0ak1DTeSjOK9rLbQVqKXc3CDpiDungXIw
+/eEVMPE=
+=iDzX
 -----END PGP SIGNATURE-----
