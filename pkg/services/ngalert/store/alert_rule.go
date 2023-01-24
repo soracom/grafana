@@ -463,7 +463,7 @@ func (st DBstore) GetAlertRulesForScheduling(ctx context.Context, query *ngmodel
 				query.ResultFoldersTitles[folder.Uid] = folder.Title
 			}
 		}
-		fmt.Println("Alerts found:", len(rules), " Folders:", len(folders))
+		st.Logger.Info("Alerts found for processing", "numAlerts", len(rules), "numFolders", len(folders))
 		return nil
 	})
 }
