@@ -8,12 +8,14 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/grafana/grafana/pkg/api/response"
 	"github.com/grafana/grafana/pkg/models"
 	"github.com/grafana/grafana/pkg/services/org"
+	"github.com/grafana/grafana/pkg/web"
 )
 
 var ImageLinkerUrl = os.Getenv("IMAGE_LINKER_URL")
@@ -39,7 +41,12 @@ func generateSignature(key string, signType string, orgName string, signTime str
 // GetLogoUploadLink GET /api/orgs/images/link
 func (hs *HTTPServer) GetLogoUploadLink(c *models.ReqContext) response.Response {
 
-	query := org.GetOrgByIdQuery{ID: c.OrgID}
+	orgId, err := strconv.ParseInt(web.Params(c.Req)[":orgId"], 10, 64)
+	if err != nil {
+		return response.Error(http.StatusBadRequest, "orgId is invalid", err)
+	}
+
+	query := org.GetOrgByIdQuery{ID: orgId}
 
 	res, err := hs.orgService.GetByID(c.Req.Context(), &query)
 	if err != nil {
