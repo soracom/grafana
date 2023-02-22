@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -12,6 +14,18 @@ import (
 
 	"github.com/grafana/grafana/pkg/expr/mathexp"
 )
+
+var ResampleMaxPoints = 2500
+
+func init() {
+	if os.Getenv("LAGOON_RESAMPLE_MAX_POINTS") != "" {
+		rmpstring := os.Getenv("LAGOON_RESAMPLE_MAX_POINTS")
+		rmp, err := strconv.Atoi(rmpstring)
+		if err == nil {
+			ResampleMaxPoints = rmp
+		}
+	}
+}
 
 // Command is an interface for all expression commands.
 type Command interface {
@@ -198,6 +212,14 @@ func NewResampleCommand(refID, rawWindow, varToResample string, downsampler stri
 	if err != nil {
 		return nil, fmt.Errorf(`failed to parse resample "window" duration field %q: %w`, window, err)
 	}
+
+	// lets try to limit the window/interval to a reasonable value
+	backendTimeRange := tr.AbsoluteTime(time.Now())
+	newSeriesLength := int(float64(backendTimeRange.To.Sub(backendTimeRange.From).Nanoseconds()) / float64(window.Nanoseconds()))
+	if newSeriesLength > ResampleMaxPoints {
+		return nil, fmt.Errorf(`resample "window" duration field %q is too low for the selected time range. %d points required but only %d allowed`, rawWindow, newSeriesLength, ResampleMaxPoints)
+	}
+
 	return &ResampleCommand{
 		Window:        window,
 		VarToResample: varToResample,
