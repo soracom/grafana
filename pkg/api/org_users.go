@@ -167,18 +167,14 @@ func (hs *HTTPServer) GetOrgUsersForCurrentOrgLookup(c *models.ReqContext) respo
 		})
 	}
 
-	if !c.SignedInUser.IsGrafanaAdmin {
-		result = filterAdminUsers(result)
-	}
-
 	return response.JSON(http.StatusOK, result)
 }
 
-func filterAdminUsers(inDTOs []*dtos.UserLookupDTO) []*dtos.UserLookupDTO {
+func filterAdminUsers(inDTOs []*org.OrgUserDTO) []*org.OrgUserDTO {
 
-	outDTOs := make([]*dtos.UserLookupDTO, 0)
+	outDTOs := make([]*org.OrgUserDTO, 0)
 	for _, dto := range inDTOs {
-		if isSoracomAdminUser(dto.Login) {
+		if isSoracomAdminUser(dto.Login) || dto.Role == "Admin" {
 			continue
 		}
 		outDTOs = append(outDTOs, dto)
@@ -258,6 +254,10 @@ func (hs *HTTPServer) getOrgUsersHelper(c *models.ReqContext, query *org.GetOrgU
 		for i := range filteredUsers {
 			filteredUsers[i].AccessControl = accessControlMetadata[fmt.Sprint(filteredUsers[i].UserID)]
 		}
+	}
+
+	if !c.SignedInUser.IsGrafanaAdmin {
+		filteredUsers = filterAdminUsers(filteredUsers)
 	}
 
 	return filteredUsers, nil
