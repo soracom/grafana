@@ -73,6 +73,10 @@ export const Permissions = ({
   };
 
   const onRemove = (item: ResourcePermission) => {
+    if (!okToChangeOrRemove(item, '')) {
+      alert('Cannot remove last Admin');
+      return;
+    }
     let promise: Promise<void> | null = null;
     if (item.userId) {
       promise = setUserPermission(resource, resourceId, item.userId, EMPTY_PERMISSION);
@@ -88,6 +92,10 @@ export const Permissions = ({
   };
 
   const onChange = (item: ResourcePermission, permission: string) => {
+    if (!okToChangeOrRemove(item, permission)) {
+      alert('Cannot remove last Admin');
+      return;
+    }
     if (item.permission === permission) {
       return;
     }
@@ -98,6 +106,22 @@ export const Permissions = ({
     } else if (item.builtInRole) {
       onAdd({ permission, builtInRole: item.builtInRole, target: PermissionTarget.BuiltInRole });
     }
+  };
+
+  const okToChangeOrRemove = (item: ResourcePermission, permission = '') => {
+    let numAdmins = 0;
+    items.forEach((itm: ResourcePermission) => {
+      if (itm.permission === 'Admin') {
+        numAdmins++;
+      }
+    });
+    if (numAdmins > 1) {
+      return true;
+    }
+    if (item.permission === 'Admin' && permission !== 'Admin') {
+      return false;
+    }
+    return true;
   };
 
   const teams = useMemo(
