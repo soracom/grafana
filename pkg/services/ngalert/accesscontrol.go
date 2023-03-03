@@ -48,10 +48,10 @@ var (
 					Action: accesscontrol.ActionAlertingRuleDelete,
 					Scope:  dashboards.ScopeFoldersAll,
 				},
-				{
-					Action: accesscontrol.ActionAlertingRuleExternalWrite,
-					Scope:  datasources.ScopeAll,
-				},
+				// {
+				// 	Action: accesscontrol.ActionAlertingRuleExternalWrite,
+				// 	Scope:  datasources.ScopeAll,
+				// },
 			}),
 		},
 	}
