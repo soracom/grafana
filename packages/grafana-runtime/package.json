@@ -2,7 +2,7 @@
   "author": "Grafana Labs",
   "license": "Apache-2.0",
   "name": "@grafana/runtime",
-  "version": "9.3.0-beta.1",
+  "version": "9.3.9",
   "description": "Grafana Runtime Library",
   "keywords": [
     "grafana",
@@ -32,13 +32,15 @@
     "build": "tsc -p ./tsconfig.build.json && rollup -c rollup.config.ts",
     "bundle": "rollup -c rollup.config.ts",
     "clean": "rimraf ./dist ./compiled ./package.tgz",
-    "typecheck": "tsc --emitDeclarationOnly false --noEmit"
+    "typecheck": "tsc --emitDeclarationOnly false --noEmit",
+    "prepack": "cp package.json package.json.bak && node ../../scripts/prepare-packagejson.js",
+    "postpack": "mv package.json.bak package.json"
   },
   "dependencies": {
-    "@grafana/data": "9.3.0-beta.1",
-    "@grafana/e2e-selectors": "9.3.0-beta.1",
+    "@grafana/data": "9.3.9",
+    "@grafana/e2e-selectors": "9.3.9",
     "@grafana/faro-web-sdk": "1.0.0-beta2",
-    "@grafana/ui": "9.3.0-beta.1",
+    "@grafana/ui": "9.3.9",
     "@sentry/browser": "6.19.7",
     "history": "4.10.1",
     "lodash": "4.17.21",

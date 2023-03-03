@@ -188,6 +188,11 @@ func (h *ContextHandler) Middleware(next http.Handler) http.Handler {
 			}
 		}
 
+		// this can be used by proxies to identify certain users
+		if h.features.IsEnabled(featuremgmt.FlagReturnUnameHeader) {
+			w.Header().Add("grafana-uname", reqContext.Login)
+		}
+
 		next.ServeHTTP(w, r)
 	})
 }
@@ -280,18 +285,23 @@ func (h *ContextHandler) initContextWithAPIKey(reqContext *models.ReqContext) bo
 	*reqContext.Req = *reqContext.Req.WithContext(ctx)
 
 	var (
-		apikey *apikey.APIKey
+		apiKey *apikey.APIKey
 		errKey error
 	)
 	if strings.HasPrefix(keyString, apikeygenprefix.GrafanaPrefix) {
-		apikey, errKey = h.getPrefixedAPIKey(reqContext.Req.Context(), keyString) // decode prefixed key
+		apiKey, errKey = h.getPrefixedAPIKey(reqContext.Req.Context(), keyString) // decode prefixed key
 	} else {
-		apikey, errKey = h.getAPIKey(reqContext.Req.Context(), keyString) // decode legacy api key
+		apiKey, errKey = h.getAPIKey(reqContext.Req.Context(), keyString) // decode legacy api key
 	}
 
 	if errKey != nil {
 		status := http.StatusInternalServerError
 		if errors.Is(errKey, apikeygen.ErrInvalidApiKey) {
+			status = http.StatusUnauthorized
+		}
+		// this is when the getPrefixAPIKey return error form the apikey package instead of the apikeygen
+		// when called in the sqlx store methods
+		if errors.Is(errKey, apikey.ErrInvalid) {
 			status = http.StatusUnauthorized
 		}
 		reqContext.JsonApiErr(status, InvalidAPIKey, errKey)
@@ -303,30 +313,36 @@ func (h *ContextHandler) initContextWithAPIKey(reqContext *models.ReqContext) bo
 	if getTime == nil {
 		getTime = time.Now
 	}
-	if apikey.Expires != nil && *apikey.Expires <= getTime().Unix() {
+	if apiKey.Expires != nil && *apiKey.Expires <= getTime().Unix() {
 		reqContext.JsonApiErr(http.StatusUnauthorized, "Expired API key", nil)
 		return true
 	}
 
-	if apikey.IsRevoked != nil && *apikey.IsRevoked {
+	if apiKey.IsRevoked != nil && *apiKey.IsRevoked {
 		reqContext.JsonApiErr(http.StatusUnauthorized, "Revoked token", nil)
 
 		return true
 	}
 
-	// update api_key last used date
-	if err := h.apiKeyService.UpdateAPIKeyLastUsedDate(reqContext.Req.Context(), apikey.Id); err != nil {
-		reqContext.JsonApiErr(http.StatusInternalServerError, InvalidAPIKey, errKey)
-		return true
-	}
+	// non-blocking update api_key last used date
+	go func(id int64) {
+		defer func() {
+			if err := recover(); err != nil {
+				reqContext.Logger.Error("api key authentication panic", "err", err)
+			}
+		}()
+		if err := h.apiKeyService.UpdateAPIKeyLastUsedDate(context.Background(), id); err != nil {
+			reqContext.Logger.Warn("failed to update last use date for api key", "id", id)
+		}
+	}(apiKey.Id)
 
-	if apikey.ServiceAccountId == nil || *apikey.ServiceAccountId < 1 { //There is no service account attached to the apikey
+	if apiKey.ServiceAccountId == nil || *apiKey.ServiceAccountId < 1 { //There is no service account attached to the apikey
 		// Use the old APIkey method.  This provides backwards compatibility.
 		// will probably have to be supported for a long time.
 		reqContext.SignedInUser = &user.SignedInUser{}
-		reqContext.OrgRole = apikey.Role
-		reqContext.ApiKeyID = apikey.Id
-		reqContext.OrgID = apikey.OrgId
+		reqContext.OrgRole = apiKey.Role
+		reqContext.ApiKeyID = apiKey.Id
+		reqContext.OrgID = apiKey.OrgId
 		reqContext.IsSignedIn = true
 		return true
 	}
@@ -334,7 +350,7 @@ func (h *ContextHandler) initContextWithAPIKey(reqContext *models.ReqContext) bo
 	//There is a service account attached to the API key
 
 	//Use service account linked to API key as the signed in user
-	querySignedInUser := user.GetSignedInUserQuery{UserID: *apikey.ServiceAccountId, OrgID: apikey.OrgId}
+	querySignedInUser := user.GetSignedInUserQuery{UserID: *apiKey.ServiceAccountId, OrgID: apiKey.OrgId}
 	querySignedInUserResult, err := h.userService.GetSignedInUserWithCacheCtx(reqContext.Req.Context(), &querySignedInUser)
 	if err != nil {
 		reqContext.Logger.Error(
@@ -434,9 +450,12 @@ func (h *ContextHandler) initContextWithToken(reqContext *models.ReqContext, org
 
 	token, err := h.AuthTokenService.LookupToken(ctx, rawToken)
 	if err != nil {
-		reqContext.Logger.Warn("Failed to look up user based on cookie", "error", err)
-		// Burn the cookie in case of failure
-		reqContext.Resp.Before(h.deleteInvalidCookieEndOfRequestFunc(reqContext))
+		reqContext.Logger.Warn("failed to look up session from cookie", "error", err)
+		if errors.Is(err, models.ErrUserTokenNotFound) || errors.Is(err, models.ErrInvalidSessionToken) {
+			// Burn the cookie in case of invalid, expired or missing token
+			reqContext.Resp.Before(h.deleteInvalidCookieEndOfRequestFunc(reqContext))
+		}
+
 		reqContext.LookupTokenErr = err
 
 		return false

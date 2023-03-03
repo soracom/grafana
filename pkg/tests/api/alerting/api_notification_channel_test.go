@@ -20,6 +20,7 @@ import (
 	"github.com/prometheus/common/model"
 	"github.com/stretchr/testify/require"
 
+	"github.com/grafana/grafana/pkg/expr"
 	"github.com/grafana/grafana/pkg/infra/db"
 	"github.com/grafana/grafana/pkg/models"
 	apimodels "github.com/grafana/grafana/pkg/services/ngalert/api/tooling/definitions"
@@ -31,7 +32,9 @@ import (
 	"github.com/grafana/grafana/pkg/tests/testinfra"
 )
 
-func TestTestReceivers(t *testing.T) {
+func TestIntegrationTestReceivers(t *testing.T) {
+	testinfra.SQLiteIntegrationTest(t)
+
 	t.Run("assert no receivers returns 400 Bad Request", func(t *testing.T) {
 		// Setup Grafana and its Database
 		dir, path := testinfra.CreateGrafDir(t, testinfra.GrafanaOpts{
@@ -423,7 +426,9 @@ func TestTestReceivers(t *testing.T) {
 	})
 }
 
-func TestTestReceiversAlertCustomization(t *testing.T) {
+func TestIntegrationTestReceiversAlertCustomization(t *testing.T) {
+	testinfra.SQLiteIntegrationTest(t)
+
 	t.Run("assert custom annotations and labels are sent", func(t *testing.T) {
 		// Setup Grafana and its Database
 		dir, path := testinfra.CreateGrafDir(t, testinfra.GrafanaOpts{
@@ -693,7 +698,9 @@ func TestTestReceiversAlertCustomization(t *testing.T) {
 	})
 }
 
-func TestNotificationChannels(t *testing.T) {
+func TestIntegrationNotificationChannels(t *testing.T) {
+	testinfra.SQLiteIntegrationTest(t)
+
 	dir, path := testinfra.CreateGrafDir(t, testinfra.GrafanaOpts{
 		DisableLegacyAlerting: true,
 		EnableUnifiedAlerting: true,
@@ -968,7 +975,7 @@ func getRulesConfig(t *testing.T) string {
 							From: ngmodels.Duration(time.Duration(5) * time.Hour),
 							To:   ngmodels.Duration(time.Duration(3) * time.Hour),
 						},
-						DatasourceUID: "-100",
+						DatasourceUID: expr.DatasourceUID,
 						Model: json.RawMessage(`{
 							"type": "math",
 							"expression": "2 + 3 > 1"

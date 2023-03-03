@@ -40,9 +40,13 @@ type ConditionEvaluator interface {
 	Evaluate(ctx context.Context, now time.Time) (Results, error)
 }
 
+type expressionService interface {
+	ExecutePipeline(ctx context.Context, now time.Time, pipeline expr.DataPipeline) (*backend.QueryDataResponse, error)
+}
+
 type conditionEvaluator struct {
 	pipeline          expr.DataPipeline
-	expressionService *expr.Service
+	expressionService expressionService
 	condition         models.Condition
 	evalTimeout       time.Duration
 }
@@ -61,7 +65,7 @@ func (r *conditionEvaluator) EvaluateRaw(ctx context.Context, now time.Time) (re
 	}()
 
 	execCtx := ctx
-	if r.evalTimeout <= 0 {
+	if r.evalTimeout >= 0 {
 		timeoutCtx, cancel := context.WithTimeout(ctx, r.evalTimeout)
 		defer cancel()
 		execCtx = timeoutCtx
@@ -154,9 +158,10 @@ type Result struct {
 	// Results contains the results of all queries, reduce and math expressions
 	Results map[string]data.Frames
 
-	// Values contains the RefID and value of reduce and math expressions.
-	// It does not contain values for classic conditions as the values
-	// in classic conditions do not have a RefID.
+	// Values contains the labels and values for all Threshold, Reduce and Math expressions,
+	// and all conditions of a Classic Condition that are firing. Threshold, Reduce and Math
+	// expressions are indexed by their Ref ID, while conditions in a Classic Condition are
+	// indexed by their Ref ID and the index of the condition. For example, B0, B1, etc.
 	Values map[string]NumberValueCapture
 
 	EvaluatedAt        time.Time

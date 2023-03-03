@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/grafana/grafana/pkg/expr"
 	"github.com/prometheus/common/model"
 	"github.com/stretchr/testify/require"
 
@@ -22,7 +23,9 @@ import (
 	"github.com/grafana/grafana/pkg/tests/testinfra"
 )
 
-func TestAdminConfiguration_SendingToExternalAlertmanagers(t *testing.T) {
+func TestIntegrationAdminConfiguration_SendingToExternalAlertmanagers(t *testing.T) {
+	testinfra.SQLiteIntegrationTest(t)
+
 	const disableOrgID int64 = 3
 	dir, path := testinfra.CreateGrafDir(t, testinfra.GrafanaOpts{
 		DisableLegacyAlerting:          true,
@@ -241,7 +244,7 @@ func TestAdminConfiguration_SendingToExternalAlertmanagers(t *testing.T) {
 									From: ngmodels.Duration(time.Duration(5) * time.Hour),
 									To:   ngmodels.Duration(time.Duration(3) * time.Hour),
 								},
-								DatasourceUID: "-100",
+								DatasourceUID: expr.DatasourceUID,
 								Model: json.RawMessage(`{
 								"type": "math",
 								"expression": "2 + 3 > 1"
@@ -262,7 +265,7 @@ func TestAdminConfiguration_SendingToExternalAlertmanagers(t *testing.T) {
 		_ = postRequest(t, ruleURL, buf.String(), http.StatusAccepted)
 	}
 
-	//Eventually, our Alertmanagers should receiver the alert.
+	// Eventually, our Alertmanagers should receiver the alert.
 	{
 		require.Eventually(t, func() bool {
 			return fakeAM1.AlertsCount() == 1 && fakeAM2.AlertsCount() == 1

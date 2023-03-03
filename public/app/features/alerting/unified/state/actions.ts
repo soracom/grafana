@@ -257,12 +257,14 @@ export function fetchRulerRulesIfNotFetchedYet(rulesSourceName: string): ThunkRe
   return (dispatch, getStore) => {
     const { rulerRules } = getStore().unifiedAlerting;
     const resp = rulerRules[rulesSourceName];
-    if (!resp?.result && !(resp && isRulerNotSupportedResponse(resp)) && !resp?.loading) {
+    const emptyResults = isEmpty(resp?.result);
+    if (emptyResults && !(resp && isRulerNotSupportedResponse(resp)) && !resp?.loading) {
       dispatch(fetchRulerRulesAction({ rulesSourceName }));
     }
   };
 }
 
+// TODO: memoize this or move to RTK Query so we can cache results!
 export function fetchAllPromBuildInfoAction(): ThunkResult<Promise<void>> {
   return async (dispatch) => {
     const allRequests = getAllRulesSourceNames().map((rulesSourceName) =>

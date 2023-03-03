@@ -8,7 +8,11 @@ import (
 
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"github.com/grafana/grafana/pkg/models"
+	"github.com/grafana/grafana/pkg/services/accesscontrol/actest"
 	"github.com/grafana/grafana/pkg/services/login"
 	"github.com/grafana/grafana/pkg/services/login/logintest"
 	"github.com/grafana/grafana/pkg/services/org"
@@ -16,8 +20,6 @@ import (
 	"github.com/grafana/grafana/pkg/services/quota/quotatest"
 	"github.com/grafana/grafana/pkg/services/user"
 	"github.com/grafana/grafana/pkg/services/user/usertest"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func Test_syncOrgRoles_doesNotBreakWhenTryingToRemoveLastOrgAdmin(t *testing.T) {
@@ -56,6 +58,7 @@ func Test_syncOrgRoles_whenTryingToRemoveLastOrgLogsError(t *testing.T) {
 		SQLStore:        nil,
 		userService:     usertest.NewUserServiceFake(),
 		orgService:      orgService,
+		accessControl:   &actest.FakeService{},
 	}
 
 	err := login.syncOrgRoles(context.Background(), &user, &externalUser)
@@ -112,6 +115,28 @@ func Test_teamSync(t *testing.T) {
 			require.Error(t, err)
 		})
 	})
+}
+
+func TestUpsertUser_crashOnLog_issue62538(t *testing.T) {
+	authInfoMock := &logintest.AuthInfoServiceFake{}
+	authInfoMock.ExpectedError = user.ErrUserNotFound
+	loginsvc := Implementation{
+		QuotaService:    quotatest.New(false, nil),
+		AuthInfoService: authInfoMock,
+	}
+
+	email := "test_user@example.org"
+	upsertCmd := &models.UpsertUserCommand{
+		ExternalUser:     &models.ExternalUserInfo{Email: email},
+		UserLookupParams: models.UserLookupParams{Email: &email},
+		SignupAllowed:    false,
+	}
+
+	var err error
+	require.NotPanics(t, func() {
+		err = loginsvc.UpsertUser(context.Background(), upsertCmd)
+	})
+	require.ErrorIs(t, err, login.ErrSignupNotAllowed)
 }
 
 func createSimpleUser() user.User {
