@@ -22,6 +22,9 @@ func Quota(quotaService quota.Service) func(string) web.Handler {
 				return
 			}
 			if limitReached {
+				if target == "org" {
+					return
+				}
 				c.JsonApiErr(403, fmt.Sprintf("%s Quota reached", target), nil)
 				return
 			}
