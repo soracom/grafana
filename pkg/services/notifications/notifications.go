@@ -143,7 +143,7 @@ func removeDefaultEmail(emails []string) []string {
 	filtered := []string{}
 
 	for _, email := range emails {
-		if email != "example@email.com" {
+		if !strings.Contains(email, "example@email.com") {
 			filtered = append(filtered, email)
 		}
 	}
