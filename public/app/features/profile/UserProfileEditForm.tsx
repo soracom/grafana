@@ -21,6 +21,10 @@ export const UserProfileEditForm: FC<Props> = ({ user, isSavingUser, updateProfi
     updateProfile(data);
   };
 
+  if (!user || !user.isGrafanaAdmin) {
+    return null;
+  }
+
   // check if authLabels is longer than 0 otherwise false
   const isExternalUser: boolean = (user && user.isExternal) ?? false;
   const authSource = isExternalUser && user && user.authLabels ? user.authLabels[0] : '';

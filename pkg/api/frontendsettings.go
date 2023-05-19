@@ -2,9 +2,11 @@ package api
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"strconv"
 
+	"github.com/grafana/grafana/pkg/lagoon"
 	"github.com/grafana/grafana/pkg/models"
 	"github.com/grafana/grafana/pkg/plugins"
 	"github.com/grafana/grafana/pkg/services/accesscontrol"
@@ -214,6 +216,18 @@ func (hs *HTTPServer) getFrontendSettingsMap(c *models.ReqContext) (map[string]i
 	if !hs.Cfg.GeomapEnableCustomBaseLayers {
 		jsonObj["geomapDisableCustomBaseLayer"] = true
 	}
+
+	// Lagoon Custom Settings Start
+	plan := lagoon.GetPlanFromOrgName(c.OrgName)
+	minRefresh := lagoon.AlertFrequencyForPlan(plan)
+	jsonObj["minRefreshInterval"] = fmt.Sprintf("%vs", minRefresh)
+	jsonObj["alertingMinInterval"] = minRefresh
+
+	features, ok := jsonObj["featureToggles"].(map[string]bool)
+	if ok && !c.IsGrafanaAdmin && !c.IsPublicDashboardView {
+		features["publicDashboards"] = lagoon.PublicDashboardsEnabledForPlan(plan)
+	}
+	// Lagoon Custom Settings End
 
 	return jsonObj, nil
 }
