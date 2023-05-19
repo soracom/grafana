@@ -136,7 +136,27 @@ func subjectTemplateFunc(obj map[string]interface{}, value string) string {
 	return ""
 }
 
+// removeDefaultEmail just prevents any emails being sent to the default
+// example@email.com address
+func removeDefaultEmail(emails []string) []string {
+
+	filtered := []string{}
+
+	for _, email := range emails {
+		if email != "example@email.com" {
+			filtered = append(filtered, email)
+		}
+	}
+
+	return filtered
+}
+
 func (ns *NotificationService) SendEmailCommandHandlerSync(ctx context.Context, cmd *models.SendEmailCommandSync) error {
+	cmd.To = removeDefaultEmail(cmd.To)
+	if len(cmd.To) == 0 {
+		return errors.New("cannot send email to example@email.com") //silently drop emails that were only to the default email
+	}
+
 	message, err := ns.buildEmailMessage(&models.SendEmailCommand{
 		Data:          cmd.Data,
 		Info:          cmd.Info,
