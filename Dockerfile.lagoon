@@ -94,7 +94,8 @@ RUN pwd && ls -las
 
 COPY ./scripts/build-soracom/plugins/. ${GF_PATHS_PLUGINS}/
 
-EXPOSE 3000
+EXPOSE 3000 9094/tcp
+EXPOSE 9094/udp
 
 COPY ./packaging/docker/run.sh /run.sh
 
