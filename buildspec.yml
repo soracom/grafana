@@ -32,7 +32,7 @@ phases:
       - echo "$shb_id" > scripts/build-soracom/deploy_keys/soracom-harvest-backend/id_rsa
       - echo "$shb_idpub" > scripts/build-soracom/deploy_keys/soracom-harvest-backend/id_rsa.pub
       - chmod 0400 scripts/build-soracom/deploy_keys/**/id_rsa
-      - $(aws ecr get-login --no-include-email --region $AWS_DEFAULT_REGION)
+      - aws ecr get-login-password --region ap-northeast-1 | docker login --username AWS --password-stdin 903921708000.dkr.ecr.ap-northeast-1.amazonaws.com
       - echo Setting Image tag $CODEBUILD_RESOLVED_SOURCE_VERSION
       - echo $CODEBUILD_WEBHOOK_TRIGGER
       - COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
