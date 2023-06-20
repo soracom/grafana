@@ -1,7 +1,7 @@
 cd "$(dirname "$0")"
 
 #install this package in a throwaway dir so we can reuse it a few times
-npm install --prefix ./local  @grafana/toolkit -g
+npm install --prefix ./local  @grafana/sign-plugin@latest -g
 PLUGIN_DIR=./plugins
 
 mkdir -p $PLUGIN_DIR
@@ -29,7 +29,7 @@ clone_private_repo () {
 
   if [ ! -z $1/signplugin.sh ]; then 
     cd $1
-    ./signplugin.sh
+    ./signplugin.sh || exit 1
     cd ..
   fi
 }
