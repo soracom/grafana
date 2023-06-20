@@ -1,5 +1,8 @@
 cd "$(dirname "$0")"
 
+node_version=$(node --version)
+echo "Node.js version: $node_version"
+
 #install this package in a throwaway dir so we can reuse it a few times
 npm install --prefix ./local  @grafana/sign-plugin@latest -g
 PLUGIN_DIR=./plugins
