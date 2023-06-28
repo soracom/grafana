@@ -2328,8 +2328,8 @@ var expNonEmailNotifications = map[string][]string{
 			  "title_link": "http://localhost:3000/alerting/list",
 			  "text": "Integration Test ",
 			  "fallback": "Integration Test [FIRING:1] SlackAlert1 (default)",
-			  "footer": "Grafana v",
-			  "footer_icon": "https://grafana.com/assets/img/fav32.png",
+			  "footer": "Lagoon v3 - ",
+			  "footer_icon": "https://jp-v3.lagoon.soracom.io/public/img/favicon-lagoon.png",
 			  "color": "#D63232",
 			  "ts": %s,
               "mrkdwn_in": ["pretext"],
@@ -2348,8 +2348,8 @@ var expNonEmailNotifications = map[string][]string{
 			  "title_link": "http://localhost:3000/alerting/list",
 			  "text": "**Firing**\n\nValue: A=1\nLabels:\n - alertname = SlackAlert2\n - grafana_folder = default\nAnnotations:\nSource: http://localhost:3000/alerting/grafana/UID_SlackAlert2/view\nSilence: http://localhost:3000/alerting/silence/new?alertmanager=grafana&matcher=alertname%%3DSlackAlert2&matcher=grafana_folder%%3Ddefault\n",
 			  "fallback": "[FIRING:1] SlackAlert2 (default)",
-			  "footer": "Grafana v",
-			  "footer_icon": "https://grafana.com/assets/img/fav32.png",
+			  "footer": "Lagoon v3 - ",
+			  "footer_icon": "https://jp-v3.lagoon.soracom.io/public/img/favicon-lagoon.png",
 			  "color": "#D63232",
 			  "ts": %s,
               "mrkdwn_in": ["pretext"],
@@ -2487,8 +2487,8 @@ var expNonEmailNotifications = map[string][]string{
 			{
 			  "color": 14037554,
 			  "footer": {
-				"icon_url": "https://grafana.com/assets/img/fav32.png",
-				"text": "Grafana v"
+				"icon_url": "https://jp-v3.lagoon.soracom.io/public/img/favicon-lagoon.png",
+				"text": "Lagoon v3 - "
 			  },
 			  "title": "[FIRING:1] DiscordAlert (default)",
 			  "type": "rich",
@@ -2599,7 +2599,7 @@ var expNonEmailNotifications = map[string][]string{
 		  "entity_display_name": "[FIRING:1] VictorOpsAlert (default)",
 		  "entity_id": "633ae988fa7074bcb51f3d1c5fef2ba1c5c4ccb45b3ecbf681f7d507b078b1ae",
 		  "message_type": "CRITICAL",
-		  "monitoring_tool": "Grafana v",
+		  "monitoring_tool": "Lagoon v3 - ",
 		  "state_message": "**Firing**\n\nValue: A=1\nLabels:\n - alertname = VictorOpsAlert\n - grafana_folder = default\nAnnotations:\nSource: http://localhost:3000/alerting/grafana/UID_VictorOpsAlert/view\nSilence: http://localhost:3000/alerting/silence/new?alertmanager=grafana&matcher=alertname%%3DVictorOpsAlert&matcher=grafana_folder%%3Ddefault\n",
 		  "timestamp": %s
 		}`,

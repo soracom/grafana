@@ -122,7 +122,7 @@ func (gcn *GoogleChatNotifier) Notify(ctx context.Context, as ...*types.Alert) (
 	// Add text paragraph widget for the build version and timestamp.
 	widgets = append(widgets, textParagraphWidget{
 		Text: text{
-			Text: "Grafana v" + setting.BuildVersion + " | " + (timeNow()).Format(time.RFC822),
+			Text: "Lagoon v3 - " + setting.BuildVersion + " | " + (timeNow()).Format(time.RFC822),
 		},
 	})
 

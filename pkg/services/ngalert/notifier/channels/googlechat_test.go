@@ -74,7 +74,7 @@ func TestGoogleChatNotifier(t *testing.T) {
 									textParagraphWidget{
 										Text: text{
 											// RFC822 only has the minute, hence it works in most cases.
-											Text: "Grafana v" + setting.BuildVersion + " | " + constNow.Format(time.RFC822),
+											Text: "Lagoon v3 - " + setting.BuildVersion + " | " + constNow.Format(time.RFC822),
 										},
 									},
 								},
@@ -133,7 +133,7 @@ func TestGoogleChatNotifier(t *testing.T) {
 									},
 									textParagraphWidget{
 										Text: text{
-											Text: "Grafana v" + setting.BuildVersion + " | " + constNow.Format(time.RFC822),
+											Text: "Lagoon v3 - " + setting.BuildVersion + " | " + constNow.Format(time.RFC822),
 										},
 									},
 								},
@@ -193,7 +193,7 @@ func TestGoogleChatNotifier(t *testing.T) {
 									textParagraphWidget{
 										Text: text{
 											// RFC822 only has the minute, hence it works in most cases.
-											Text: "Grafana v" + setting.BuildVersion + " | " + constNow.Format(time.RFC822),
+											Text: "Lagoon v3 - " + setting.BuildVersion + " | " + constNow.Format(time.RFC822),
 										},
 									},
 								},
@@ -248,7 +248,7 @@ func TestGoogleChatNotifier(t *testing.T) {
 									textParagraphWidget{
 										Text: text{
 											// RFC822 only has the minute, hence it works in most cases.
-											Text: "Grafana v" + setting.BuildVersion + " | " + constNow.Format(time.RFC822),
+											Text: "Lagoon v3 - " + setting.BuildVersion + " | " + constNow.Format(time.RFC822),
 										},
 									},
 								},
@@ -303,7 +303,7 @@ func TestGoogleChatNotifier(t *testing.T) {
 									textParagraphWidget{
 										Text: text{
 											// RFC822 only has the minute, hence it works in most cases.
-											Text: "Grafana v" + setting.BuildVersion + " | " + constNow.Format(time.RFC822),
+											Text: "Lagoon v3 - " + setting.BuildVersion + " | " + constNow.Format(time.RFC822),
 										},
 									},
 								},
@@ -353,7 +353,7 @@ func TestGoogleChatNotifier(t *testing.T) {
 									textParagraphWidget{
 										Text: text{
 											// RFC822 only has the minute, hence it works in most cases.
-											Text: "Grafana v" + setting.BuildVersion + " | " + constNow.Format(time.RFC822),
+											Text: "Lagoon v3 - " + setting.BuildVersion + " | " + constNow.Format(time.RFC822),
 										},
 									},
 								},
@@ -398,7 +398,7 @@ func TestGoogleChatNotifier(t *testing.T) {
 									textParagraphWidget{
 										Text: text{
 											// RFC822 only has the minute, hence it works in most cases.
-											Text: "Grafana v" + setting.BuildVersion + " | " + constNow.Format(time.RFC822),
+											Text: "Lagoon v3 - " + setting.BuildVersion + " | " + constNow.Format(time.RFC822),
 										},
 									},
 								},
@@ -442,7 +442,7 @@ func TestGoogleChatNotifier(t *testing.T) {
 									textParagraphWidget{
 										Text: text{
 											// RFC822 only has the minute, hence it works in most cases.
-											Text: "Grafana v" + setting.BuildVersion + " | " + constNow.Format(time.RFC822),
+											Text: "Lagoon v3 - " + setting.BuildVersion + " | " + constNow.Format(time.RFC822),
 										},
 									},
 								},

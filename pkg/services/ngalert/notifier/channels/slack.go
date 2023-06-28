@@ -273,7 +273,7 @@ func (sn *SlackNotifier) buildSlackMessage(ctx context.Context, alrts []*types.A
 				Color:      getAlertStatusColor(alerts.Status()),
 				Title:      tmpl(sn.settings.Title),
 				Fallback:   tmpl(sn.settings.Title),
-				Footer:     "Grafana v" + setting.BuildVersion,
+				Footer:     "Lagoon v3 - " + setting.BuildVersion,
 				FooterIcon: FooterIconURL,
 				Ts:         time.Now().Unix(),
 				TitleLink:  ruleURL,
