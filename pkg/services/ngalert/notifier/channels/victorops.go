@@ -122,7 +122,7 @@ func (vn *VictoropsNotifier) Notify(ctx context.Context, as ...*types.Alert) (bo
 		"entity_display_name": tmpl(vn.settings.Title),
 		"timestamp":           time.Now().Unix(),
 		"state_message":       tmpl(vn.settings.Description),
-		"monitoring_tool":     "Grafana v" + setting.BuildVersion,
+		"monitoring_tool":     "Lagoon v3 - " + setting.BuildVersion,
 	}
 
 	if tmplErr != nil {

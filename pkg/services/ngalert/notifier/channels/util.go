@@ -30,7 +30,7 @@ import (
 )
 
 const (
-	FooterIconURL      = "https://grafana.com/assets/img/fav32.png"
+	FooterIconURL      = "https://jp-v3.lagoon.soracom.io/public/img/favicon-lagoon.png"
 	ColorAlertFiring   = "#D63232"
 	ColorAlertResolved = "#36a64f"
 

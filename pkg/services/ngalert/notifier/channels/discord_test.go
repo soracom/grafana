@@ -46,8 +46,8 @@ func TestDiscordNotifier(t *testing.T) {
 				"embeds": []interface{}{map[string]interface{}{
 					"color": 1.4037554e+07,
 					"footer": map[string]interface{}{
-						"icon_url": "https://grafana.com/assets/img/fav32.png",
-						"text":     "Grafana v" + setting.BuildVersion,
+						"icon_url": "https://jp-v3.lagoon.soracom.io/public/img/favicon-lagoon.png",
+						"text":     "Lagoon v3 - " + setting.BuildVersion,
 					},
 					"title": "[FIRING:1]  (val1)",
 					"url":   "http://localhost/alerting/list",
@@ -73,8 +73,8 @@ func TestDiscordNotifier(t *testing.T) {
 				"embeds": []interface{}{map[string]interface{}{
 					"color": 1.4037554e+07,
 					"footer": map[string]interface{}{
-						"icon_url": "https://grafana.com/assets/img/fav32.png",
-						"text":     "Grafana v" + setting.BuildVersion,
+						"icon_url": "https://jp-v3.lagoon.soracom.io/public/img/favicon-lagoon.png",
+						"text":     "Lagoon v3 - " + setting.BuildVersion,
 					},
 					"title": "Alerts firing: 1",
 					"url":   "http://localhost/alerting/list",
@@ -87,7 +87,7 @@ func TestDiscordNotifier(t *testing.T) {
 		{
 			name: "Missing field in template",
 			settings: `{
-				"avatar_url": "https://grafana.com/assets/img/fav32.png",
+				"avatar_url": "https://jp-v3.lagoon.soracom.io/public/img/favicon-lagoon.png",
 				"url": "http://localhost",
 				"message": "I'm a custom template {{ .NotAField }} bad template"
 			}`,
@@ -100,13 +100,13 @@ func TestDiscordNotifier(t *testing.T) {
 				},
 			},
 			expMsg: map[string]interface{}{
-				"avatar_url": "https://grafana.com/assets/img/fav32.png",
+				"avatar_url": "https://jp-v3.lagoon.soracom.io/public/img/favicon-lagoon.png",
 				"content":    "I'm a custom template ",
 				"embeds": []interface{}{map[string]interface{}{
 					"color": 1.4037554e+07,
 					"footer": map[string]interface{}{
-						"icon_url": "https://grafana.com/assets/img/fav32.png",
-						"text":     "Grafana v" + setting.BuildVersion,
+						"icon_url": "https://jp-v3.lagoon.soracom.io/public/img/favicon-lagoon.png",
+						"text":     "Lagoon v3 - " + setting.BuildVersion,
 					},
 					"title": "[FIRING:1]  (val1)",
 					"url":   "http://localhost/alerting/list",
@@ -119,7 +119,7 @@ func TestDiscordNotifier(t *testing.T) {
 		{
 			name: "Invalid message template",
 			settings: `{
-				"avatar_url": "https://grafana.com/assets/img/fav32.png",
+				"avatar_url": "https://jp-v3.lagoon.soracom.io/public/img/favicon-lagoon.png",
 				"url": "http://localhost",
 				"message": "{{ template \"invalid.template\" }}"
 			}`,
@@ -132,13 +132,13 @@ func TestDiscordNotifier(t *testing.T) {
 				},
 			},
 			expMsg: map[string]interface{}{
-				"avatar_url": "https://grafana.com/assets/img/fav32.png",
+				"avatar_url": "https://jp-v3.lagoon.soracom.io/public/img/favicon-lagoon.png",
 				"content":    "",
 				"embeds": []interface{}{map[string]interface{}{
 					"color": 1.4037554e+07,
 					"footer": map[string]interface{}{
-						"icon_url": "https://grafana.com/assets/img/fav32.png",
-						"text":     "Grafana v" + setting.BuildVersion,
+						"icon_url": "https://jp-v3.lagoon.soracom.io/public/img/favicon-lagoon.png",
+						"text":     "Lagoon v3 - " + setting.BuildVersion,
 					},
 					"title": "[FIRING:1]  (val1)",
 					"url":   "http://localhost/alerting/list",
@@ -169,8 +169,8 @@ func TestDiscordNotifier(t *testing.T) {
 				"embeds": []interface{}{map[string]interface{}{
 					"color": 1.4037554e+07,
 					"footer": map[string]interface{}{
-						"icon_url": "https://grafana.com/assets/img/fav32.png",
-						"text":     "Grafana v" + setting.BuildVersion,
+						"icon_url": "https://jp-v3.lagoon.soracom.io/public/img/favicon-lagoon.png",
+						"text":     "Lagoon v3 - " + setting.BuildVersion,
 					},
 					"title": "[FIRING:1]  (val1)",
 					"url":   "http://localhost/alerting/list",
@@ -183,7 +183,7 @@ func TestDiscordNotifier(t *testing.T) {
 		{
 			name: "Invalid URL template",
 			settings: `{
-				"avatar_url": "https://grafana.com/assets/img/fav32.png",
+				"avatar_url": "https://jp-v3.lagoon.soracom.io/public/img/favicon-lagoon.png",
 				"url": "http://localhost?q={{invalid }}}",
 				"message": "valid message"
 			}`,
@@ -196,13 +196,13 @@ func TestDiscordNotifier(t *testing.T) {
 				},
 			},
 			expMsg: map[string]interface{}{
-				"avatar_url": "https://grafana.com/assets/img/fav32.png",
+				"avatar_url": "https://jp-v3.lagoon.soracom.io/public/img/favicon-lagoon.png",
 				"content":    "valid message",
 				"embeds": []interface{}{map[string]interface{}{
 					"color": 1.4037554e+07,
 					"footer": map[string]interface{}{
-						"icon_url": "https://grafana.com/assets/img/fav32.png",
-						"text":     "Grafana v" + setting.BuildVersion,
+						"icon_url": "https://jp-v3.lagoon.soracom.io/public/img/favicon-lagoon.png",
+						"text":     "Lagoon v3 - " + setting.BuildVersion,
 					},
 					"title": "[FIRING:1]  (val1)",
 					"url":   "http://localhost/alerting/list",
@@ -215,7 +215,7 @@ func TestDiscordNotifier(t *testing.T) {
 		{
 			name: "Custom config with multiple alerts",
 			settings: `{
-				"avatar_url": "https://grafana.com/assets/img/fav32.png",
+				"avatar_url": "https://jp-v3.lagoon.soracom.io/public/img/favicon-lagoon.png",
 				"url": "http://localhost",
 				"message": "{{ len .Alerts.Firing }} alerts are firing, {{ len .Alerts.Resolved }} are resolved"
 			}`,
@@ -233,13 +233,13 @@ func TestDiscordNotifier(t *testing.T) {
 				},
 			},
 			expMsg: map[string]interface{}{
-				"avatar_url": "https://grafana.com/assets/img/fav32.png",
+				"avatar_url": "https://jp-v3.lagoon.soracom.io/public/img/favicon-lagoon.png",
 				"content":    "2 alerts are firing, 0 are resolved",
 				"embeds": []interface{}{map[string]interface{}{
 					"color": 1.4037554e+07,
 					"footer": map[string]interface{}{
-						"icon_url": "https://grafana.com/assets/img/fav32.png",
-						"text":     "Grafana v" + setting.BuildVersion,
+						"icon_url": "https://jp-v3.lagoon.soracom.io/public/img/favicon-lagoon.png",
+						"text":     "Lagoon v3 - " + setting.BuildVersion,
 					},
 					"title": "[FIRING:2]  ",
 					"url":   "http://localhost/alerting/list",
@@ -273,8 +273,8 @@ func TestDiscordNotifier(t *testing.T) {
 				"embeds": []interface{}{map[string]interface{}{
 					"color": 1.4037554e+07,
 					"footer": map[string]interface{}{
-						"icon_url": "https://grafana.com/assets/img/fav32.png",
-						"text":     "Grafana v" + setting.BuildVersion,
+						"icon_url": "https://jp-v3.lagoon.soracom.io/public/img/favicon-lagoon.png",
+						"text":     "Lagoon v3 - " + setting.BuildVersion,
 					},
 					"title": "[FIRING:1]  (val1)",
 					"url":   "http://localhost/alerting/list",

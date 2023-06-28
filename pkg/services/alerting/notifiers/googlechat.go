@@ -196,7 +196,7 @@ func (gcn *GoogleChatNotifier) Notify(evalContext *alerting.EvalContext) error {
 	// add text paragraph widget for the build version and timestamp
 	widgets = append(widgets, textParagraphWidget{
 		Text: text{
-			Text: "Grafana v" + setting.BuildVersion + " | " + (time.Now()).Format(time.RFC822),
+			Text: "Lagoon v3 - " + setting.BuildVersion + " | " + (time.Now()).Format(time.RFC822),
 		},
 	})
 
