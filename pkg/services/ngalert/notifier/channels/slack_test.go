@@ -64,7 +64,7 @@ func TestSlackNotifier(t *testing.T) {
 			},
 			expMsg: &slackMessage{
 				Channel:   "#testchannel",
-				Username:  "Grafana",
+				Username:  "Lagoon",
 				IconEmoji: ":emoji:",
 				Attachments: []attachment{
 					{
@@ -99,7 +99,7 @@ func TestSlackNotifier(t *testing.T) {
 			},
 			expMsg: &slackMessage{
 				Channel:   "#testchannel",
-				Username:  "Grafana",
+				Username:  "Lagoon",
 				IconEmoji: ":emoji:",
 				Attachments: []attachment{
 					{
@@ -134,7 +134,7 @@ func TestSlackNotifier(t *testing.T) {
 			},
 			expMsg: &slackMessage{
 				Channel:   "#testchannel",
-				Username:  "Grafana",
+				Username:  "Lagoon",
 				IconEmoji: ":emoji:",
 				Attachments: []attachment{
 					{
@@ -177,7 +177,7 @@ func TestSlackNotifier(t *testing.T) {
 			},
 			expMsg: &slackMessage{
 				Channel:   "#testchannel",
-				Username:  "Grafana",
+				Username:  "Lagoon",
 				IconEmoji: ":emoji:",
 				Attachments: []attachment{
 					{
@@ -225,7 +225,7 @@ func TestSlackNotifier(t *testing.T) {
 			},
 			expMsg: &slackMessage{
 				Channel:   "#testchannel",
-				Username:  "Grafana",
+				Username:  "Lagoon",
 				IconEmoji: ":emoji:",
 				Attachments: []attachment{
 					{

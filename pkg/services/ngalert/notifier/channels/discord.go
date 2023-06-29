@@ -97,7 +97,7 @@ func (d DiscordNotifier) Notify(ctx context.Context, as ...*types.Alert) (bool, 
 	bodyJSON := simplejson.New()
 
 	if !d.settings.UseDiscordUsername {
-		bodyJSON.Set("username", "Grafana")
+		bodyJSON.Set("username", "Lagoon")
 	}
 
 	var tmplErr error

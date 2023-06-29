@@ -98,7 +98,7 @@ func buildSlackNotifier(factoryConfig FactoryConfig) (*SlackNotifier, error) {
 		return nil, errors.New("token must be specified when using the Slack chat API")
 	}
 	if settings.Username == "" {
-		settings.Username = "Grafana"
+		settings.Username = "Lagoon"
 	}
 	if settings.Text == "" {
 		settings.Text = DefaultMessageEmbed
