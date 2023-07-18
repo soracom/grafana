@@ -119,6 +119,7 @@ func (ns *NotificationService) GetMailer() Mailer {
 }
 
 func (ns *NotificationService) SendWebhookSync(ctx context.Context, cmd *models.SendWebhookSync) error {
+	ns.log.Info("Sending Notification Webhook", "url", cmd.Url)
 	return ns.sendWebRequestSync(ctx, &Webhook{
 		Url:         cmd.Url,
 		User:        cmd.User,
@@ -156,6 +157,7 @@ func (ns *NotificationService) SendEmailCommandHandlerSync(ctx context.Context, 
 	if len(cmd.To) == 0 {
 		return errors.New("cannot send email to example@email.com") //silently drop emails that were only to the default email
 	}
+	ns.log.Info("Sending Notification Email", "address", cmd.To)
 
 	message, err := ns.buildEmailMessage(&models.SendEmailCommand{
 		Data:          cmd.Data,

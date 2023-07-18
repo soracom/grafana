@@ -137,7 +137,7 @@ func (n *notificationService) SendIfNeeded(evalCtx *EvalContext) error {
 func (n *notificationService) sendAndMarkAsComplete(evalContext *EvalContext, notifierState *notifierState) error {
 	notifier := notifierState.notifier
 
-	n.log.Info("Sending notification", "type", notifier.GetType(), "uid", notifier.GetNotifierUID(), "isDefault", notifier.GetIsDefault())
+	n.log.Debug("Sending notification", "type", notifier.GetType(), "uid", notifier.GetNotifierUID(), "isDefault", notifier.GetIsDefault())
 	metrics.MAlertingNotificationSent.WithLabelValues(notifier.GetType()).Inc()
 
 	if err := evalContext.evaluateNotificationTemplateFields(); err != nil {
@@ -235,7 +235,7 @@ func (n *notificationService) renderAndUploadImage(evalCtx *EvalContext, timeout
 	}
 	took := time.Since(start)
 
-	n.log.Info("Rendered alert panel image", "ruleId", evalCtx.Rule.ID, "path", result.FilePath, "took", took)
+	n.log.Debug("Rendered alert panel image", "ruleId", evalCtx.Rule.ID, "path", result.FilePath, "took", took)
 
 	evalCtx.ImageOnDiskPath = result.FilePath
 
@@ -249,7 +249,7 @@ func (n *notificationService) renderAndUploadImage(evalCtx *EvalContext, timeout
 	took = time.Since(start)
 
 	if evalCtx.ImagePublicURL != "" {
-		n.log.Info("Uploaded alert panel image to external image store", "ruleId", evalCtx.Rule.ID, "url", evalCtx.ImagePublicURL, "took", took)
+		n.log.Debug("Uploaded alert panel image to external image store", "ruleId", evalCtx.Rule.ID, "url", evalCtx.ImagePublicURL, "took", took)
 	}
 
 	return nil
