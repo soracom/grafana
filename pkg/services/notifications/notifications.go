@@ -155,7 +155,7 @@ func removeDefaultEmail(emails []string) []string {
 func (ns *NotificationService) SendEmailCommandHandlerSync(ctx context.Context, cmd *models.SendEmailCommandSync) error {
 	cmd.To = removeDefaultEmail(cmd.To)
 	if len(cmd.To) == 0 {
-		return errors.New("cannot send email to example@email.com") //silently drop emails that were only to the default email
+		return errors.New("cannot send email to example@email.com with subject " + cmd.Subject) //silently drop emails that were only to the default email
 	}
 	ns.log.Info("Sending Notification Email", "address", cmd.To)
 

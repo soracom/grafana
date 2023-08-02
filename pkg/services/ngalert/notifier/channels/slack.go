@@ -182,6 +182,7 @@ func (sn *SlackNotifier) Notify(ctx context.Context, alerts ...*types.Alert) (bo
 	}
 
 	if err := sendSlackRequest(request, sn.log); err != nil {
+		sn.log.Error("Failed to send Slack API request", "url", sn.settings.URL, "data", string(b))
 		return false, err
 	}
 
