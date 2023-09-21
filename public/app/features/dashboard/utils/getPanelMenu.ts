@@ -110,9 +110,11 @@ export function getPanelMenu(
     });
   }
 
+  const editTextTranslation = t('panel.header-menu.edit', `Edit`);
+
   if (dashboard.canEditPanel(panel) && !panel.isEditing) {
     menu.push({
-      text: 'Edit',
+      text: editTextTranslation,
       iconClassName: 'edit',
       onClick: onEditPanel,
       shortcut: 'e',
@@ -128,9 +130,11 @@ export function getPanelMenu(
     shortcut: 'p s',
   });
 
+  const exploreTextTranslation = t('panel.header-menu.explore', `Explore`);
+
   if (contextSrv.hasAccessToExplore() && !(panel.plugin && panel.plugin.meta.skipDataQuery)) {
     menu.push({
-      text: 'Explore',
+      text: exploreTextTranslation,
       iconClassName: 'compass',
       onClick: onNavigateToExplore,
       shortcut: 'x',
@@ -148,9 +152,11 @@ export function getPanelMenu(
       onClick: (e: React.MouseEvent<any>) => onInspectPanel(InspectTab.Data),
     });
 
+    const queryTextTranslation = t('panel.header-menu.query', `Query`);
+
     if (dashboard.meta.canEdit) {
       inspectMenu.push({
-        text: 'Query',
+        text: queryTextTranslation,
         onClick: (e: React.MouseEvent<any>) => onInspectPanel(InspectTab.Query),
       });
     }
@@ -261,8 +267,9 @@ export function getPanelMenu(
   if (dashboard.canEditPanel(panel) && !panel.isEditing && !panel.isViewing) {
     menu.push({ type: 'divider', text: '' });
 
+    const removeTextTranslation = t('panel.header-menu.remove', `Remove`);
     menu.push({
-      text: 'Remove',
+      text: removeTextTranslation,
       iconClassName: 'trash-alt',
       onClick: onRemovePanel,
       shortcut: 'p r',

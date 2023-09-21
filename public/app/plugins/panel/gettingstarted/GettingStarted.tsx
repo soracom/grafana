@@ -6,6 +6,7 @@ import { PanelProps } from '@grafana/data';
 import { config } from '@grafana/runtime';
 import { Button, Spinner, stylesFactory } from '@grafana/ui';
 import { contextSrv } from 'app/core/core';
+import { Trans } from 'app/core/internationalization';
 import { backendSrv } from 'app/core/services/backend_srv';
 import { getDashboardSrv } from 'app/features/dashboard/services/DashboardSrv';
 
@@ -91,7 +92,7 @@ export class GettingStarted extends PureComponent<PanelProps, State> {
         ) : (
           <>
             <Button variant="secondary" fill="text" className={styles.dismiss} onClick={this.dismiss}>
-              Remove this panel
+              <Trans i18nKey="getting-started.remove-this-panel">Remove this panel</Trans>
             </Button>
             {currentStep === steps.length - 1 && (
               <Button

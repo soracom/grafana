@@ -6,6 +6,7 @@ import { GrafanaTheme2, InterpolateFunction, PanelProps } from '@grafana/data';
 import { CustomScrollbar, stylesFactory, useStyles2 } from '@grafana/ui';
 import { Icon, IconProps } from '@grafana/ui/src/components/Icon/Icon';
 import { getFocusStyles } from '@grafana/ui/src/themes/mixins';
+import { t } from 'app/core/internationalization';
 import { setStarred } from 'app/core/reducers/navBarTree';
 import { getBackendSrv } from 'app/core/services/backend_srv';
 import impressionSrv from 'app/core/services/impression_srv';
@@ -124,12 +125,12 @@ export function DashList(props: PanelProps<PanelOptions>) {
 
   const dashboardGroups: DashboardGroup[] = [
     {
-      header: 'Starred dashboards',
+      header: t('dashlist.starred-dashboards', 'Starred dashboards'),
       dashboards: starredDashboards,
       show: showStarred,
     },
     {
-      header: 'Recently viewed dashboards',
+      header: t('dashlist.recently-viewed-dashboards', 'Recently viewed dashboards'),
       dashboards: recentDashboards,
       show: showRecentlyViewed,
     },
