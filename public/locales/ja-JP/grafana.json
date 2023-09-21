@@ -11,6 +11,17 @@
     },
     "save": "保存"
   },
+  "welcome": {
+    "title": "Lagoon へようこそ",
+    "need-help": "何を探していますか？"
+  },
+  "getting-started": {
+    "remove-this-panel": "このパネルを削除する"
+  },
+  "dashlist": {
+    "starred-dashboards": "お気に入りのダッシュボード",
+    "recently-viewed-dashboards": "最近表示したダッシュボード"
+  },
   "dashboard": {
     "inspect": {
       "actions-tab": "Actions",
@@ -65,19 +76,19 @@
       "table-title": "Stats"
     },
     "toolbar": {
-      "add-panel": "Add panel",
+      "add-panel": "パネルを追加する",
       "comments-show": "Show dashboard comments",
-      "mark-favorite": "Mark as favorite",
+      "mark-favorite": "お気に入りに設定する",
       "open-original": "Open original dashboard",
       "playlist-next": "Go to next dashboard",
       "playlist-previous": "Go to previous dashboard",
       "playlist-stop": "Stop playlist",
-      "refresh": "Refresh dashboard",
-      "save": "Save dashboard",
-      "settings": "Dashboard settings",
-      "share": "Share dashboard or panel",
-      "tv-button": "Cycle view mode",
-      "unmark-favorite": "Unmark as favorite"
+      "refresh": "ダッシュボードを再読込する",
+      "save": "ダッシュボードを保存する",
+      "settings": "ダッシュボードの設定を変更する",
+      "share": "ダッシュボードまたはパネルを共有する",
+      "tv-button": "表示モードを切り替える",
+      "unmark-favorite": "お気に入り設定を解除する"
     }
   },
   "folder-picker": {
@@ -182,7 +193,7 @@
       "title": "インポート"
     },
     "dashboards": {
-      "subtitle": "あなたのデータを表示するためのダッシュボードを作成 / 管理します",
+      "subtitle": "データを可視化するためのダッシュボードを作成 / 管理します。",
       "title": "ダッシュボード"
     },
     "datasources": {
@@ -194,24 +205,24 @@
     },
     "global-orgs": {
       "subtitle": "Isolated instances of Grafana running on the same server",
-      "title": "Organizations"
+      "title": "組織 (Organizations)"
     },
     "global-users": {
       "subtitle": "Manage and create users across the whole Grafana server",
       "title": "Users (All orgs)",
-      "titleBeforeTopnav": "Users"
+      "titleBeforeTopnav": "ユーザー"
     },
     "help": {
-      "title": "Help"
+      "title": "ヘルプ"
     },
-    "help/documentation": "Documentation",
-    "help/keyboard-shortcuts": "Keyboard shortcuts",
+    "help/documentation": "ドキュメント",
+    "help/keyboard-shortcuts": "キーボードショートカット",
     "home": {
-      "title": "Home"
+      "title": "ホーム"
     },
     "library-panels": {
-      "subtitle": "Reusable panels that can be added to multiple dashboards",
-      "title": "Library panels"
+      "subtitle": "複数のダッシュボードに追加できる再利用可能なパネル",
+      "title": "ライブラリパネル"
     },
     "live": {
       "title": "Event streaming"
@@ -226,17 +237,17 @@
       "title": "Status"
     },
     "manage-dashboards": {
-      "title": "Browse"
+      "title": "一覧"
     },
     "monitoring": {
       "subtitle": "Monitoring and infrastructure apps",
       "title": "Monitoring"
     },
     "new-dashboard": {
-      "title": "New dashboard"
+      "title": "ダッシュボードの新規作成"
     },
     "new-folder": {
-      "title": "New folder"
+      "title": "フォルダーの新規作成"
     },
     "org-settings": {
       "subtitle": "Manage preferences across an organization",
@@ -244,8 +255,8 @@
       "titleBeforeTopnav": "設定"
     },
     "playlists": {
-      "subtitle": "Groups of dashboards that are displayed in a sequence",
-      "title": "Playlists"
+      "subtitle": "順番に表示されるダッシュボードのグループ。",
+      "title": "プレイリスト"
     },
     "plugins": {
       "subtitle": "Extend the Grafana experience with plugins",
@@ -268,7 +279,7 @@
       "placeholder": "Search Grafana"
     },
     "search-dashboards": {
-      "title": "Search dashboards"
+      "title": "ダッシュボードの検索"
     },
     "server-settings": {
       "subtitle": "View the settings defined in your Grafana config",
@@ -283,14 +294,14 @@
       "title": "Sign out"
     },
     "snapshots": {
-      "subtitle": "Interactive, publically available, point-in-time representations of dashboards",
-      "title": "Snapshots"
+      "subtitle": "ある時点におけるダッシュボードを「スナップショット」として保存して任意の第三者に公開できます。",
+      "title": "スナップショット"
     },
     "starred": {
-      "title": "Starred"
+      "title": "お気に入り"
     },
     "starred-empty": {
-      "title": "Your starred dashboards will appear here"
+      "title": "お気に入りに設定したダッシュボードが表示されます。"
     },
     "storage": {
       "subtitle": "Manage file storage",
@@ -317,20 +328,39 @@
     "title": "Latest from the blog"
   },
   "notifications": {
-    "starred-dashboard": "Dashboard starred",
-    "unstarred-dashboard": "Dashboard unstarred"
+    "starred-dashboard": "ダッシュボードをお気に入りに設定しました。",
+    "unstarred-dashboard": "ダッシュボードのお気に入りを解除しました。"
   },
   "panel": {
     "header-menu": {
-      "hide-legend": "Hide legend",
-      "inspect": "Inspect",
-      "inspect-data": "Data",
-      "inspect-json": "Panel JSON",
-      "more": "More...",
-      "share": "Share",
-      "show-legend": "Show legend",
-      "view": "View"
+      "edit": "編集",
+      "explore": "エクスプローラー (Explore)",
+      "hide-legend": "凡例を非表示にする",
+      "inspect": "インスペクト",
+      "inspect-data": "データ",
+      "inspect-json": "パネルのソースデータ (JSON)",
+      "more": "そのほか...",
+      "query": "クエリー",
+      "remove": "削除",
+      "share": "共有",
+      "show-legend": "凡例を表示する",
+      "view": "表示"
     }
+  },
+  "edit-panel": {
+    "table-view": "テーブル表示"
+  },
+  "display-mode": {
+    "actual": "ダッシュボードに合わせる",
+    "actual-description": "ダッシュボードに表示したときと同じサイズにする",
+    "fill": "余白を詰める",
+    "fill-description": "余白をすべて使用する"
+  },
+  "panel-editor": {
+    "query": "クエリー",
+    "query-options": "クエリーオプション",
+    "transform": "変換 (Transform)",
+    "alert": "アラート"
   },
   "refresh-picker": {
     "aria-label": {
@@ -519,7 +549,7 @@
     "title": "セッション"
   },
   "user-sessions": {
-    "loading": "Loading sessions..."
+    "loading": "セッション情報を読み込み中です..."
   },
   "variable": {
     "picker": {

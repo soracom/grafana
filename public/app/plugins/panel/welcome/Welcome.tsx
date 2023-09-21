@@ -3,11 +3,12 @@ import React, { FC } from 'react';
 
 import { GrafanaTheme2 } from '@grafana/data';
 import { useStyles2 } from '@grafana/ui';
+import { Trans } from 'app/core/internationalization';
 
 const helpOptions = [
-  { value: 0, label: 'Documentation', href: 'https://developers.soracom.io/en/docs/lagoon' },
-  { value: 1, label: 'ドキュメント', href: 'https://users.soracom.io/ja-jp/docs/lagoon-v2' },
-  { value: 2, label: 'Console', href: 'https://console.soracom.io' },
+  { value: 0, label: 'Documentation (English)', href: 'https://developers.soracom.io/en/docs/lagoon' },
+  { value: 1, label: 'ドキュメント (日本語)', href: 'https://users.soracom.io/ja-jp/docs/lagoon-v3' },
+  { value: 2, label: 'SORACOM ユーザーコンソール', href: 'https://console.soracom.io' },
 ];
 
 export const WelcomeBanner: FC = () => {
@@ -15,9 +16,13 @@ export const WelcomeBanner: FC = () => {
 
   return (
     <div className={styles.container}>
-      <h1 className={styles.title}>Welcome to Lagoon</h1>
+      <h1 className={styles.title}>
+        <Trans i18nKey="welcome.title">Welcome to Lagoon</Trans>
+      </h1>
       <div className={styles.help}>
-        <h3 className={styles.helpText}>Need help?</h3>
+        <h3 className={styles.helpText}>
+          <Trans i18nKey="welcome.need-help">Need help?</Trans>
+        </h3>
         <div className={styles.helpLinks}>
           {helpOptions.map((option, index) => {
             return (
