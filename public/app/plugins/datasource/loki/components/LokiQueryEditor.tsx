@@ -73,6 +73,10 @@ export const LokiQueryEditor = React.memo<LokiQueryEditorProps>((props) => {
   };
 
   const onClickLabelBrowserButton = () => {
+    reportInteraction('grafana_loki_label_browser_opened', {
+      app: app,
+    });
+
     setLabelBrowserVisible((visible) => !visible);
   };
 
@@ -132,7 +136,7 @@ export const LokiQueryEditor = React.memo<LokiQueryEditorProps>((props) => {
             Label browser
           </Button>
         </Stack>
-        <QueryHeaderSwitch label="Explain" value={explain} onChange={onExplainChange} />
+        <QueryHeaderSwitch label="Explain query" value={explain} onChange={onExplainChange} />
         <FlexItem grow={1} />
         {app !== CoreApp.Explore && (
           <Button

@@ -16,6 +16,7 @@ import (
 	"github.com/grafana/grafana/pkg/services/tag/tagimpl"
 	"github.com/grafana/grafana/pkg/services/team/teamimpl"
 	"github.com/grafana/grafana/pkg/services/user"
+	"github.com/grafana/grafana/pkg/services/user/userimpl"
 )
 
 func TestIntegrationDashboardACLDataAccess(t *testing.T) {
@@ -204,7 +205,7 @@ func TestIntegrationDashboardACLDataAccess(t *testing.T) {
 
 			err = updateDashboardACL(t, dashboardStore, savedFolder.Id, models.DashboardACL{
 				OrgID:       1,
-				TeamID:      team1.Id,
+				TeamID:      team1.ID,
 				DashboardID: savedFolder.Id,
 				Permission:  models.PERMISSION_EDIT,
 			})
@@ -215,7 +216,7 @@ func TestIntegrationDashboardACLDataAccess(t *testing.T) {
 			require.Nil(t, err)
 			require.Equal(t, savedFolder.Id, q1.Result[0].DashboardId)
 			require.Equal(t, models.PERMISSION_EDIT, q1.Result[0].Permission)
-			require.Equal(t, team1.Id, q1.Result[0].TeamId)
+			require.Equal(t, team1.ID, q1.Result[0].TeamId)
 		})
 
 		t.Run("Should be able to update an existing permission for a team", func(t *testing.T) {
@@ -225,7 +226,7 @@ func TestIntegrationDashboardACLDataAccess(t *testing.T) {
 			require.Nil(t, err)
 			err = updateDashboardACL(t, dashboardStore, savedFolder.Id, models.DashboardACL{
 				OrgID:       1,
-				TeamID:      team1.Id,
+				TeamID:      team1.ID,
 				DashboardID: savedFolder.Id,
 				Permission:  models.PERMISSION_ADMIN,
 			})
@@ -237,7 +238,7 @@ func TestIntegrationDashboardACLDataAccess(t *testing.T) {
 			require.Equal(t, 1, len(q3.Result))
 			require.Equal(t, savedFolder.Id, q3.Result[0].DashboardId)
 			require.Equal(t, models.PERMISSION_ADMIN, q3.Result[0].Permission)
-			require.Equal(t, team1.Id, q3.Result[0].TeamId)
+			require.Equal(t, team1.ID, q3.Result[0].TeamId)
 		})
 	})
 
@@ -274,11 +275,14 @@ func createUser(t *testing.T, sqlStore *sqlstore.SQLStore, name string, role str
 	sqlStore.Cfg.AutoAssignOrgId = 1
 	sqlStore.Cfg.AutoAssignOrgRole = role
 
-	orgService, err := orgimpl.ProvideService(sqlStore, sqlStore.Cfg, quotaimpl.ProvideService(sqlStore, sqlStore.Cfg))
+	qs := quotaimpl.ProvideService(sqlStore, sqlStore.Cfg)
+	orgService, err := orgimpl.ProvideService(sqlStore, sqlStore.Cfg, qs)
+	require.NoError(t, err)
+	usrSvc, err := userimpl.ProvideService(sqlStore, orgService, sqlStore.Cfg, nil, nil, qs)
 	require.NoError(t, err)
 
 	currentUserCmd := user.CreateUserCommand{Login: name, Email: name + "@test.com", Name: "a " + name, IsAdmin: isAdmin}
-	currentUser, err := sqlStore.CreateUser(context.Background(), currentUserCmd)
+	currentUser, err := usrSvc.CreateUserForTests(context.Background(), &currentUserCmd)
 	require.NoError(t, err)
 	orgs, err := orgService.GetUserOrgList(context.Background(), &org.GetUserOrgListQuery{UserID: currentUser.ID})
 	require.NoError(t, err)

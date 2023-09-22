@@ -15,6 +15,8 @@ import (
 	"github.com/grafana/grafana/pkg/infra/db"
 	"github.com/grafana/grafana/pkg/infra/kvstore"
 	"github.com/grafana/grafana/pkg/infra/log"
+	"github.com/grafana/grafana/pkg/infra/tracing"
+	"github.com/grafana/grafana/pkg/plugins"
 	"github.com/grafana/grafana/pkg/services/accesscontrol"
 	"github.com/grafana/grafana/pkg/services/annotations"
 	"github.com/grafana/grafana/pkg/services/dashboards"
@@ -62,6 +64,8 @@ func ProvideService(
 	bus bus.Bus,
 	accesscontrolService accesscontrol.Service,
 	annotationsRepo annotations.Repository,
+	pluginsStore plugins.Store,
+	tracer tracing.Tracer,
 ) (*AlertNG, error) {
 	ng := &AlertNG{
 		Cfg:                  cfg,
@@ -85,6 +89,8 @@ func ProvideService(
 		bus:                  bus,
 		accesscontrolService: accesscontrolService,
 		annotationsRepo:      annotationsRepo,
+		pluginsStore:         pluginsStore,
+		tracer:               tracer,
 	}
 
 	if ng.IsDisabled() {
@@ -129,7 +135,9 @@ type AlertNG struct {
 	annotationsRepo      annotations.Repository
 	store                *store.DBstore
 
-	bus bus.Bus
+	bus          bus.Bus
+	pluginsStore plugins.Store
+	tracer       tracing.Tracer
 }
 
 func (ng *AlertNG) init() error {
@@ -182,7 +190,7 @@ func (ng *AlertNG) init() error {
 
 	ng.AlertsRouter = alertsRouter
 
-	evalFactory := eval.NewEvaluatorFactory(ng.Cfg.UnifiedAlerting, ng.DataSourceCache, ng.ExpressionService)
+	evalFactory := eval.NewEvaluatorFactory(ng.Cfg.UnifiedAlerting, ng.DataSourceCache, ng.ExpressionService, ng.pluginsStore)
 	schedCfg := schedule.SchedulerCfg{
 		MaxAttempts:          ng.Cfg.UnifiedAlerting.MaxAttempts,
 		C:                    clk,
@@ -194,10 +202,22 @@ func (ng *AlertNG) init() error {
 		RuleStore:            store,
 		Metrics:              ng.Metrics.GetSchedulerMetrics(),
 		AlertSender:          alertsRouter,
+		Tracer:               ng.tracer,
 	}
 
-	historian := historian.NewAnnotationHistorian(ng.annotationsRepo, ng.dashboardService)
-	stateManager := state.NewManager(ng.Metrics.GetStateMetrics(), appUrl, store, ng.imageService, clk, historian)
+	history, err := configureHistorianBackend(ng.Cfg.UnifiedAlerting.StateHistory, ng.annotationsRepo, ng.dashboardService)
+	if err != nil {
+		return err
+	}
+	cfg := state.ManagerCfg{
+		Metrics:       ng.Metrics.GetStateMetrics(),
+		ExternalURL:   appUrl,
+		InstanceStore: store,
+		Images:        ng.imageService,
+		Clock:         clk,
+		Historian:     history,
+	}
+	stateManager := state.NewManager(cfg)
 	scheduler := schedule.NewScheduler(schedCfg, stateManager)
 
 	// if it is required to include folder title to the alerts, we need to subscribe to changes of alert title
@@ -240,6 +260,8 @@ func (ng *AlertNG) init() error {
 		AlertRules:           alertRuleService,
 		AlertsRouter:         alertsRouter,
 		EvaluatorFactory:     evalFactory,
+		FeatureManager:       ng.FeatureToggles,
+		AppUrl:               appUrl,
 	}
 	api.RegisterAPIEndpoints(ng.Metrics.GetAPIMetrics())
 
@@ -353,4 +375,22 @@ func readQuotaConfig(cfg *setting.Cfg) (*quota.Map, error) {
 	limits.Set(globalQuotaTag, alertGlobalQuota)
 	limits.Set(orgQuotaTag, alertOrgQuota)
 	return limits, nil
+}
+
+func configureHistorianBackend(cfg setting.UnifiedAlertingStateHistorySettings, ar annotations.Repository, ds dashboards.DashboardService) (state.Historian, error) {
+	if !cfg.Enabled {
+		return historian.NewNopHistorian(), nil
+	}
+
+	if cfg.Backend == "annotations" {
+		return historian.NewAnnotationBackend(ar, ds), nil
+	}
+	if cfg.Backend == "loki" {
+		return historian.NewRemoteLokiBackend(), nil
+	}
+	if cfg.Backend == "sql" {
+		return historian.NewSqlBackend(), nil
+	}
+
+	return nil, fmt.Errorf("unrecognized state history backend: %s", cfg.Backend)
 }
