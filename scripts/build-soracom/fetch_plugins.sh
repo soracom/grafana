@@ -1,4 +1,4 @@
-cd "$(dirname "$0")"
+cd "$(dirname "$0")" || exit
 
 node_version=$(node --version)
 echo "Node.js version: $node_version"
@@ -8,7 +8,7 @@ npm install --prefix ./local  @grafana/sign-plugin@latest -g
 PLUGIN_DIR=./plugins
 
 mkdir -p $PLUGIN_DIR
-cd $PLUGIN_DIR
+cd $PLUGIN_DIR || exit
 
 clone_private_repo () {
   if [ ! -z "$2" ]; then
@@ -18,7 +18,7 @@ clone_private_repo () {
   fi
   
   if [ -d $1 ]; then
-    cd $1
+    cd $1 || exit
     git pull origin $BRANCH
     cd ..
   else
@@ -30,8 +30,8 @@ clone_private_repo () {
     GIT_SSH_COMMAND="ssh -i ../deploy_keys/$1/id_rsa -F /dev/null" git clone --depth 1 --single-branch --branch $BRANCH git@github.com:soracom/$1.git $1
   fi
 
-  if [ ! -z $1/signplugin.sh ]; then 
-    cd $1
+  if [ -f "$1/signplugin.sh" ]; then 
+    cd $1 || exit
     ./signplugin.sh || exit 1
     cd ..
   fi
@@ -39,14 +39,14 @@ clone_private_repo () {
 
 clone_public_repo () {
   if [ -d "$1-$2" ]; then
-    cd $1-$2
+    cd $1-$2 || exit
     git pull origin master
     cd ..
   else
     git clone https://github.com/$1/$2.git $1-$2
   fi
   if [ ! -z "$3" ]; then
-    cd $1-$2
+    cd $1-$2 || exit
     echo "Checking out specific commit $3"
     git checkout $3
     cd ..
@@ -55,7 +55,7 @@ clone_public_repo () {
 
 build_repo () {
   if [ -d "$1-$2" ]; then
-    cd $1-$2
+    cd $1-$2 || exit
     npm install
     npm run-script build
     cd ..
@@ -64,7 +64,7 @@ build_repo () {
 
 yarn_build_repo () {
   if [ -d "$1-$2" ]; then
-    cd $1-$2
+    cd $1-$2 || exit
     npm install yarn
     npx yarn install --pure-lockfile
     npx yarn build
