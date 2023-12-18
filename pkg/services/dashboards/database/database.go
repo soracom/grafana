@@ -806,15 +806,14 @@ func (d *DashboardStore) deleteDashboard(cmd *models.DeleteDashboardCommand, ses
 		}
 
 		// remove all access control permission with folder scope
-		_, err = sess.Exec("DELETE FROM permission WHERE scope = ?", dashboards.ScopeFoldersProvider.GetResourceScopeUID(dashboard.Uid))
+		err = d.deleteResourcePermissions(sess, dashboard.OrgId, dashboards.ScopeFoldersProvider.GetResourceScopeUID(dashboard.Uid))
 		if err != nil {
 			return err
 		}
 
 		for _, dash := range dashIds {
 			// remove all access control permission with child dashboard scopes
-			_, err = sess.Exec("DELETE FROM permission WHERE scope = ?", ac.GetResourceScopeUID("dashboards", dash.Uid))
-			if err != nil {
+			if err := d.deleteResourcePermissions(sess, dashboard.OrgId, ac.GetResourceScopeUID("dashboards", dash.Uid)); err != nil {
 				return err
 			}
 		}
@@ -861,8 +860,7 @@ func (d *DashboardStore) deleteDashboard(cmd *models.DeleteDashboardCommand, ses
 			}
 		}
 	} else {
-		_, err = sess.Exec("DELETE FROM permission WHERE scope = ?", ac.GetResourceScopeUID("dashboards", dashboard.Uid))
-		if err != nil {
+		if err := d.deleteResourcePermissions(sess, dashboard.OrgId, ac.GetResourceScopeUID("dashboards", dashboard.Uid)); err != nil {
 			return err
 		}
 	}
@@ -885,6 +883,24 @@ func (d *DashboardStore) deleteDashboard(cmd *models.DeleteDashboardCommand, ses
 		}
 	}
 	return nil
+}
+
+// Backport of https://github.com/grafana/grafana/pull/71225
+func (d *DashboardStore) deleteResourcePermissions(sess *db.Session, orgID int64, resourceScope string) error {
+	// retrieve all permissions for the resource scope and org id
+	var permissionIDs []int64
+	err := sess.SQL("SELECT permission.id FROM permission INNER JOIN role ON permission.role_id = role.id WHERE permission.scope = ? AND role.org_id = ?", resourceScope, orgID).Find(&permissionIDs)
+	if err != nil {
+		return err
+	}
+
+	if len(permissionIDs) == 0 {
+		return nil
+	}
+
+	// delete the permissions
+	_, err = sess.In("id", permissionIDs).Delete(&ac.Permission{})
+	return err
 }
 
 func createEntityEvent(dashboard *models.Dashboard, eventType store.EntityEventType) *store.EntityEvent {
