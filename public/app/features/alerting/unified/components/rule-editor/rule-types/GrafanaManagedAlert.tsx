@@ -7,15 +7,15 @@ import { RuleType, SharedProps } from './RuleType';
 const GrafanaManagedRuleType: FC<SharedProps> = ({ selected = false, disabled, onClick }) => {
   return (
     <RuleType
-      name="Grafana managed alert"
+      name="Lagoon managed alert"
       description={
         <span>
-          Supports multiple data sources of any kind.
+          Supports SORACOM Harvest.
           <br />
           Transform data with expressions.
         </span>
       }
-      image="public/img/grafana_icon.svg"
+      image="public/img/lagoon-logo-cl.svg"
       selected={selected}
       disabled={disabled}
       value={RuleFormType.grafana}
