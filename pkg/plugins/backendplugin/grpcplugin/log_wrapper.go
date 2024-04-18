@@ -14,6 +14,7 @@ type logWrapper struct {
 
 	name        string
 	impliedArgs []interface{}
+	DebugIsInfo bool
 }
 
 func formatArgs(args ...interface{}) []interface{} {
@@ -43,7 +44,11 @@ func (lw logWrapper) Log(level hclog.Level, msg string, args ...interface{}) {
 	case hclog.Trace:
 		lw.Trace(msg, args...)
 	case hclog.Debug:
-		lw.Debug(msg, args...)
+		if lw.DebugIsInfo {
+			lw.Info(msg, args...) // we want to output all plugin logs as INFO
+		} else {
+			lw.Debug(msg, args...)
+		}
 	case hclog.Info:
 		lw.Info(msg, args...)
 	case hclog.Warn:
@@ -62,7 +67,11 @@ func (lw logWrapper) Trace(msg string, args ...interface{}) {
 
 // Emit a message and key/value pairs at the DEBUG level
 func (lw logWrapper) Debug(msg string, args ...interface{}) {
-	lw.Logger.Debug(msg, formatArgs(args...)...)
+	if lw.DebugIsInfo {
+		lw.Logger.Info(msg, formatArgs(args...)...)
+	} else {
+		lw.Logger.Debug(msg, formatArgs(args...)...)
+	}
 }
 
 // Emit a message and key/value pairs at the INFO level

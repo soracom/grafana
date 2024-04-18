@@ -123,6 +123,10 @@ func (p *grpcPlugin) IsDecommissioned() bool {
 func (p *grpcPlugin) getPluginClient() (pluginClient, bool) {
 	p.mutex.RLock()
 	if p.client == nil || p.client.Exited() || p.pluginClient == nil {
+		clientIsNil := p.client == nil
+		clientIsExited := p.client != nil && p.client.Exited()
+		pluginClientIsNil := p.pluginClient == nil
+		p.logger.Error("Error Getting PLUGIN", "clientIsNil", clientIsNil, "clientIsExited", clientIsExited, "pluginClientIsNil", pluginClientIsNil, "pluginID", p.descriptor.pluginID, "pluginPath", p.descriptor.executablePath)
 		p.mutex.RUnlock()
 		return nil, false
 	}
