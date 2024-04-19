@@ -37,7 +37,7 @@ func newClientConfig(executablePath string, env []string, logger log.Logger,
 		Cmd:              cmd,
 		HandshakeConfig:  handshake,
 		VersionedPlugins: versionedPlugins,
-		Logger:           logWrapper{Logger: logger, DebugIsInfo: true},
+		Logger:           logWrapper{Logger: logger},
 		AllowedProtocols: []goplugin.Protocol{goplugin.ProtocolGRPC},
 		GRPCDialOptions: []grpc.DialOption{
 			grpc.WithChainUnaryInterceptor(
