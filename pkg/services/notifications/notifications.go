@@ -157,7 +157,7 @@ func (ns *NotificationService) SendEmailCommandHandlerSync(ctx context.Context, 
 	if len(cmd.To) == 0 {
 		return errors.New("cannot send email to example@email.com with subject " + cmd.Subject) //silently drop emails that were only to the default email
 	}
-	ns.log.Info("Sending Notification Email", "address", cmd.To)
+	ns.log.Info("Sending Notification Email", "address", cmd.To, "subject", cmd.Subject)
 
 	message, err := ns.buildEmailMessage(&models.SendEmailCommand{
 		Data:          cmd.Data,
