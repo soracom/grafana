@@ -4,6 +4,7 @@ export const ENGLISH_US = 'en-US';
 export const FRENCH_FRANCE = 'fr-FR';
 export const SPANISH_SPAIN = 'es-ES';
 export const GERMAN_GERMANY = 'de-DE';
+export const JAPANESE_JAPAN = 'ja-JP';
 export const CHINESE_SIMPLIFIED = 'zh-Hans';
 export const PSEUDO_LOCALE = 'pseudo-LOCALE';
 
@@ -43,6 +44,12 @@ export const LANGUAGES: LanguageDefinitions[] = [
     code: GERMAN_GERMANY,
     name: 'Deutsch',
     loader: () => import('../../../locales/de-DE/grafana.json'),
+  },
+
+  {
+    code: JAPANESE_JAPAN,
+    name: '日本語',
+    loader: () => import('../../../locales/ja-JP/grafana.json'),
   },
 
   {
