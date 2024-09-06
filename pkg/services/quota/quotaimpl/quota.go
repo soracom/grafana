@@ -223,7 +223,11 @@ func (s *service) CheckQuotaReached(ctx context.Context, targetSrv quota.TargetS
 			if !ok {
 				return false, quota.ErrUsageFoundForTarget.Errorf("no usage for target:%s", t)
 			}
-			if u >= limit {
+			if t == "ngalert:alert_rule:org" {
+				if u > limit {
+					return true, nil
+				}
+			} else if u >= limit {
 				return true, nil
 			}
 		}
