@@ -100,7 +100,7 @@ func (en *EmailNotifier) Notify(evalContext *alerting.EvalContext) error {
 			},
 			To:            en.Addresses,
 			SingleEmail:   en.SingleEmail,
-			Template:      "alert_notification",
+			Template:      "lagoon_alert_notification",
 			EmbeddedFiles: []string{},
 		},
 	}
