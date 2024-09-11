@@ -457,6 +457,16 @@ func ReadLoggingConfig(modes []string, logsPath string, cfg *ini.File) error {
 			sysLogHandler := NewSyslog(sec, format)
 			loggersToClose = append(loggersToClose, sysLogHandler)
 			handler.val = sysLogHandler.logger
+		case "firehose":
+			stream := sec.Key("stream").MustString("")
+			region := sec.Key("region").MustString("")
+			fmt.Fprintln(os.Stderr, "*********Stream/Region:", stream, region)
+			firehose, err := NewFirehose(stream, region)
+			if err != nil {
+				_ = level.Error(root).Log("Failed to initialize firehose handler", "err", err)
+				continue
+			}
+			handler.val = format(firehose)
 		}
 		if handler.val == nil {
 			panic(fmt.Sprintf("Handler is uninitialized for mode %q", mode))
