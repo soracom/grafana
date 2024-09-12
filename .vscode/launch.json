@@ -9,7 +9,15 @@
       "program": "${workspaceFolder}/pkg/cmd/grafana-server/",
       "env": {},
       "cwd": "${workspaceFolder}",
-      "args": ["--homepath", "${workspaceFolder}", "--packaging", "dev"]
+      "args": ["--homepath", "${workspaceFolder}", "--packaging", "dev", "--config", "${workspaceFolder}/conf/development.ini"]
+    },
+    {
+      "name": "Run Frontend",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "yarn",
+      "runtimeArgs": ["dev", "--watch"],
+      "console": "integratedTerminal"
     },
     {
       "name": "Attach to Chrome",
