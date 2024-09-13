@@ -9,29 +9,43 @@
       "program": "${workspaceFolder}/pkg/cmd/grafana-server/",
       "env": {},
       "cwd": "${workspaceFolder}",
-      "args": ["--homepath", "${workspaceFolder}", "--packaging", "dev", "--config", "${workspaceFolder}/conf/development.ini"]
+      "args": [
+        "--homepath",
+        "${workspaceFolder}",
+        "--packaging",
+        "dev",
+        "--config",
+        "${workspaceFolder}/conf/development.ini"
+      ]
     },
     {
       "name": "Run Frontend",
       "type": "node",
       "request": "launch",
       "runtimeExecutable": "yarn",
-      "runtimeArgs": ["dev", "--watch"],
+      "runtimeArgs": [
+        "dev",
+        "--watch"
+      ],
       "console": "integratedTerminal"
     },
     {
-      "name": "Attach to Chrome",
-      "port": 9222,
-      "request": "attach",
+      "name": "Launch Chrome",
       "type": "chrome",
-      "webRoot": "${workspaceFolder}"
+      "request": "launch",
+      "url": "http://localhost:3000"
     },
     {
       "name": "Debug Jest test",
       "type": "node",
       "request": "launch",
       "runtimeExecutable": "yarn",
-      "runtimeArgs": ["run", "jest", "--runInBand", "${file}"],
+      "runtimeArgs": [
+        "run",
+        "jest",
+        "--runInBand",
+        "${file}"
+      ],
       "console": "integratedTerminal",
       "internalConsoleOptions": "neverOpen",
       "port": 9229
