@@ -30,11 +30,10 @@
       "console": "integratedTerminal"
     },
     {
-      "name": "Attach to Chrome",
-      "port": 9222,
-      "request": "attach",
+      "name": "Launch Chrome",
       "type": "chrome",
-      "webRoot": "${workspaceFolder}"
+      "request": "launch",
+      "url": "http://localhost:3000"
     },
     {
       "name": "Debug UI test",
