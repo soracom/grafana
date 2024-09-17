@@ -10,3 +10,4 @@ RUN chown vscode:vscode /grafana
 USER vscode
 
 ENV NODE_ENV=dev
+ENV NODE_OPTIONS="--max-old-space-size=4096"
