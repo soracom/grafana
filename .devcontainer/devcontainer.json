@@ -24,8 +24,8 @@
   // "forwardPorts": [],
   "additionalProperties": {},
   "postStartCommand": {
-    "yarn-install": "yarn install",
-    "yarn-ide-setup": "yarn dlx @yarnpkg/sdks vscode"
+    "yarn-install": "yarn install"
+  //  "yarn-ide-setup": "yarn dlx @yarnpkg/sdks vscode"
   },
   "mounts": [
     {
