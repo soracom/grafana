@@ -8,6 +8,26 @@ import { getInstanceState } from '../state/selectors';
 import { initialVariablesState, VariablePayload, VariablesState } from '../state/types';
 import { initialVariableModelState, QueryVariableModel, VariableOption, VariableRefresh, VariableSort } from '../types';
 
+enum MetaFlag {
+  text = 'text',
+  value = 'value',
+  none = '',
+}
+
+// I don't particularly like this function, but keyof typeof causes betterer eslint to get angry
+const stringToMetaFlag = (value: string): MetaFlag => {
+  switch (value) {
+    case MetaFlag.text:
+      return MetaFlag.text;
+    case MetaFlag.value:
+      return MetaFlag.value;
+    case MetaFlag.none:
+      return MetaFlag.none;
+    default:
+      throw new Error(`${value} is not a valid meta flag.`);
+  }
+};
+
 interface VariableOptionsUpdate {
   templatedRegex: string;
   results: MetricFindValue[];
@@ -81,12 +101,36 @@ const getAllMatches = (str: string, regex: RegExp): RegExpExecArray[] => {
   return results;
 };
 
+const stringToMetaFlagAndRegex = (variableRegEx: string): [MetaFlag, RegExp] => {
+  const REGEX_CHAR = '/';
+
+  // variableRegEx has no metafield and is only a regex string
+  if (variableRegEx[0] === REGEX_CHAR) {
+    return [MetaFlag.none, stringToJsRegex(variableRegEx)];
+  }
+
+  // variableRegEx doesn't include / and is maybe just a basic string
+  if (!variableRegEx.includes(REGEX_CHAR)) {
+    return [MetaFlag.none, stringToJsRegex(variableRegEx)];
+  }
+
+  const regexStartIdx = variableRegEx.indexOf(REGEX_CHAR);
+
+  const metaString = variableRegEx.slice(0, regexStartIdx).toLowerCase();
+  const metaFlag = stringToMetaFlag(metaString);
+
+  const extractedRegexString = variableRegEx.slice(regexStartIdx);
+
+  return [metaFlag, stringToJsRegex(extractedRegexString)];
+};
+
 export const metricNamesToVariableValues = (variableRegEx: string, sort: VariableSort, metricNames: any[]) => {
   let regex;
+  let metaFlag = MetaFlag.none;
   let options: VariableOption[] = [];
 
   if (variableRegEx) {
-    regex = stringToJsRegex(variableRegEx);
+    [metaFlag, regex] = stringToMetaFlagAndRegex(variableRegEx);
   }
 
   for (let i = 0; i < metricNames.length; i++) {
@@ -103,7 +147,18 @@ export const metricNamesToVariableValues = (variableRegEx: string, sort: Variabl
     }
 
     if (regex) {
-      const matches = getAllMatches(value, regex);
+      let matches;
+      switch (metaFlag) {
+        case MetaFlag.text:
+          matches = getAllMatches(text, regex);
+          break;
+        case MetaFlag.value: //Fallthrough - default grafana behavior is matching against value
+        case MetaFlag.none:
+        default:
+          matches = getAllMatches(value, regex);
+          break;
+      }
+
       if (!matches.length) {
         continue;
       }
