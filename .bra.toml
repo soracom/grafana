@@ -3,7 +3,7 @@ init_cmds = [
   ["make", "gen-go"],
   ["make", "gen-jsonnet"],
   ["GO_BUILD_DEV=1", "make", "build-go"],
-  ["./bin/grafana", "server", "-packaging=dev", "cfg:app_mode=development"]
+  ["./bin/grafana", "server", "-packaging=dev", "--config", "./conf/development.ini"]
 ]
 watch_all = true
 follow_symlinks = true
@@ -20,5 +20,5 @@ cmds = [
   ["make", "gen-go"],
   ["make", "gen-jsonnet"],
   ["GO_BUILD_DEV=1", "make", "build-go"],
-  ["./bin/grafana", "server", "-packaging=dev", "cfg:app_mode=development"]
+  ["./bin/grafana", "server", "-packaging=dev", "--config", "./conf/development.ini"]
 ]
