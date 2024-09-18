@@ -365,6 +365,61 @@ describe('metricNamesToVariableValues', () => {
   });
 });
 
+describe('soracomMetricNamesToVariableValues', () => {
+  const item = (_text: string, _value: string) => ({ text: _text, value: _value, selected: false });
+  const metricsNames = [
+    item('shogo : lagoon : breaker :', 'd-bv172aeaukdipr6kdt9a'),
+    item(`shogo"''"""'\"''""''"::':;':'::shogo:;;shogo:;sho:;;;:"shogo"\"\"\\"""breaker`, 'd-a616m91nq27llu552gfc'),
+    item('shogo_test_device_normal', 'd-a0m1nk44uebhra1e7196'),
+    item('shogo_arc_sim', '999999088738969'),
+  ];
+
+  const expected1 = [{ value: '999999088738969', text: 'shogo_arc_sim', selected: false }];
+
+  const expected2 = [
+    { value: 'd-bv172aeaukdipr6kdt9a', text: 'shogo : lagoon : breaker :', selected: false },
+    {
+      value: 'd-a616m91nq27llu552gfc',
+      text: `shogo"''"""'\"''""''"::':;':'::shogo:;;shogo:;sho:;;;:"shogo"\"\"\\"""breaker`,
+      selected: false,
+    },
+    { value: 'd-a0m1nk44uebhra1e7196', text: 'shogo_test_device_normal', selected: false },
+  ];
+
+  it.each`
+    variableRegEx                                                                   | expected        | expectErr
+    ${''}                                                                           | ${metricsNames} | ${false}
+    ${'/unknown/'}                                                                  | ${[]}           | ${false}
+    ${'/unknown/g'}                                                                 | ${[]}           | ${false}
+    ${'text/unknown/'}                                                              | ${[]}           | ${false}
+    ${'value/unknown/g'}                                                            | ${[]}           | ${false}
+    ${'text/.*shogo.*/'}                                                            | ${metricsNames} | ${false}
+    ${'TEXT/.*shogo.*/'}                                                            | ${metricsNames} | ${false}
+    ${'text/.*sim.*/'}                                                              | ${expected1}    | ${false}
+    ${'value/.*shogo.*/'}                                                           | ${[]}           | ${false}
+    ${'VALUE/.*shogo.*/'}                                                           | ${[]}           | ${false}
+    ${'value/^d-.*/'}                                                               | ${expected2}    | ${false}
+    ${'value/^999999088738969.*/'}                                                  | ${expected1}    | ${false}
+    ${'value/(999999088738969)/'}                                                   | ${expected1}    | ${false}
+    ${'/(999999088738969)/'}                                                        | ${expected1}    | ${false}
+    ${'/(d-bv172aeaukdipr6kdt9a)|(d-a616m91nq27llu552gfc)|d-a0m1nk44uebhra1e7196/'} | ${expected2}    | ${false}
+    ${'asdf//'}                                                                     | ${[]}           | ${true}
+    ${'asdf/'}                                                                      | ${[]}           | ${true}
+  `(
+    'when called with variableRegEx:$variableRegEx then it return correct options',
+    ({ variableRegEx, expected, expectErr }) => {
+      try {
+        const result = metricNamesToVariableValues(variableRegEx, VariableSort.disabled, metricsNames);
+        expect(result).toEqual(expected);
+      } catch (e) {
+        if (expectErr) {
+          expect(e).toBeTruthy();
+        }
+      }
+    }
+  );
+});
+
 function createMetric(value: string) {
   return {
     text: value,
