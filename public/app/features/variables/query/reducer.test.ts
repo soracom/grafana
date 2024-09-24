@@ -387,24 +387,25 @@ describe('soracomMetricNamesToVariableValues', () => {
   ];
 
   it.each`
-    variableRegEx                                                                   | expected        | expectErr
-    ${''}                                                                           | ${metricsNames} | ${false}
-    ${'/unknown/'}                                                                  | ${[]}           | ${false}
-    ${'/unknown/g'}                                                                 | ${[]}           | ${false}
-    ${'text/unknown/'}                                                              | ${[]}           | ${false}
-    ${'value/unknown/g'}                                                            | ${[]}           | ${false}
-    ${'text/.*shogo.*/'}                                                            | ${metricsNames} | ${false}
-    ${'TEXT/.*shogo.*/'}                                                            | ${metricsNames} | ${false}
-    ${'text/.*sim.*/'}                                                              | ${expected1}    | ${false}
-    ${'value/.*shogo.*/'}                                                           | ${[]}           | ${false}
-    ${'VALUE/.*shogo.*/'}                                                           | ${[]}           | ${false}
-    ${'value/^d-.*/'}                                                               | ${expected2}    | ${false}
-    ${'value/^999999088738969.*/'}                                                  | ${expected1}    | ${false}
-    ${'value/(999999088738969)/'}                                                   | ${expected1}    | ${false}
-    ${'/(999999088738969)/'}                                                        | ${expected1}    | ${false}
-    ${'/(d-bv172aeaukdipr6kdt9a)|(d-a616m91nq27llu552gfc)|d-a0m1nk44uebhra1e7196/'} | ${expected2}    | ${false}
-    ${'asdf//'}                                                                     | ${[]}           | ${true}
-    ${'asdf/'}                                                                      | ${[]}           | ${true}
+    variableRegEx                                                               | expected        | expectErr
+    ${''}                                                                       | ${metricsNames} | ${false}
+    ${'/unknown/'}                                                              | ${[]}           | ${false}
+    ${'/unknown/g'}                                                             | ${[]}           | ${false}
+    ${'name/unknown/'}                                                          | ${[]}           | ${false}
+    ${'id/unknown/'}                                                            | ${[]}           | ${false}
+    ${'name/.*shogo.*/'}                                                        | ${metricsNames} | ${false}
+    ${'NAME/.*shogo.*/'}                                                        | ${metricsNames} | ${false}
+    ${'name/.*sim.*/'}                                                          | ${expected1}    | ${false}
+    ${'name/shogo_arc_sim/'}                                                    | ${expected1}    | ${false}
+    ${'id/.*shogo.*/'}                                                          | ${[]}           | ${false}
+    ${'ID/.*shogo.*/'}                                                          | ${[]}           | ${false}
+    ${'id/^d-.*/'}                                                              | ${expected2}    | ${false}
+    ${'id/^999999088738969.*/'}                                                 | ${expected1}    | ${false}
+    ${'id/999999088738969/'}                                                    | ${expected1}    | ${false}
+    ${'/999999088738969/'}                                                      | ${expected1}    | ${false}
+    ${'/d-bv172aeaukdipr6kdt9a|d-a616m91nq27llu552gfc|d-a0m1nk44uebhra1e7196/'} | ${expected2}    | ${false}
+    ${'asdf//'}                                                                 | ${[]}           | ${true}
+    ${'asdf/'}                                                                  | ${[]}           | ${true}
   `(
     'when called with variableRegEx:$variableRegEx then it return correct options',
     ({ variableRegEx, expected, expectErr }) => {
@@ -412,8 +413,8 @@ describe('soracomMetricNamesToVariableValues', () => {
         const result = metricNamesToVariableValues(variableRegEx, VariableSort.disabled, metricsNames);
         expect(result).toEqual(expected);
       } catch (e) {
-        if (expectErr) {
-          expect(e).toBeTruthy();
+        if (!expectErr) {
+          throw e;
         }
       }
     }
