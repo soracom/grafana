@@ -9,18 +9,18 @@ import { initialVariablesState, VariablePayload, VariablesState } from '../state
 import { initialVariableModelState, QueryVariableModel, VariableOption, VariableRefresh, VariableSort } from '../types';
 
 enum MetaFlag {
-  text = 'text',
-  value = 'value',
+  name = 'name',
+  id = 'id',
   none = '',
 }
 
 // I don't particularly like this function, but keyof typeof causes betterer eslint to get angry
 const stringToMetaFlag = (value: string): MetaFlag => {
   switch (value) {
-    case MetaFlag.text:
-      return MetaFlag.text;
-    case MetaFlag.value:
-      return MetaFlag.value;
+    case MetaFlag.name:
+      return MetaFlag.name;
+    case MetaFlag.id:
+      return MetaFlag.id;
     case MetaFlag.none:
       return MetaFlag.none;
     default:
@@ -149,10 +149,10 @@ export const metricNamesToVariableValues = (variableRegEx: string, sort: Variabl
     if (regex) {
       let matches;
       switch (metaFlag) {
-        case MetaFlag.text:
+        case MetaFlag.name:
           matches = getAllMatches(text, regex);
           break;
-        case MetaFlag.value: //Fallthrough - default grafana behavior is matching against value
+        case MetaFlag.id: //Fallthrough - default grafana behavior is matching against value
         case MetaFlag.none:
         default:
           matches = getAllMatches(value, regex);
