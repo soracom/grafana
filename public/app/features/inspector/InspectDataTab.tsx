@@ -55,7 +55,7 @@ export class InspectDataTab extends PureComponent<Props, State> {
     super(props);
 
     this.state = {
-      selectedDataFrame: 0,
+      selectedDataFrame: DataTransformerID.joinByField,
       dataFrameIndex: 0,
       transformId: DataTransformerID.noop,
       transformationOptions: buildTransformationOptions(),
