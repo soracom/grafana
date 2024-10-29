@@ -151,6 +151,11 @@ export function ChannelSubForm<R extends ChannelValues>({
       </div>
       {notifier && (
         <div className={styles.innerContent}>
+          {notifier.alert !== '' && (
+            <Alert title="" severity="warning">
+              {notifier.alert}
+            </Alert>
+          )}
           <ChannelOptions<R>
             defaultValues={defaultValues}
             selectedChannelOptions={mandatoryOptions?.length ? mandatoryOptions! : optionalOptions!}
