@@ -7,7 +7,7 @@ type NotifierPlugin struct {
 	Heading     string           `json:"heading"`
 	Description string           `json:"description"`
 	Info        string           `json:"info"`
-	Alert       string           `json:"alert"`
+	Alert       []string         `json:"alert"`
 	Options     []NotifierOption `json:"options"`
 }
 

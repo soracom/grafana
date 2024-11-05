@@ -948,7 +948,10 @@ func GetAvailableNotifiers() []*NotifierPlugin {
 			Name:        "LINE",
 			Description: "Send notifications to LINE notify",
 			Heading:     "LINE notify settings",
-			Alert:       "Due to the EOL of the LINE Notify API, LINE alerting will stop working after March 31, 2025. Please consider using another contact point.",
+			Alert: []string{
+				"LINE Notify API の提供終了に伴い、2025 年 3 月 31 日以降は LINE 通知を利用できません。別の Contact Point の利用を検討してください。",
+				"After the LINE Notify API reaches EOL on March 31, 2025, LINE alerting will no longer function. Please consider using another contact point.",
+			},
 			Options: []NotifierOption{
 				{
 					Label:        "Token",

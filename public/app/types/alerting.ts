@@ -75,7 +75,7 @@ export interface NotifierDTO {
   heading: string;
   options: NotificationChannelOption[];
   info?: string;
-  alert?: string;
+  alert?: string[];
   secure?: boolean;
 }
 

@@ -151,9 +151,11 @@ export function ChannelSubForm<R extends ChannelValues>({
       </div>
       {notifier && (
         <div className={styles.innerContent}>
-          {notifier.alert !== '' && (
+          {notifier.alert?.length && notifier.alert.length > 0 && notifier.alert[0] !== '' && (
             <Alert title="" severity="warning">
-              {notifier.alert}
+              {notifier.alert.map((alert, index) => (
+                <div key={index}>{alert}</div>
+              ))}
             </Alert>
           )}
           <ChannelOptions<R>
