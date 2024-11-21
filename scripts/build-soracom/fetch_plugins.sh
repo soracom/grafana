@@ -104,11 +104,11 @@ yarn_build_repo () {
   fi
 }
 
-clone_private_repo soracom-harvest-backend e7f46129ebbbfe574cb1ae1c41f5d171f6e48831
-clone_private_repo soracom-map-panel 59be62df090b858cad049b64db5527d9d8c5ef05
-clone_private_repo soracom-image-panel a3385ba1e6507cb8cc7efff29fe96af1b55b10f5
-clone_private_repo soracom-plot-panel d67d734f0c36e8ecde7e0a7cdecda4784178a497
-clone_private_repo soracom-dynamic-image-panel 4df052c511cd4161f709ba15b3c5912bbb5c0040
+clone_private_repo soracom-harvest-backend HASH_PLACEHOLDER
+clone_private_repo soracom-map-panel HASH_PLACEHOLDER
+clone_private_repo soracom-image-panel HASH_PLACEHOLDER
+clone_private_repo soracom-plot-panel HASH_PLACEHOLDER
+clone_private_repo soracom-dynamic-image-panel HASH_PLACEHOLDER
 
 #Add any pre-built plugins to the dir
 cp -R ../pre-built-plugins/* .
