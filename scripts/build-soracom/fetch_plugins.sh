@@ -1,4 +1,6 @@
-cd "$(dirname "$0")"
+set -e
+
+cd "$(dirname "$0")" || exit
 
 node_version=$(node --version)
 echo "Node.js version: $node_version"
@@ -19,14 +21,9 @@ clone_private_repo () {
   fi
   
   if [ -d $1 ]; then
-<<<<<<< HEAD
-    cd $1
-    git pull origin $BRANCH
-=======
     cd $1 || exit
     git fetch origin $COMMIT
     git checkout FETCH_HEAD
->>>>>>> 48b1723427 ([build] First attempt at getting plugins by commit hash)
     cd ..
   else
     echo "$(pwd)"
@@ -34,14 +31,14 @@ clone_private_repo () {
     echo `ls ../deploy_keys`
     echo `ls ../deploy_keys/$1/`
 
-    echo "export GIT_SSH_COMMAND=\"ssh -i ../deploy_keys/$1/id_rsa -F /dev/null\""
-    export GIT_SSH_COMMAND="ssh -i ../deploy_keys/$1/id_rsa -F /dev/null"
-
     echo "git init $1"
     git init $1
 
     echo "cd $1 || exit"
     cd $1 || exit
+
+    echo "export GIT_SSH_COMMAND=\"ssh -i ../deploy_keys/$1/id_rsa -F /dev/null\""
+    export GIT_SSH_COMMAND="ssh -i ../../deploy_keys/$1/id_rsa -F /dev/null"
 
     echo "git remote add origin git@github.com:soracom/$1.git"
     git remote add origin git@github.com:soracom/$1.git
