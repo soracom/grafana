@@ -1,3 +1,6 @@
+#!/bin/bash
+set -e
+
 cd "$(dirname "$0")" || exit
 
 node_version=$(node --version)
@@ -12,22 +15,52 @@ cd $PLUGIN_DIR || exit
 
 clone_private_repo () {
   if [ ! -z "$2" ]; then
-    BRANCH=$2
-  else 
-    BRANCH=master
+    echo "Cloning $1 at commit $2"
+    COMMIT=$2
+  else
+    echo "ERROR No commit specified for $1, exiting"
+    exit 1
   fi
+
+  # Suppress message about initial branch name
+  # Suppress message about detached head
+  git config --global init.defaultBranch main
+  git config --global advice.detachedHead false
   
   if [ -d $1 ]; then
     cd $1 || exit
-    git pull origin $BRANCH
+    echo "git fetch origin $COMMIT"
+    git fetch origin $COMMIT
+
+    echo "git checkout FETCH_HEAD"
+    git checkout FETCH_HEAD
     cd ..
   else
     echo "$(pwd)"
     echo `ls ..`
     echo `ls ../deploy_keys`
     echo `ls ../deploy_keys/$1/`
-    echo "git clone --depth 1 --single-branch --branch $BRANCH git@github.com:soracom/$1.git $1"
-    GIT_SSH_COMMAND="ssh -i ../deploy_keys/$1/id_rsa -F /dev/null" git clone --depth 1 --single-branch --branch $BRANCH git@github.com:soracom/$1.git $1
+
+    echo "git init $1"
+    git init $1
+
+    echo "cd $1 || exit"
+    cd $1 || exit
+
+    echo "export GIT_SSH_COMMAND=\"ssh -i ../../deploy_keys/$1/id_rsa -F /dev/null\""
+    export GIT_SSH_COMMAND="ssh -i ../../deploy_keys/$1/id_rsa -F /dev/null"
+
+    echo "git remote add origin git@github.com:soracom/$1.git"
+    git remote add origin git@github.com:soracom/$1.git
+
+    echo "git fetch origin $COMMIT"
+    git fetch origin $COMMIT
+
+    echo "git checkout FETCH_HEAD"
+    git checkout FETCH_HEAD
+
+    echo "cd .."
+    cd ..
   fi
 
   if [ -f "$1/signplugin.sh" ]; then 
@@ -72,11 +105,11 @@ yarn_build_repo () {
   fi
 }
 
-clone_private_repo soracom-harvest-backend main
-clone_private_repo soracom-map-panel lagoon3-master
-clone_private_repo soracom-image-panel lagoon3-master
-clone_private_repo soracom-plot-panel main
-clone_private_repo soracom-dynamic-image-panel lagoon3-master
+clone_private_repo soracom-harvest-backend HASH_PLACEHOLDER
+clone_private_repo soracom-map-panel HASH_PLACEHOLDER
+clone_private_repo soracom-image-panel HASH_PLACEHOLDER
+clone_private_repo soracom-plot-panel HASH_PLACEHOLDER
+clone_private_repo soracom-dynamic-image-panel HASH_PLACEHOLDER
 
 #Add any pre-built plugins to the dir
 cp -R ../pre-built-plugins/* .
