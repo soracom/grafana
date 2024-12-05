@@ -176,8 +176,9 @@ export const RuleActionsButtons: FC<Props> = ({ rule, rulesSource }) => {
           <ConfirmModal
             isOpen={true}
             title="Delete rule"
-            body="Deleting this rule will permanently remove it from your alert rule list. Are you sure you want to delete this rule?"
+            body="Deleting this rule will permanently remove it from your alert rule list. Are you sure you want to delete this rule? Type DELETE to confirm."
             confirmText="Yes, delete"
+            confirmationText="DELETE"
             icon="exclamation-triangle"
             onConfirm={deleteRule}
             onDismiss={() => setRuleToDelete(undefined)}
