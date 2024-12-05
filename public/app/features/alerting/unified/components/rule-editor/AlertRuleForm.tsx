@@ -176,9 +176,9 @@ export const AlertRuleForm: FC<Props> = ({ existing }) => {
         <ConfirmModal
           isOpen={true}
           title="Delete rule"
-          body="Deleting this rule will permanently remove it. Are you sure you want to delete this rule?"
+          body="Deleting this rule will permanently remove it. Are you sure you want to delete this rule? Type DELETE to confirm."
           confirmText="Yes, delete"
-          confirmationText="Delete alert"
+          confirmationText="DELETE"
           icon="exclamation-triangle"
           onConfirm={deleteRule}
           onDismiss={() => setShowDeleteModal(false)}
