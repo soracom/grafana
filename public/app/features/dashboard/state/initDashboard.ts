@@ -273,6 +273,82 @@ export function getNewDashboardModelData(urlFolderId?: string, panelType?: strin
           title: 'Panel Title',
         },
       ],
+      templating: {
+        list: [
+          {
+            current: {},
+            datasource: {
+              type: "harvest-backend-datasource"
+            },
+            definition: "resource_types",
+            hide: 0,
+            includeAll: false,
+            multi: false,
+            name: "resource_types",
+            options: [],
+            query: "resource_types",
+            refresh: 1,
+            regex: "",
+            skipUrlSync: false,
+            sort: 0,
+            type: "query"
+          },
+          {
+            current: {},
+            datasource: {
+              type: "harvest-backend-datasource"
+            },
+            definition: "groups",
+            hide: 0,
+            includeAll: false,
+            multi: false,
+            name: "groups",
+            options: [],
+            query: "groups",
+            refresh: 1,
+            regex: "",
+            skipUrlSync: false,
+            sort: 0,
+            type: "query"
+          },
+          {
+            current: {},
+            datasource: {
+              type: "harvest-backend-datasource"
+            },
+            definition: "$resource_types?group=$groups",
+            hide: 0,
+            includeAll: true,
+            multi: true,
+            name: "resources",
+            options: [],
+            query: "$resource_types?group=$groups",
+            refresh: 1,
+            regex: "",
+            skipUrlSync: false,
+            sort: 0,
+            type: "query"
+          },
+          {
+            current: {},
+            datasource: {
+              type: "harvest-backend-datasource"
+            },
+            definition: "$resource_types||$resources",
+            hide: 0,
+            includeAll: false,
+            multi: true,
+            name: "properties",
+            options: [],
+            query: "$resource_types||$resources",
+            refresh: 1,
+            regex: "",
+            skipUrlSync: false,
+            sort: 0,
+            type: "query"
+          }
+        ],
+      },
     },
   };
 
