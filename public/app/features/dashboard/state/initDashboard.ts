@@ -280,13 +280,13 @@ export function getNewDashboardModelData(urlFolderId?: string, panelType?: strin
             datasource: {
               type: "harvest-backend-datasource"
             },
-            definition: "groups",
+            definition: "resource_types",
             hide: 0,
             includeAll: false,
             multi: false,
-            name: "groups",
+            name: "resource_types",
             options: [],
-            query: "groups",
+            query: "resource_types",
             refresh: 1,
             regex: "",
             skipUrlSync: false,
@@ -298,13 +298,13 @@ export function getNewDashboardModelData(urlFolderId?: string, panelType?: strin
             datasource: {
               type: "harvest-backend-datasource"
             },
-            definition: "resource_types",
+            definition: "groups",
             hide: 0,
             includeAll: false,
             multi: false,
-            name: "resource_types",
+            name: "groups",
             options: [],
-            query: "resource_types",
+            query: "groups",
             refresh: 1,
             regex: "",
             skipUrlSync: false,
