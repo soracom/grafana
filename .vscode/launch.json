@@ -13,9 +13,9 @@
         "server", 
         "--homepath", "${workspaceFolder}", 
         "--packaging", "dev", 
-        "cfg:app_mode=development",
         "--config",
-        "${workspaceFolder}/conf/development.ini"
+        "${workspaceFolder}/conf/development.ini",
+        "cfg:app_mode=development"
       ]
     },
     {
