@@ -11,7 +11,7 @@ npm install --prefix ./local  @grafana/sign-plugin@latest -g
 PLUGIN_DIR=./plugins
 
 mkdir -p $PLUGIN_DIR
-cd $PLUGIN_DIR
+cd $PLUGIN_DIR || exit
 
 clone_private_repo () {
   if [ ! -z "$2" ]; then
@@ -63,8 +63,8 @@ clone_private_repo () {
     cd ..
   fi
 
-  if [ ! -z $1/signplugin.sh ]; then 
-    cd $1
+  if [ -f "$1/signplugin.sh" ]; then 
+    cd $1 || exit
     ./signplugin.sh || exit 1
     cd ..
   fi
@@ -72,14 +72,14 @@ clone_private_repo () {
 
 clone_public_repo () {
   if [ -d "$1-$2" ]; then
-    cd $1-$2
+    cd $1-$2 || exit
     git pull origin master
     cd ..
   else
     git clone https://github.com/$1/$2.git $1-$2
   fi
   if [ ! -z "$3" ]; then
-    cd $1-$2
+    cd $1-$2 || exit
     echo "Checking out specific commit $3"
     git checkout $3
     cd ..
@@ -88,7 +88,7 @@ clone_public_repo () {
 
 build_repo () {
   if [ -d "$1-$2" ]; then
-    cd $1-$2
+    cd $1-$2 || exit
     npm install
     npm run-script build
     cd ..
@@ -97,7 +97,7 @@ build_repo () {
 
 yarn_build_repo () {
   if [ -d "$1-$2" ]; then
-    cd $1-$2
+    cd $1-$2 || exit
     npm install yarn
     npx yarn install --pure-lockfile
     npx yarn build
@@ -105,11 +105,11 @@ yarn_build_repo () {
   fi
 }
 
-clone_private_repo soracom-harvest-backend HASH_PLACEHOLDER
-clone_private_repo soracom-map-panel HASH_PLACEHOLDER
-clone_private_repo soracom-image-panel HASH_PLACEHOLDER
-clone_private_repo soracom-plot-panel HASH_PLACEHOLDER
-clone_private_repo soracom-dynamic-image-panel HASH_PLACEHOLDER
+clone_private_repo soracom-harvest-backend 72c11e5f84dd3d471ee97e5f1992646310af2bb6
+clone_private_repo soracom-map-panel 59be62df090b858cad049b64db5527d9d8c5ef05
+clone_private_repo soracom-image-panel a3385ba1e6507cb8cc7efff29fe96af1b55b10f5
+clone_private_repo soracom-plot-panel a166c5f3da64896d6ac6a2ddc39b4551dbc5c9c3
+clone_private_repo soracom-dynamic-image-panel 9c56cc2c8c7ed9ef10d843e01ca69bc940b5ba38
 
 #Add any pre-built plugins to the dir
 cp -R ../pre-built-plugins/* .

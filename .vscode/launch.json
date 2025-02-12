@@ -10,12 +10,12 @@
       "env": {},
       "cwd": "${workspaceFolder}",
       "args": [
-        "--homepath",
-        "${workspaceFolder}",
-        "--packaging",
-        "dev",
+        "server", 
+        "--homepath", "${workspaceFolder}", 
+        "--packaging", "dev", 
         "--config",
-        "${workspaceFolder}/conf/development.ini"
+        "${workspaceFolder}/conf/development.ini",
+        "cfg:app_mode=development"
       ]
     },
     {
