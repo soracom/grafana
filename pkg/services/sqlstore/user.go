@@ -86,11 +86,17 @@ func (ss *SQLStore) createUser(ctx context.Context, sess *DBSession, args user.C
 	usr.Rands = rands
 
 	if len(args.Password) > 0 {
-		encodedPassword, err := util.EncodePassword(string(args.Password), usr.Salt)
-		if err != nil {
-			return usr, err
+		// for lagoon migration, this allows an already encoded password to be migrated
+		if len(args.Password) > 32 && args.Password[:22] == "lagoon-migrate:salt10:" { //magic string defining salt length
+			usr.Salt = args.Password[22:32]   // 10 chars for the salt
+			usr.Password = args.Password[32:] // the rest is encoded password
+		} else {
+			encodedPassword, err := util.EncodePassword(args.Password, usr.Salt)
+			if err != nil {
+				return usr, err
+			}
+			usr.Password = encodedPassword
 		}
-		usr.Password = user.Password(encodedPassword)
 	}
 
 	sess.UseBool("is_admin")
