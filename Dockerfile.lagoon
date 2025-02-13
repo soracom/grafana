@@ -1,4 +1,5 @@
 
+ARG REPOSITORY=public.ecr.aws/docker/library/
 ARG BASE_IMAGE=alpine:3.20
 ARG JS_IMAGE=node:22-alpine
 ARG JS_PLATFORM=linux/amd64
@@ -7,7 +8,7 @@ ARG GO_IMAGE=golang:1.23.5-alpine
 ARG GO_SRC=go-builder
 ARG JS_SRC=js-builder
 
-FROM --platform=${JS_PLATFORM} ${JS_IMAGE} as js-builder
+FROM --platform=${JS_PLATFORM} ${REPOSITORY}${JS_IMAGE} as js-builder
 
 ENV NODE_OPTIONS=--max_old_space_size=8000
 
@@ -33,7 +34,7 @@ COPY emails emails
 ENV NODE_ENV=production
 RUN yarn build
 
-FROM ${GO_IMAGE} as go-builder
+FROM ${REPOSITORY}${GO_IMAGE} as go-builder
 
 ARG COMMIT_SHA=""
 ARG BUILD_BRANCH=""
@@ -97,7 +98,7 @@ ENV BUILD_BRANCH=${BUILD_BRANCH}
 
 RUN make build-go GO_BUILD_TAGS=${GO_BUILD_TAGS} WIRE_TAGS=${WIRE_TAGS}
 
-FROM ${BASE_IMAGE} as tgz-builder
+FROM ${REPOSITORY}${BASE_IMAGE} as tgz-builder
 
 WORKDIR /tmp/grafana
 
@@ -113,7 +114,7 @@ FROM ${GO_SRC} as go-src
 FROM ${JS_SRC} as js-src
 
 # Final stage
-FROM ${BASE_IMAGE}
+FROM ${REPOSITORY}${BASE_IMAGE}
 
 LABEL maintainer="Grafana Labs <hello@grafana.com>"
 
