@@ -105,7 +105,7 @@ yarn_build_repo () {
   fi
 }
 
-clone_private_repo soracom-harvest-backend 03d47d64c8c6960b951e0ec807a05b0a10608a9c
+clone_private_repo soracom-harvest-backend cb6b1d6967ec6778c274aa461d6dbaa5a13a863d
 clone_private_repo soracom-map-panel 59be62df090b858cad049b64db5527d9d8c5ef05
 clone_private_repo soracom-image-panel a3385ba1e6507cb8cc7efff29fe96af1b55b10f5
 clone_private_repo soracom-plot-panel a166c5f3da64896d6ac6a2ddc39b4551dbc5c9c3
