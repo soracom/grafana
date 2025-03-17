@@ -124,7 +124,6 @@ download_artifact_from_s3 () {
   if [ -f "$plugin_name-$version.zip" ]; then
     unzip -o "$plugin_name-$version.zip"
     rm -f "$plugin_name-$version.zip"
-    mv $plugin_name-$version $plugin_name
   fi
 }
 
