@@ -119,7 +119,7 @@ download_artifact_from_s3 () {
     exit 1
   fi
 
-  aws s3 cp "s3://soracom-grafana-plugins/${plugin_name}-${version}.zip" .
+  aws s3 cp "s3://lagoon-plugins/${plugin_name}-${version}.zip" .
 
   if [ -f "$plugin_name-$version.zip" ]; then
     unzip -o "$plugin_name-$version.zip"
