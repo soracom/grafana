@@ -105,11 +105,35 @@ yarn_build_repo () {
   fi
 }
 
+download_artifact_from_s3 () {
+  plugin_name=$1
+  version=$2
+
+  if [ -z "$plugin_name" ]; then
+    echo "ERROR No plugin name specified, exiting"
+    exit 1
+  fi
+
+  if [ -z "$version" ]; then
+    echo "ERROR No version specified for $plugin_name, exiting"
+    exit 1
+  fi
+
+  aws s3 cp "s3://soracom-grafana-plugins/${plugin_name}-${version}.zip" .
+
+  if [ -f "$plugin_name-$version.zip" ]; then
+    unzip -o "$plugin_name-$version.zip"
+    rm -f "$plugin_name-$version.zip"
+    mv $plugin_name-$version $plugin_name
+  fi
+}
+
 clone_private_repo soracom-harvest-backend HASH_PLACEHOLDER
 clone_private_repo soracom-map-panel HASH_PLACEHOLDER
 clone_private_repo soracom-image-panel HASH_PLACEHOLDER
 clone_private_repo soracom-plot-panel HASH_PLACEHOLDER
-clone_private_repo soracom-dynamic-image-panel HASH_PLACEHOLDER
+
+download_artifact_from_s3 soracom-dynamic-image-panel VERSION_PLACEHOLDER
 
 #Add any pre-built plugins to the dir
 cp -R ../pre-built-plugins/* .
