@@ -130,7 +130,7 @@ download_artifact_from_s3 () {
   aws s3 cp "s3://lagoon-plugins/${basename}.zip" .
 
   if [ -f "${basename}.zip" ]; then
-    sha1sum -c "${basename}.zip.sha1"
+    echo "$(cat ${basename}.zip.sha1) ${basename}.zip" | sha1sum -c -
     unzip -o "${basename}.zip"
     rm -f "${basename}.zip.sha1"
     rm -f "${basename}.zip"
