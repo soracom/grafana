@@ -105,11 +105,44 @@ yarn_build_repo () {
   fi
 }
 
+download_artifact_from_s3 () {
+  plugin_name=$1
+  version=$2
+  branch=$3
+
+  if [ -z "$plugin_name" ]; then
+    echo "ERROR No plugin name specified, exiting"
+    exit 1
+  fi
+
+  if [ -z "$version" ]; then
+    echo "ERROR No version specified for $plugin_name, exiting"
+    exit 1
+  fi
+
+  if [ ! -z "$branch" ]; then
+    basename="${plugin_name}-${version}-${branch}"
+  else
+    basename="${plugin_name}-${version}"
+  fi
+
+  aws s3 cp "s3://lagoon-plugins/${basename}.zip.sha1" .
+  aws s3 cp "s3://lagoon-plugins/${basename}.zip" .
+
+  if [ -f "${basename}.zip" ]; then
+    echo "$(cat ${basename}.zip.sha1) ${basename}.zip" | sha1sum -c -
+    unzip -o "${basename}.zip"
+    rm -f "${basename}.zip.sha1"
+    rm -f "${basename}.zip"
+  fi
+}
+
 clone_private_repo soracom-harvest-backend 72c11e5f84dd3d471ee97e5f1992646310af2bb6
 clone_private_repo soracom-map-panel 59be62df090b858cad049b64db5527d9d8c5ef05
-clone_private_repo soracom-image-panel a3385ba1e6507cb8cc7efff29fe96af1b55b10f5
 clone_private_repo soracom-plot-panel a166c5f3da64896d6ac6a2ddc39b4551dbc5c9c3
-clone_private_repo soracom-dynamic-image-panel 9c56cc2c8c7ed9ef10d843e01ca69bc940b5ba38
+
+download_artifact_from_s3 soracom-dynamic-image-panel 2.0.0
+download_artifact_from_s3 soracom-image-panel 2.0.0 sc-134810-migrate-soracom-image-panel-to-react-from
 
 #Add any pre-built plugins to the dir
 cp -R ../pre-built-plugins/* .
