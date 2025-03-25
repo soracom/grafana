@@ -48,6 +48,6 @@ phases:
   build:
     commands:
       - ./scripts/build-soracom/fetch_plugins.sh
-      - docker build -t $IMAGE_REPO_NAME:$IMAGE_TAG -f Dockerfile.lagoon . --build-arg CONFIG_FILE=$LAGOON_CONFIG_FILE
+      - docker build -t $IMAGE_REPO_NAME:$IMAGE_TAG -f Dockerfile.lagoon . --build-arg CONFIG_FILE=$LAGOON_CONFIG_FILE --config buildkitd.toml
       - docker tag $IMAGE_REPO_NAME:$IMAGE_TAG $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME:$IMAGE_TAG
       - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME:$IMAGE_TAG
