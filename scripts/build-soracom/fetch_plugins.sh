@@ -141,9 +141,8 @@ clone_private_repo soracom-harvest-backend 1ecd1455048f12efdb85e1189aa7f2eedbbfa
 clone_private_repo soracom-map-panel 59be62df090b858cad049b64db5527d9d8c5ef05
 clone_private_repo soracom-image-panel a3385ba1e6507cb8cc7efff29fe96af1b55b10f5
 clone_private_repo soracom-plot-panel a166c5f3da64896d6ac6a2ddc39b4551dbc5c9c3
-clone_private_repo soracom-dynamic-image-panel 9c56cc2c8c7ed9ef10d843e01ca69bc940b5ba38
 
-#download_artifact_from_s3 soracom-dynamic-image-panel 2.0.0
+download_artifact_from_s3 soracom-dynamic-image-panel 2.0.0
 #download_artifact_from_s3 soracom-image-panel 2.0.0 sc-134810-migrate-soracom-image-panel-to-react-from
 
 #Add any pre-built plugins to the dir
