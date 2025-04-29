@@ -27,6 +27,7 @@
     "yarn-install": "yarn install"
   //  "yarn-ide-setup": "yarn dlx @yarnpkg/sdks vscode"
   },
+  "postCreateCommand": "if [ -n \"$SSH_AUTH_SOCK\" ]; then nohup bash -c 'while true; do sleep 20; ps aux | grep -E \"vscode.*[b]ootstrap-fork.*extensionHost.*\" > /dev/null || kill -15 1; done &' > /dev/null 2>&1; else echo \"Not Remote-SSH — skipping watchdog\"; fi",
   "mounts": [
     {
       // Grafana data directory (logs and db)
