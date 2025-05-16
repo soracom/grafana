@@ -141,7 +141,7 @@ clone_private_repo soracom-harvest-backend f026d7aa2dc718728b484a25682a0e517944d
 clone_private_repo soracom-map-panel 59be62df090b858cad049b64db5527d9d8c5ef05
 clone_private_repo soracom-plot-panel a166c5f3da64896d6ac6a2ddc39b4551dbc5c9c3
 
-download_artifact_from_s3 soracom-dynamic-image-panel 2.0.0
+download_artifact_from_s3 soracom-dynamic-image-panel 2.1.0 sc-141507-poc-soracam-kddi-lagoon-hover-image-seeking
 download_artifact_from_s3 soracom-image-panel 2.0.0
 
 #Add any pre-built plugins to the dir
