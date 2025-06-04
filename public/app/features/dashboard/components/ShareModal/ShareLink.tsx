@@ -167,7 +167,7 @@ export class ShareLink extends PureComponent<Props, State> {
               <TextLink href="https://grafana.com/grafana/plugins/grafana-image-renderer" external>
                 Grafana image renderer plugin
               </TextLink>
-              . Please contact your Grafana administrator to install the plugin.
+              . Please contact your Lagoon administrator to install the plugin.
             </Trans>
           </Alert>
         )}

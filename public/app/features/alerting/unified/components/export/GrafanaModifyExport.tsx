@@ -87,7 +87,7 @@ function RuleModifyExport({ ruleIdentifier }: { ruleIdentifier: RuleIdentifier }
     // alert rule exists but is not a grafana-managed rule
     return (
       <Alert
-        title="This rule is not a Grafana-managed alert rule"
+        title="This rule is not a Lagoon-managed alert rule"
         buttonContent="Go back to alert list"
         onRemove={() => locationService.replace(createRelativeUrl('/alerting/list'))}
       />

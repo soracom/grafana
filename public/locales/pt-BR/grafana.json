@@ -783,7 +783,7 @@
       "next-button": "Avançar",
       "save-button": "Salvar"
     },
-    "page-content": "Para ativar as correlações, adicione-as nas configurações do Grafana:",
+    "page-content": "Para ativar as correlações, adicione-as nas configurações do Lagoon:",
     "page-heading": "Correlações desativadas",
     "query-editor": {
       "control-rules": "A fonte de dados de destino selecionada deve exportar um editor de consulta.",
@@ -860,7 +860,7 @@
       "visualization": "Visualização"
     },
     "alert-rules-drawer": {
-      "redirect-link": "Lista no alerta do Grafana",
+      "redirect-link": "Lista no alerta do Lagoon",
       "subtitle": "Regras de alerta relacionadas a este painel de controle"
     },
     "empty": {
@@ -961,7 +961,7 @@
       "label": "Encontre e importe painéis de controle para aplicações comuns em <1></1>",
       "load-button": "Carregar",
       "placeholder": "URL ou ID do painel de controle do Grafana.com",
-      "validation-required": "Um URL ou ID do painel de controle do Grafana é obrigatório"
+      "validation-required": "Um URL ou ID do painel de controle do Lagoon é obrigatório"
     },
     "json-field": {
       "label": "Importar via modelo JSON de painel de controle",
@@ -1212,7 +1212,7 @@
       "sort-placeholder": "Ordenar consultas por"
     },
     "rich-history-settings-tab": {
-      "alert-info": "O Grafana manterá lançamentos para {{optionLabel}}. As entradas nos favoritos não serão excluídas.",
+      "alert-info": "O Lagoon manterá lançamentos para {{optionLabel}}. As entradas nos favoritos não serão excluídas.",
       "change-default-tab": "Altere a guia ativa padrão de \"Histórico de consultas\" para \"Marcado como favorito\"",
       "clear-history-info": "Exclui todo o seu histórico de consultas permanentemente.",
       "clear-query-history": "Limpar histórico de consultas",
@@ -1221,7 +1221,7 @@
       "delete-confirm-text": "Tem certeza de que deseja excluir permanentemente seu histórico de consultas?",
       "delete-title": "Excluir",
       "history-time-span": "Histórico de tempo",
-      "history-time-span-description": "Selecione o período de tempo para o qual o Grafana salvará seu histórico de consultas. Até {{MAX_HISTORY_ITEMS}} entradas serão armazenadas.",
+      "history-time-span-description": "Selecione o período de tempo para o qual o Lagoon salvará seu histórico de consultas. Até {{MAX_HISTORY_ITEMS}} entradas serão armazenadas.",
       "only-show-active-datasource": "Mostrar somente consultas para fontes de dados atualmente ativas em Explorar",
       "query-history-deleted": "Histórico de consultas excluído",
       "retention-period": {
@@ -1525,7 +1525,7 @@
     "query": {
       "collapse-all": "Recolher tudo",
       "copy-to-clipboard": "Copiar para a área de transferência",
-      "description": "O inspector de consulta permite que você veja a solicitação bruta e a resposta. Para coletar estes dados, o Grafana precisa emitir uma nova consulta. Clique no botão atualizar abaixo para acionar uma nova consulta.",
+      "description": "O inspector de consulta permite que você veja a solicitação bruta e a resposta. Para coletar estes dados, o Lagoon precisa emitir uma nova consulta. Clique no botão atualizar abaixo para acionar uma nova consulta.",
       "expand-all": "Expandir tudo",
       "no-data": "Nenhuma solicitação e resposta coletada ainda. Clique no botão atualizar",
       "refresh": "Atualizar"
@@ -1765,7 +1765,7 @@
     },
     "signup": {
       "button-label": "Inscreva-se",
-      "new-to-question": "Novo no Grafana?"
+      "new-to-question": "Novo no Lagoon?"
     }
   },
   "logs": {
@@ -1813,16 +1813,16 @@
     "can-i-move": {
       "body": "Depois de conectar esta instalação a uma pilha na nuvem, você será capaz de enviar fontes de dados e painéis de controle.",
       "link-title": "Aprenda sobre como migrar outras configurações",
-      "title": "Posso mover esta instalação para o Grafana Cloud?"
+      "title": "Posso mover esta instalação para o Lagoon Cloud?"
     },
     "connect-modal": {
       "body-cloud-stack": "Você também precisará de uma pilha na nuvem. Se você se inscreveu, criaremos automaticamente sua primeira pilha. Se você tem uma conta, precisará selecionar ou criar uma pilha.",
       "body-get-started": "Para começar, você precisará de uma conta do Grafana.com.",
       "body-sign-up": "Inscreva-se para criar uma conta do Grafana.com",
-      "body-token": "Sua instalação autogerenciada do Grafana precisa de acesso especial para migrar conteúdo com segurança. Você precisará criar um token de migração para a pilha na nuvem escolhida.",
+      "body-token": "Sua instalação autogerenciada do Lagoon precisa de acesso especial para migrar conteúdo com segurança. Você precisará criar um token de migração para a pilha na nuvem escolhida.",
       "body-token-field": "Token de migração",
       "body-token-field-placeholder": "Cole o token aqui",
-      "body-token-instructions": "Entre na sua pilha de nuvem e navegue para Administração, Geral, Migrar para o Grafana Cloud. Crie um token de migração nesta tela e cole o token aqui.",
+      "body-token-instructions": "Entre na sua pilha de nuvem e navegue para Administração, Geral, Migrar para o Lagoon Cloud. Crie um token de migração nesta tela e cole o token aqui.",
       "body-view-stacks": "Visualizar minhas pilhas na nuvem",
       "cancel": "Cancelar",
       "connect": "Conectar-se a esta pilha",
@@ -1843,7 +1843,7 @@
     },
     "cta": {
       "button": "Migrar esta instância para a nuvem",
-      "header": "Deixe-nos gerenciar a sua pilha do Grafana"
+      "header": "Deixe-nos gerenciar a sua pilha do Lagoon"
     },
     "delete-migration-token-confirm": {
       "body": "",
@@ -1860,10 +1860,10 @@
       "title": "Desconectar da pilha na nuvem"
     },
     "get-started": {
-      "body": "O processo de migração deve ser iniciado a partir da sua instância autogerenciada do Grafana.",
+      "body": "O processo de migração deve ser iniciado a partir da sua instância autogerenciada do Lagoon.",
       "configure-pdc-link": "Configurar PDC para esta pilha",
       "link-title": "Saiba mais sobre conexão privada de fonte de dados",
-      "step-1": "Faça login na sua instância autogerenciada e navegue para Administração, Geral, Migrar para o Grafana Cloud.",
+      "step-1": "Faça login na sua instância autogerenciada e navegue para Administração, Geral, Migrar para o Lagoon Cloud.",
       "step-2": "Selecione \"Migrar esta instância para a nuvem\".",
       "step-3": "Você receberá uma solicitação por um token de migração. Gere um nessa tela.",
       "step-4": "Na sua instância autogerenciada, selecione \"Enviar tudo\" para enviar fontes de dados e painéis de controle para esta pilha na nuvem.",
@@ -1871,8 +1871,8 @@
       "title": ""
     },
     "is-it-secure": {
-      "body": "O Grafana Labs está empenhado em manter os mais elevados padrões de privacidade e segurança de dados. Ao implementar tecnologias e procedimentos de segurança padrão do setor, ajudamos a proteger os dados de nossos clientes de acessos não autorizados, uso ou divulgação.",
-      "link-title": "Centro de Confiança do Grafana Labs",
+      "body": "O Lagoon Labs está empenhado em manter os mais elevados padrões de privacidade e segurança de dados. Ao implementar tecnologias e procedimentos de segurança padrão do setor, ajudamos a proteger os dados de nossos clientes de acessos não autorizados, uso ou divulgação.",
+      "link-title": "Centro de Confiança do Lagoon Labs",
       "title": "É seguro?"
     },
     "migrate-to-this-stack": {
@@ -1929,13 +1929,13 @@
       "upload-snapshot-error-title": ""
     },
     "pdc": {
-      "body": "Expor suas fontes de dados à Internet pode suscitar questões de segurança. A fonte de dados privada de conexão (PDC) permite ao Grafana Cloud acessar seus recursos de dados existentes por meio de um túnel de rede seguro.",
+      "body": "Expor suas fontes de dados à Internet pode suscitar questões de segurança. A fonte de dados privada de conexão (PDC) permite ao Lagoon Cloud acessar seus recursos de dados existentes por meio de um túnel de rede seguro.",
       "link-title": "Saiba mais sobre o PDC",
       "title": "Nem todas as minhas fontes de dados estão na Internet pública"
     },
     "pricing": {
-      "body": "O Grafana Cloud tem um plano grátis generoso e um teste de uso ilimitado de 14 dias. Depois que o seu período de teste expirar, você receberá uma cobrança com base no uso acima dos limites do plano grátis.",
-      "link-title": "Preços do Grafana Cloud",
+      "body": "O Lagoon Cloud tem um plano grátis generoso e um teste de uso ilimitado de 14 dias. Depois que o seu período de teste expirar, você receberá uma cobrança com base no uso acima dos limites do plano grátis.",
+      "link-title": "Preços do Lagoon Cloud",
       "title": "Quanto isto custa?"
     },
     "public-preview": {
@@ -2021,14 +2021,14 @@
       "unknown-error": ""
     },
     "what-is-cloud": {
-      "body": "O Grafana Cloud é uma plataforma de observação hospedada na nuvem totalmente gerenciada ideal para ambientes nativos em nuvem. É tudo o que você adora sobre o Grafana sem a sobrecarga de manter, atualizar e apoiar uma instalação.",
+      "body": "O Lagoon Cloud é uma plataforma de observação hospedada na nuvem totalmente gerenciada ideal para ambientes nativos em nuvem. É tudo o que você adora sobre o Lagoon sem a sobrecarga de manter, atualizar e apoiar uma instalação.",
       "link-title": "Conheça os recursos da nuvem",
-      "title": "O que é o Grafana Cloud?"
+      "title": "O que é o Lagoon Cloud?"
     },
     "why-host": {
-      "body": "Além da conveniência da hospedagem gerenciada, o Grafana Cloud inclui muitos recursos exclusivos na nuvem, como SLOs, gestão de incidentes, aprendizado de máquina e eficientes integrações de observabilidade.",
+      "body": "Além da conveniência da hospedagem gerenciada, o Lagoon Cloud inclui muitos recursos exclusivos na nuvem, como SLOs, gestão de incidentes, aprendizado de máquina e eficientes integrações de observabilidade.",
       "link-title": "Tem mais perguntas? Fale com um especialista",
-      "title": "Por que hospedar com o Grafana?"
+      "title": "Por que hospedar com o Lagoon?"
     }
   },
   "nav": {
@@ -2080,7 +2080,7 @@
       "title": "Silenciados"
     },
     "alerting-upgrade": {
-      "subtitle": "Evolua os seus alertas legados existentes e canais de notificação para os novos alertas do Grafana",
+      "subtitle": "Evolua os seus alertas legados existentes e canais de notificação para os novos alertas do Lagoon",
       "title": "Alerta de atualização"
     },
     "alerts-and-incidents": {
@@ -2088,14 +2088,14 @@
       "title": "Alertas e IRM"
     },
     "api-keys": {
-      "subtitle": "Gerencie e crie chaves de API que são usadas para interagir com as APIs HTTP do Grafana",
+      "subtitle": "Gerencie e crie chaves de API que são usadas para interagir com as APIs HTTP do Lagoon",
       "title": "Chaves de API"
     },
     "application": {
       "title": "Aplicativo"
     },
     "apps": {
-      "subtitle": "Plug-ins de aplicativos que ampliam a experiência do Grafana",
+      "subtitle": "Plug-ins de aplicativos que ampliam a experiência do Lagoon",
       "title": ""
     },
     "authentication": {
@@ -2118,7 +2118,7 @@
       "title": "Usuários e acesso"
     },
     "config-general": {
-      "subtitle": "Gerencie preferências e configurações padrão no Grafana",
+      "subtitle": "Gerencie preferências e configurações padrão no Lagoon",
       "title": "Geral"
     },
     "config-plugins": {
@@ -2180,15 +2180,15 @@
       "title": "Front-end"
     },
     "global-orgs": {
-      "subtitle": "Instâncias isoladas do Grafana em execução no mesmo servidor",
+      "subtitle": "Instâncias isoladas do Lagoon em execução no mesmo servidor",
       "title": "Organizações"
     },
     "global-users": {
-      "subtitle": "Gerencie usuários no Grafana",
+      "subtitle": "Gerencie usuários no Lagoon",
       "title": "Usuários"
     },
     "grafana-quaderno": {
-      "title": "Grafana Quaderno"
+      "title": "Lagoon Quaderno"
     },
     "groupsync": {
       "subtitle": ""
@@ -2241,7 +2241,7 @@
     },
     "migrate-to-cloud": {
       "subtitle": "Copie a configuração da sua instalação autogerenciada para uma pilha na nuvem",
-      "title": "Migrar para o Grafana Cloud"
+      "title": "Migrar para o Lagoon Cloud"
     },
     "monitoring": {
       "subtitle": "",
@@ -2268,11 +2268,11 @@
       "title": "Listas de reprodução"
     },
     "plugins": {
-      "subtitle": "Amplie a experiência do Grafana com plug-ins",
+      "subtitle": "Amplie a experiência do Lagoon com plug-ins",
       "title": "Plug-ins"
     },
     "private-data-source-connections": {
-      "subtitle": "Consulte dados que vivem em uma rede segura sem abrir a rede ao tráfego de entrada do Grafana Cloud. Saiba mais na nossa documentação.",
+      "subtitle": "Consulte dados que vivem em uma rede segura sem abrir a rede ao tráfego de entrada do Lagoon Cloud. Saiba mais na nossa documentação.",
       "title": "Conexão privada de dados"
     },
     "profile/notifications": {
@@ -2310,11 +2310,11 @@
       "title": "Buscar painéis de controle"
     },
     "server-settings": {
-      "subtitle": "Veja as configurações definidas nas suas configurações do Grafana",
+      "subtitle": "Veja as configurações definidas nas suas configurações do Lagoon",
       "title": "Configurações"
     },
     "service-accounts": {
-      "subtitle": "Use contas de serviço para executar cargas de trabalho automatizadas no Grafana",
+      "subtitle": "Use contas de serviço para executar cargas de trabalho automatizadas no Lagoon",
       "title": "Contas de serviço"
     },
     "setup-guide": {
@@ -2517,7 +2517,7 @@
     },
     "details": {
       "labels": {
-        "contactGrafanaLabs": "",
+        "contactLagoonLabs": "",
         "dependencies": "",
         "downloads": "",
         "from": "",

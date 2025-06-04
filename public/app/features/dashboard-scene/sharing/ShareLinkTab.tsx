@@ -223,7 +223,7 @@ function ShareLinkTabRenderer({ model }: SceneComponentProps<ShareLinkTab>) {
             >
               Grafana image renderer plugin
             </a>
-            . Please contact your Grafana administrator to install the plugin.
+            . Please contact your Lagoon administrator to install the plugin.
           </Trans>
         </Alert>
       )}

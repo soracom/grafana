@@ -57,11 +57,11 @@
       "contact-us": "Contact us and get a free trial",
       "description": "You can use the trial version for free for 30 days. We will remind you about it five days before the trial period ends.",
       "features-heading": "Enhanced functionality",
-      "included-description": "Indemnification, working with Grafana Labs on future prioritization, and training from the core Grafana team.",
+      "included-description": "Indemnification, working with Lagoon Labs on future prioritization, and training from the core Lagoon team.",
       "included-heading": "Also included:",
       "service-title": "At your service",
       "team-sync-details": "LDAP, GitHub OAuth, Auth Proxy, Okta",
-      "title": "Get Grafana Enterprise"
+      "title": "Get Lagoon Enterprise"
     },
     "ldap": {
       "test-mapping-heading": "Test user mapping",
@@ -97,7 +97,7 @@
       "last-seen-never": "Never"
     },
     "org-users": {
-      "not-editable": "This user's role is not editable because it is synchronized from your auth provider. Refer to the <1>Grafana authentication docs</1> for details."
+      "not-editable": "This user's role is not editable because it is synchronized from your auth provider. Refer to the <1>Lagoon authentication docs</1> for details."
     },
     "orgs": {
       "delete-body": "Are you sure you want to delete '{{deleteOrgName}}'?<3></3> <5>All dashboards for this organization will be removed!</5>",
@@ -114,7 +114,7 @@
       "users-button": "Manage users"
     },
     "settings": {
-      "info-description": "These system settings are defined in grafana.ini or custom.ini (or overridden in ENV variables). To change these you currently need to restart Grafana."
+      "info-description": "These system settings are defined in grafana.ini or custom.ini (or overridden in ENV variables). To change these you currently need to restart Lagoon."
     },
     "upgrade-info": {
       "title": "Enterprise license"
@@ -122,9 +122,9 @@
     "user-orgs": {
       "add-button": "Add user to organization",
       "change-role-button": "Change role",
-      "external-user-tooltip": "This user's built-in role is not editable because it is synchronized from your auth provider. Refer to the <1>Grafana authentication docs</1> for details.",
+      "external-user-tooltip": "This user's built-in role is not editable because it is synchronized from your auth provider. Refer to the <1>Lagoon authentication docs</1> for details.",
       "remove-button": "Remove from organization",
-      "role-not-editable": "This user's role is not editable because it is synchronized from your auth provider. Refer to the <1>Grafana authentication docs</1> for details.",
+      "role-not-editable": "This user's role is not editable because it is synchronized from your auth provider. Refer to the <1>Lagoon authentication docs</1> for details.",
       "title": "Organizations"
     },
     "user-orgs-modal": {
@@ -133,7 +133,7 @@
     },
     "user-permissions": {
       "change-button": "Change",
-      "grafana-admin-key": "Grafana Admin",
+      "grafana-admin-key": "Lagoon Admin",
       "grafana-admin-no": "No",
       "grafana-admin-yes": "Yes",
       "title": "Permissions"
@@ -314,7 +314,7 @@
           "export-rules": "Export rules",
           "loading": "Loading...",
           "new-recording-rule": "New recording rule",
-          "title": "Grafana-managed"
+          "title": "Lagoon-managed"
         }
       }
     },
@@ -547,7 +547,7 @@
         "goto-docs": "Notification templates documentation"
       },
       "help": {
-        "intro": "Notification templates use Go templating language to create notification messages.\n\nIn Grafana, a template group can define multiple notification templates using {{ define \"<NAME>\" }}.\nThese templates can then be used in contact points and within other notification templates by calling {{ template \"<NAME>\" }}.\nFor detailed information about notification templates, refer to our documentation."
+        "intro": "Notification templates use Go templating language to create notification messages.\n\nIn Lagoon, a template group can define multiple notification templates using {{ define \"<NAME>\" }}.\nThese templates can then be used in contact points and within other notification templates by calling {{ template \"<NAME>\" }}.\nFor detailed information about notification templates, refer to our documentation."
       },
       "misconfigured-badge-text": "Misconfigured",
       "misconfigured-warning": "This template is misconfigured.",
@@ -560,7 +560,7 @@
   "annotations": {
     "empty-state": {
       "button-title": "Add annotation query",
-      "info-box-content": "<0>Annotations provide a way to integrate event data into your graphs. They are visualized as vertical lines and icons on all graph panels. When you hover over an annotation icon you can get event text & tags for the event. You can add annotation events directly from grafana by holding CTRL or CMD + click on graph (or drag region). These will be stored in Grafana's annotation database.</0>",
+      "info-box-content": "<0>Annotations provide a way to integrate event data into your graphs. They are visualized as vertical lines and icons on all graph panels. When you hover over an annotation icon you can get event text & tags for the event. You can add annotation events directly from grafana by holding CTRL or CMD + click on graph (or drag region). These will be stored in Lagoon's annotation database.</0>",
       "info-box-content-2": "Checkout the <2>Annotations documentation</2> for more information.",
       "title": "There are no custom annotation queries added yet"
     }
@@ -783,7 +783,7 @@
       "next-button": "Next",
       "save-button": "Save"
     },
-    "page-content": "To enable Correlations, add it in the Grafana config:",
+    "page-content": "To enable Correlations, add it in the Lagoon config:",
     "page-heading": "Correlations are disabled",
     "query-editor": {
       "control-rules": "The selected target data source must export a query editor.",
@@ -860,7 +860,7 @@
       "visualization": "Visualization"
     },
     "alert-rules-drawer": {
-      "redirect-link": "List in Grafana Alerting",
+      "redirect-link": "List in Lagoon Alerting",
       "subtitle": "Alert rules related to this dashboard"
     },
     "empty": {
@@ -961,7 +961,7 @@
       "label": "Find and import dashboards for common applications at <1></1>",
       "load-button": "Load",
       "placeholder": "Grafana.com dashboard URL or ID",
-      "validation-required": "A Grafana dashboard URL or ID is required"
+      "validation-required": "A Lagoon dashboard URL or ID is required"
     },
     "json-field": {
       "label": "Import via dashboard JSON model",
@@ -1016,7 +1016,7 @@
     },
     "provisioned-delete-modal": {
       "confirm-button": "OK",
-      "text-1": "This dashboard is managed by Grafana provisioning and cannot be deleted. Remove the dashboard from the config file to delete it.",
+      "text-1": "This dashboard is managed by Lagoon provisioning and cannot be deleted. Remove the dashboard from the config file to delete it.",
       "text-2": "See grafana documentation for more information about provisioning. ",
       "text-3": "File path: {{provisionedId}}",
       "text-link": "Go to docs page",
@@ -1212,7 +1212,7 @@
       "sort-placeholder": "Sort queries by"
     },
     "rich-history-settings-tab": {
-      "alert-info": "Grafana will keep entries up to {{optionLabel}}.Starred entries won't be deleted.",
+      "alert-info": "Lagoon will keep entries up to {{optionLabel}}.Starred entries won't be deleted.",
       "change-default-tab": "Change the default active tab from “Query history” to “Starred”",
       "clear-history-info": "Delete all of your query history, permanently.",
       "clear-query-history": "Clear query history",
@@ -1221,7 +1221,7 @@
       "delete-confirm-text": "Are you sure you want to permanently delete your query history?",
       "delete-title": "Delete",
       "history-time-span": "History time span",
-      "history-time-span-description": "Select the period of time for which Grafana will save your query history. Up to {{MAX_HISTORY_ITEMS}} entries will be stored.",
+      "history-time-span-description": "Select the period of time for which Lagoon will save your query history. Up to {{MAX_HISTORY_ITEMS}} entries will be stored.",
       "only-show-active-datasource": "Only show queries for data source currently active in Explore",
       "query-history-deleted": "Query history deleted",
       "retention-period": {
@@ -1341,7 +1341,7 @@
       "skip-button": "Skip",
       "submit-button": "Submit"
     },
-    "contact-admin": "Did you forget your username or email? Contact your Grafana administrator.",
+    "contact-admin": "Did you forget your username or email? Contact your Lagoon administrator.",
     "email-sent": "An email with a reset link has been sent to the email address. You should receive it shortly.",
     "reset-password-header": "Reset password",
     "send-email-button": "Send reset email"
@@ -1391,7 +1391,7 @@
       "direct-url-tooltip": "Your access method is <1>Browser</1>, this means the URL needs to be accessible from the browser.",
       "heading": "HTTP",
       "proxy-url-tooltip": "Your access method is <1>Server</1>, this means the URL needs to be accessible from the grafana backend/server.",
-      "server-mode-description": "All requests will be made from the browser to Grafana backend/server which in turn will forward the requests to the data source and by that circumvent possible Cross-Origin Resource Sharing (CORS) requirements. The URL needs to be accessible from the grafana backend/server if you select this access mode.",
+      "server-mode-description": "All requests will be made from the browser to Lagoon backend/server which in turn will forward the requests to the data source and by that circumvent possible Cross-Origin Resource Sharing (CORS) requirements. The URL needs to be accessible from the grafana backend/server if you select this access mode.",
       "server-mode-title": "<0>Server access mode (Default):</0>"
     },
     "data-source-settings": {
@@ -1518,14 +1518,14 @@
   "help-wizard": {
     "download-snapshot": "Download snapshot",
     "github-comment": "Copy Github comment",
-    "support-bundle": "You can also retrieve a support bundle containing information concerning your Grafana instance and configured datasources in the <1>support bundles section</1>.",
-    "troubleshooting-help": "To request troubleshooting help, send a snapshot of this panel to Grafana Labs Technical Support. The snapshot contains query response data and panel settings."
+    "support-bundle": "You can also retrieve a support bundle containing information concerning your Lagoon instance and configured datasources in the <1>support bundles section</1>.",
+    "troubleshooting-help": "To request troubleshooting help, send a snapshot of this panel to Lagoon Labs Technical Support. The snapshot contains query response data and panel settings."
   },
   "inspector": {
     "query": {
       "collapse-all": "Collapse all",
       "copy-to-clipboard": "Copy to clipboard",
-      "description": "Query inspector allows you to view raw request and response. To collect this data Grafana needs to issue a new query. Click refresh button below to trigger a new query.",
+      "description": "Query inspector allows you to view raw request and response. To collect this data Lagoon needs to issue a new query. Click refresh button below to trigger a new query.",
       "expand-all": "Expand all",
       "no-data": "No request and response collected yet. Hit refresh button",
       "refresh": "Refresh"
@@ -1571,15 +1571,15 @@
     },
     "group-mapping": {
       "grafana-admin": {
-        "description": "If enabled, all users from this group will be Grafana Admins",
-        "label": "Grafana Admin"
+        "description": "If enabled, all users from this group will be Lagoon Admins",
+        "label": "Lagoon Admin"
       },
       "group-dn": {
         "description": "The name of the key used to extract the ID token from the returned OAuth2 token.",
         "label": "Group DN"
       },
       "org-id": {
-        "description": "The Grafana organization database id. Default org (ID 1) will be used if left out",
+        "description": "The Lagoon organization database id. Default org (ID 1) will be used if left out",
         "label": "Org ID"
       },
       "org-role": {
@@ -1593,7 +1593,7 @@
       "add": {
         "button": "Add group mapping"
       },
-      "description": "Map LDAP groups to Grafana org roles",
+      "description": "Map LDAP groups to Lagoon org roles",
       "group-search-base-dns-label": "Group search base DNS",
       "group-search-base-dns-placeholder": "example: ou=groups,dc=example,dc=com",
       "group-search-filter-description": "Used to filter and identify group entries within the directory",
@@ -1605,7 +1605,7 @@
       "skip-org-role-sync-label": "Skip organization role sync"
     },
     "misc-section": {
-      "allow-sign-up-descrition": "If not enabled, only existing Grafana users can log in using LDAP",
+      "allow-sign-up-descrition": "If not enabled, only existing Lagoon users can log in using LDAP",
       "allow-sign-up-label": "Allow sign-up",
       "label": "Misc",
       "port-description": "Default port is 389 without SSL or 636 with SSL",
@@ -1666,7 +1666,7 @@
       "label": "Search base DNS",
       "placeholder": "example: dc=grafana,dc=org"
     },
-    "subtitle": "The LDAP integration in Grafana allows your Grafana users to log in with their LDAP credentials. Find out more in our <2><0>documentation</0></2>.",
+    "subtitle": "The LDAP integration in Lagoon allows your Lagoon users to log in with their LDAP credentials. Find out more in our <2><0>documentation</0></2>.",
     "title": "Basic Settings"
   },
   "library-panel": {
@@ -1765,7 +1765,7 @@
     },
     "signup": {
       "button-label": "Sign up",
-      "new-to-question": "New to Grafana?"
+      "new-to-question": "New to Lagoon?"
     }
   },
   "logs": {
@@ -1801,28 +1801,28 @@
   },
   "migrate-to-cloud": {
     "build-snapshot": {
-      "description": "This tool can migrate some resources from this installation to your cloud stack. To get started, you'll need to create a snapshot of this installation. Creating a snapshot typically takes less than two minutes. The snapshot is stored alongside this Grafana installation.",
+      "description": "This tool can migrate some resources from this installation to your cloud stack. To get started, you'll need to create a snapshot of this installation. Creating a snapshot typically takes less than two minutes. The snapshot is stored alongside this Lagoon installation.",
       "title": "No snapshot exists",
       "when-complete": "Once the snapshot is complete, you will be able to upload it to your cloud stack."
     },
     "building-snapshot": {
-      "description": "We're creating a point-in-time snapshot of the current state of this installation. Once the snapshot is complete. you'll be able to upload it to Grafana Cloud.",
+      "description": "We're creating a point-in-time snapshot of the current state of this installation. Once the snapshot is complete. you'll be able to upload it to Lagoon Cloud.",
       "description-eta": "Creating a snapshot typically takes less than two minutes.",
       "title": "Building installation snapshot"
     },
     "can-i-move": {
       "body": "Once you connect this installation to a cloud stack, you'll be able to upload data sources and dashboards.",
       "link-title": "Learn about migrating other settings",
-      "title": "Can I move this installation to Grafana Cloud?"
+      "title": "Can I move this installation to Lagoon Cloud?"
     },
     "connect-modal": {
       "body-cloud-stack": "You'll also need a cloud stack. If you just signed up, we'll automatically create your first stack. If you have an account, you'll need to select or create a stack.",
       "body-get-started": "To get started, you'll need a Grafana.com account.",
       "body-sign-up": "Sign up for a Grafana.com account",
-      "body-token": "Your self-managed Grafana installation needs special access to securely migrate content. You'll need to create a migration token on your chosen cloud stack.",
+      "body-token": "Your self-managed Lagoon installation needs special access to securely migrate content. You'll need to create a migration token on your chosen cloud stack.",
       "body-token-field": "Migration token",
       "body-token-field-placeholder": "Paste token here",
-      "body-token-instructions": "Log into your cloud stack and navigate to Administration, General, Migrate to Grafana Cloud. Create a migration token on that screen and paste the token here.",
+      "body-token-instructions": "Log into your cloud stack and navigate to Administration, General, Migrate to Lagoon Cloud. Create a migration token on that screen and paste the token here.",
       "body-view-stacks": "View my cloud stacks",
       "cancel": "Cancel",
       "connect": "Connect to this stack",
@@ -1835,15 +1835,15 @@
         "migration-disabled": "Cloud migrations are disabled on this instance.",
         "session-creation-failure": "There was an error creating the migration. Please try again.",
         "token-invalid": "Token is not valid. Generate a new token on your cloud instance and try again.",
-        "token-not-saved": "There was an error saving the token. See the Grafana server logs for more details.",
-        "token-request-error": "An error occurred while validating the token. Please check the Grafana instance logs.",
+        "token-not-saved": "There was an error saving the token. See the Lagoon server logs for more details.",
+        "token-request-error": "An error occurred while validating the token. Please check the Lagoon instance logs.",
         "token-validation-failure": "Token is not valid. Please ensure the token matches the migration token on your cloud instance."
       },
       "token-required-error": "Migration token is required"
     },
     "cta": {
       "button": "Migrate this instance to Cloud",
-      "header": "Let us manage your Grafana stack"
+      "header": "Let us manage your Lagoon stack"
     },
     "delete-migration-token-confirm": {
       "body": "If you've already used this token with a self-managed installation, that installation will no longer be able to upload content.",
@@ -1860,10 +1860,10 @@
       "title": "Disconnect from cloud stack"
     },
     "get-started": {
-      "body": "The migration process must be started from your self-managed Grafana instance.",
+      "body": "The migration process must be started from your self-managed Lagoon instance.",
       "configure-pdc-link": "Configure PDC for this stack",
       "link-title": "Learn more about Private Data Source Connect",
-      "step-1": "Log in to your self-managed instance and navigate to Administration, General, Migrate to Grafana Cloud.",
+      "step-1": "Log in to your self-managed instance and navigate to Administration, General, Migrate to Lagoon Cloud.",
       "step-2": "Select \"Migrate this instance to Cloud\".",
       "step-3": "You'll be prompted for a migration token. Generate one from this screen.",
       "step-4": "In your self-managed instance, select \"Upload everything\" to upload data sources and dashboards to this cloud stack.",
@@ -1871,12 +1871,12 @@
       "title": "Performing a migration"
     },
     "is-it-secure": {
-      "body": "Grafana Labs is committed to maintaining the highest standards of data privacy and security. By implementing industry-standard security technologies and procedures, we help protect our customers' data from unauthorized access, use, or disclosure.",
-      "link-title": "Grafana Labs Trust Center",
+      "body": "Lagoon Labs is committed to maintaining the highest standards of data privacy and security. By implementing industry-standard security technologies and procedures, we help protect our customers' data from unauthorized access, use, or disclosure.",
+      "link-title": "Lagoon Labs Trust Center",
       "title": "Is it secure?"
     },
     "migrate-to-this-stack": {
-      "body": "You can migrate some resources from your self-managed Grafana installation to this cloud stack. To do this securely, you'll need to generate a migration token. Your self-managed instance will use the token to authenticate with this cloud stack.",
+      "body": "You can migrate some resources from your self-managed Lagoon installation to this cloud stack. To do this securely, you'll need to generate a migration token. Your self-managed instance will use the token to authenticate with this cloud stack.",
       "link-title": "View the full migration guide",
       "title": "Let us help you migrate to this stack"
     },
@@ -1915,49 +1915,49 @@
       "cancel-snapshot-error-title": "Error cancelling creating snapshot",
       "create-snapshot-error-title": "Error creating snapshot",
       "disconnect-error-title": "Error disconnecting",
-      "error-see-server-logs": "See the Grafana server logs for more details",
+      "error-see-server-logs": "See the Lagoon server logs for more details",
       "get-session-error-title": "Error loading migration configuration",
       "get-snapshot-error-title": "Error loading snapshot",
       "migration-finished-with-caveat-title": "Resource migration complete",
       "migration-finished-with-errors-body": "The migration has completed, but some items could not be migrated to the cloud stack. Check the failed resources for more details",
       "migration-finished-with-warnings-body": "The migration has completed with some warnings. Check individual resources for more details",
-      "snapshot-error-status-body": "There was an error creating the snapshot or starting the migration process. See the Grafana server logs for more details",
+      "snapshot-error-status-body": "There was an error creating the snapshot or starting the migration process. See the Lagoon server logs for more details",
       "snapshot-error-status-title": "Error migrating resources",
-      "success-message": "Successfully migrated {{successCount}} {{types, list}} to your Grafana Cloud instance.",
-      "success-message-generic": "Successfully migrated {{successCount}} resources to your Grafana Cloud instance.",
+      "success-message": "Successfully migrated {{successCount}} {{types, list}} to your Lagoon Cloud instance.",
+      "success-message-generic": "Successfully migrated {{successCount}} resources to your Lagoon Cloud instance.",
       "success-title": "Migration completed!",
       "upload-snapshot-error-title": "Error uploading snapshot"
     },
     "pdc": {
-      "body": "Exposing your data sources to the internet can raise security concerns. Private data source connect (PDC) allows Grafana Cloud to access your existing data sources over a secure network tunnel.",
+      "body": "Exposing your data sources to the internet can raise security concerns. Private data source connect (PDC) allows Lagoon Cloud to access your existing data sources over a secure network tunnel.",
       "link-title": "Learn about PDC",
       "title": "Not all my data sources are on the public internet"
     },
     "pricing": {
-      "body": "Grafana Cloud has a generous free plan and a 14 day unlimited usage trial. After your trial expires, you'll be billed based on usage over the free plan limits.",
-      "link-title": "Grafana Cloud pricing",
+      "body": "Lagoon Cloud has a generous free plan and a 14 day unlimited usage trial. After your trial expires, you'll be billed based on usage over the free plan limits.",
+      "link-title": "Lagoon Cloud pricing",
       "title": "How much does it cost?"
     },
     "public-preview": {
       "button-text": "Give feedback",
       "message": "No SLAs are available yet. <2>Visit our docs</2> to learn more about this feature!",
       "message-plugins": "Only Community and Commercial signed plugins are eligible for migration. Their latest version will be installed in the cloud instance, please upgrade your plugins before starting the migration process.",
-      "title": "Migrate to Grafana Cloud is in public preview",
+      "title": "Migrate to Lagoon Cloud is in public preview",
       "title-plugins": "Migration of plugins"
     },
     "resource-details": {
       "dismiss-button": "OK",
       "error-messages": {
-        "dashboard-already-managed": "Dashboard is already provisioned and managed by Grafana in the cloud instance. We recommend using the provisioned dashboard going forward. If you still wish to copy the dashboard to the cloud instance, then change the dashboard ID in the dashboard JSON, save a new snapshot and upload again.",
-        "datasource-already-managed": "Data source is already provisioned and managed by Grafana in the cloud instance. If this is a different resource, set another UID and try again.",
+        "dashboard-already-managed": "Dashboard is already provisioned and managed by Lagoon in the cloud instance. We recommend using the provisioned dashboard going forward. If you still wish to copy the dashboard to the cloud instance, then change the dashboard ID in the dashboard JSON, save a new snapshot and upload again.",
+        "datasource-already-managed": "Data source is already provisioned and managed by Lagoon in the cloud instance. If this is a different resource, set another UID and try again.",
         "datasource-invalid-url": "There is a data source which has an invalid URL. Provide a valid URL and try again.",
         "datasource-name-conflict": "There is a data source with the same name in the target instance. Rename one of them and try again.",
         "folder-name-conflict": "There is a folder with the same name in the target instance. Rename one of them and try again.",
         "generic-error": "There has been an error while migrating. Please check the cloud migration logs for more information.",
-        "internal-service-error": "There has been an error while migrating. Please check the Grafana server logs for more details.",
+        "internal-service-error": "There has been an error while migrating. Please check the Lagoon server logs for more details.",
         "library-element-name-conflict": "There is a library element with the same name in the target instance. Rename one of them and try again.",
-        "resource-conflict": "There is a resource conflict with the target instance. Please check the Grafana server logs for more details.",
-        "unexpected-error": "There has been an error while migrating. Please check the Grafana server logs for more details.",
+        "resource-conflict": "There is a resource conflict with the target instance. Please check the Lagoon server logs for more details.",
+        "unexpected-error": "There has been an error while migrating. Please check the Lagoon server logs for more details.",
         "unsupported-data-type": "Migration of this data type is not currently supported."
       },
       "error-title": "Unable to migrate this resource:",
@@ -2012,7 +2012,7 @@
       "upload-migration": "Upload snapshot"
     },
     "support-types-disclosure": {
-      "text": "Dashboards, Folders, and built-in core data sources are migrated to your Grafana Cloud stack. <2>Learn about migrating other settings.</2>"
+      "text": "Dashboards, Folders, and built-in core data sources are migrated to your Lagoon Cloud stack. <2>Learn about migrating other settings.</2>"
     },
     "token-status": {
       "active": "Token created and active",
@@ -2021,14 +2021,14 @@
       "unknown-error": "Error retrieving token"
     },
     "what-is-cloud": {
-      "body": "Grafana cloud is a fully managed cloud-hosted observability platform ideal for cloud native environments. It's everything you love about Grafana without the overhead of maintaining, upgrading, and supporting an installation.",
+      "body": "Lagoon cloud is a fully managed cloud-hosted observability platform ideal for cloud native environments. It's everything you love about Lagoon without the overhead of maintaining, upgrading, and supporting an installation.",
       "link-title": "Learn about cloud features",
-      "title": "What is Grafana Cloud?"
+      "title": "What is Lagoon Cloud?"
     },
     "why-host": {
-      "body": "In addition to the convenience of managed hosting, Grafana Cloud includes many cloud-exclusive features like SLOs, incident management, machine learning, and powerful observability integrations.",
+      "body": "In addition to the convenience of managed hosting, Lagoon Cloud includes many cloud-exclusive features like SLOs, incident management, machine learning, and powerful observability integrations.",
       "link-title": "More questions? Talk to an expert",
-      "title": "Why host with Grafana?"
+      "title": "Why host with Lagoon?"
     }
   },
   "nav": {
@@ -2047,7 +2047,7 @@
       "title": "Alerting"
     },
     "alerting-admin": {
-      "subtitle": "Manage Alertmanager configurations and enable receiving Grafana-managed alerts",
+      "subtitle": "Manage Alertmanager configurations and enable receiving Lagoon-managed alerts",
       "title": "Settings"
     },
     "alerting-am-routes": {
@@ -2080,7 +2080,7 @@
       "title": "Silences"
     },
     "alerting-upgrade": {
-      "subtitle": "Upgrade your existing legacy alerts and notification channels to the new Grafana Alerting",
+      "subtitle": "Upgrade your existing legacy alerts and notification channels to the new Lagoon Alerting",
       "title": "Alerting upgrade"
     },
     "alerts-and-incidents": {
@@ -2088,14 +2088,14 @@
       "title": "Alerts & IRM"
     },
     "api-keys": {
-      "subtitle": "Manage and create API keys that are used to interact with Grafana HTTP APIs",
+      "subtitle": "Manage and create API keys that are used to interact with Lagoon HTTP APIs",
       "title": "API keys"
     },
     "application": {
       "title": "Application"
     },
     "apps": {
-      "subtitle": "App plugins that extend the Grafana experience",
+      "subtitle": "App plugins that extend the Lagoon experience",
       "title": "More apps"
     },
     "authentication": {
@@ -2118,7 +2118,7 @@
       "title": "Users and access"
     },
     "config-general": {
-      "subtitle": "Manage default preferences and settings across Grafana",
+      "subtitle": "Manage default preferences and settings across Lagoon",
       "title": "General"
     },
     "config-plugins": {
@@ -2180,18 +2180,18 @@
       "title": "Frontend"
     },
     "global-orgs": {
-      "subtitle": "Isolated instances of Grafana running on the same server",
+      "subtitle": "Isolated instances of Lagoon running on the same server",
       "title": "Organizations"
     },
     "global-users": {
-      "subtitle": "Manage users in Grafana",
+      "subtitle": "Manage users in Lagoon",
       "title": "Users"
     },
     "grafana-quaderno": {
-      "title": "Grafana Quaderno"
+      "title": "Lagoon Quaderno"
     },
     "groupsync": {
-      "subtitle": "Manage mappings of Identity Provider groups to Grafana Roles"
+      "subtitle": "Manage mappings of Identity Provider groups to Lagoon Roles"
     },
     "help": {
       "title": "Help"
@@ -2241,7 +2241,7 @@
     },
     "migrate-to-cloud": {
       "subtitle": "Copy configuration from your self-managed installation to a cloud stack",
-      "title": "Migrate to Grafana Cloud"
+      "title": "Migrate to Lagoon Cloud"
     },
     "monitoring": {
       "subtitle": "Out-of-the-box observability solutions",
@@ -2268,11 +2268,11 @@
       "title": "Playlists"
     },
     "plugins": {
-      "subtitle": "Extend the Grafana experience with plugins",
+      "subtitle": "Extend the Lagoon experience with plugins",
       "title": "Plugins"
     },
     "private-data-source-connections": {
-      "subtitle": "Query data that lives within a secured network without opening the network to inbound traffic from Grafana Cloud. Learn more in our docs.",
+      "subtitle": "Query data that lives within a secured network without opening the network to inbound traffic from Lagoon Cloud. Learn more in our docs.",
       "title": "Private data source connect"
     },
     "profile/notifications": {
@@ -2310,11 +2310,11 @@
       "title": "Search dashboards"
     },
     "server-settings": {
-      "subtitle": "View the settings defined in your Grafana config",
+      "subtitle": "View the settings defined in your Lagoon config",
       "title": "Settings"
     },
     "service-accounts": {
-      "subtitle": "Use service accounts to run automated workloads in Grafana",
+      "subtitle": "Use service accounts to run automated workloads in Lagoon",
       "title": "Service accounts"
     },
     "setup-guide": {
@@ -2517,7 +2517,7 @@
     },
     "details": {
       "labels": {
-        "contactGrafanaLabs": "Contact Grafana Labs",
+        "contactLagoonLabs": "Contact Lagoon Labs",
         "dependencies": "Dependencies",
         "downloads": "Downloads",
         "from": "From",
@@ -2848,7 +2848,7 @@
       "clear-button": "Clear"
     },
     "title": {
-      "description": "Assign roles to users to ensure granular control over access to Grafana&lsquo;s features and resources. Find out more in our <2>documentation</2>."
+      "description": "Assign roles to users to ensure granular control over access to Lagoon&lsquo;s features and resources. Find out more in our <2>documentation</2>."
     }
   },
   "role-picker-drawer": {
@@ -2857,7 +2857,7 @@
     }
   },
   "route-error": {
-    "description": "Grafana has likely been updated. Please try reloading the page.",
+    "description": "Lagoon has likely been updated. Please try reloading the page.",
     "reload-button": "Reload",
     "title": "Unable to find application file"
   },
@@ -2987,7 +2987,7 @@
     "embed": {
       "copy": "Copy to clipboard",
       "html": "Embed HTML",
-      "html-description": "The HTML code below can be pasted and included in another web page. Unless anonymous access is enabled, the users viewing that page need to be signed into Grafana for the graph to load.",
+      "html-description": "The HTML code below can be pasted and included in another web page. Unless anonymous access is enabled, the users viewing that page need to be signed into Lagoon for the graph to load.",
       "info": "Generate HTML for embedding an iframe with this panel",
       "time-range": "Lock time range"
     },
@@ -3008,7 +3008,7 @@
       "info-text": "Create a direct link to this dashboard or panel, customized with the options below.",
       "link-url": "Link URL",
       "render-alert": "Image renderer plugin not installed",
-      "render-instructions": "To render a panel image, you must install the <2>Grafana image renderer plugin</2>. Please contact your Grafana administrator to install the plugin.",
+      "render-instructions": "To render a panel image, you must install the <2>Lagoon image renderer plugin</2>. Please contact your Lagoon administrator to install the plugin.",
       "rendered-image": "Direct link rendered image",
       "save-alert": "Dashboard is not saved",
       "save-dashboard": "To render a panel image, you must save the dashboard first.",
@@ -3201,7 +3201,7 @@
       "delete-title": "Delete snapshot",
       "deleted-alert": "Snapshot deleted. It could take an hour to be cleared from CDN caches.",
       "expiration-label": "Expires in",
-      "info-alert": "A Grafana dashboard snapshot publicly shares a dashboard while removing sensitive data such as queries and panel links, leaving only visible metrics and series names. Anyone with the link can access the snapshot.",
+      "info-alert": "A Lagoon dashboard snapshot publicly shares a dashboard while removing sensitive data such as queries and panel links, leaving only visible metrics and series names. Anyone with the link can access the snapshot.",
       "learn-more-button": "Learn more",
       "local-button": "Publish snapshot",
       "name-label": "Snapshot name",
@@ -3211,7 +3211,7 @@
       "view-all-button": "View all snapshots"
     },
     "share-panel": {
-      "info-alert": "A Grafana panel snapshot publicly shares a panel while removing sensitive data such as queries and panel links, leaving only visible metrics and series names. Anyone with the link can access the snapshot."
+      "info-alert": "A Lagoon panel snapshot publicly shares a panel while removing sensitive data such as queries and panel links, leaving only visible metrics and series names. Anyone with the link can access the snapshot."
     },
     "url-column-header": "Snapshot url",
     "view-button": "View"
@@ -3339,7 +3339,7 @@
   },
   "upgrade-box": {
     "discovery-text": "You’ve discovered a Pro feature!",
-    "discovery-text-continued": "Get the Grafana Pro plan to access {{featureName}}.",
+    "discovery-text-continued": "Get the Lagoon Pro plan to access {{featureName}}.",
     "get-started": "Get started with {{featureName}}",
     "learn-more": "Learn more",
     "upgrade-button": "Upgrade"

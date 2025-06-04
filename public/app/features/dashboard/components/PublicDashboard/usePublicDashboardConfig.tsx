@@ -4,9 +4,9 @@ import * as React from 'react';
 import { GrafanaTheme2 } from '@grafana/data';
 import { useStyles2, useTheme2 } from '@grafana/ui';
 
-const FOOTER_URL = 'https://grafana.com/?src=grafananet&cnt=public-dashboards';
-const GRAFANA_LOGO_LIGHT_URL = 'public/img/grafana_text_logo_light.svg';
-const GRAFANA_LOGO_DARK_URL = 'public/img/grafana_text_logo_dark.svg';
+const FOOTER_URL = 'https://soracom.jp/';
+const GRAFANA_LOGO_LIGHT_URL = 'public/img/lagoon-logo-cl.svg';
+const GRAFANA_LOGO_DARK_URL = 'public/img/lagoon-logo-cl.svg';
 const GRAFANA_LOGO_DEFAULT_VALUE = 'grafana-logo';
 
 export interface PublicDashboardCfg {
@@ -22,7 +22,7 @@ const useGetConfig = (cfg?: PublicDashboardCfg) => {
 
   const { footerHide, footerText, footerLink, footerLogo, headerLogoHide } = cfg || {
     footerHide: false,
-    footerText: 'Powered by',
+    footerText: 'Powered by SORACOM Lagoon',
     footerLogo: GRAFANA_LOGO_DEFAULT_VALUE,
     footerLink: FOOTER_URL,
     headerLogoHide: false,

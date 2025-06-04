@@ -774,7 +774,7 @@
       "next-button": "下一步",
       "save-button": "保存"
     },
-    "page-content": "要启用 Correlations，请将其在 Grafana 配置中添加：",
+    "page-content": "要启用 Correlations，请将其在 Lagoon 配置中添加：",
     "page-heading": "Correlations 已禁用",
     "query-editor": {
       "control-rules": "选定的目标数据源必须导出查询编辑器。",
@@ -851,7 +851,7 @@
       "visualization": "可视化"
     },
     "alert-rules-drawer": {
-      "redirect-link": "Grafana Alerting 中的列表",
+      "redirect-link": "Lagoon Alerting 中的列表",
       "subtitle": "与此仪表板相关的警报规则"
     },
     "empty": {
@@ -952,7 +952,7 @@
       "label": "在<1></1>查找并导入常见应用程序的仪表板",
       "load-button": "加载",
       "placeholder": "Grafana.com 仪表板网址或 ID",
-      "validation-required": "Grafana 仪表板网址或 ID 是必需项"
+      "validation-required": "Lagoon 仪表板网址或 ID 是必需项"
     },
     "json-field": {
       "label": "通过仪表板 JSON 模型导入",
@@ -1203,7 +1203,7 @@
       "sort-placeholder": "查询排序方式："
     },
     "rich-history-settings-tab": {
-      "alert-info": "Grafana 将最多保留 {{optionLabel}} 的条目。标有星标的条目不会被删除。",
+      "alert-info": "Lagoon 将最多保留 {{optionLabel}} 的条目。标有星标的条目不会被删除。",
       "change-default-tab": "将默认活动选项卡从“查询历史记录”更改为“星标”",
       "clear-history-info": "永久删除您所有的查询历史记录。",
       "clear-query-history": "清除查询历史记录",
@@ -1212,7 +1212,7 @@
       "delete-confirm-text": "您确定是否要永久删除您的查询历史记录？",
       "delete-title": "删除",
       "history-time-span": "历史记录时间范围",
-      "history-time-span-description": "选择 Grafana 将保存您查询历史记录的时间段。将存储最多 {{MAX_HISTORY_ITEMS}} 个条目。",
+      "history-time-span-description": "选择 Lagoon 将保存您查询历史记录的时间段。将存储最多 {{MAX_HISTORY_ITEMS}} 个条目。",
       "only-show-active-datasource": "只显示当前在 浏览 中活动状态数据源的查询",
       "query-history-deleted": "查询历史记录已删除",
       "retention-period": {
@@ -1516,7 +1516,7 @@
     "query": {
       "collapse-all": "折叠全部",
       "copy-to-clipboard": "复制到剪贴板",
-      "description": "查询查看器允许您查看原始请求和响应。要收集此数据，Grafana 需要发布新查询。请点击下面的刷新按钮触发一个新查询。",
+      "description": "查询查看器允许您查看原始请求和响应。要收集此数据，Lagoon 需要发布新查询。请点击下面的刷新按钮触发一个新查询。",
       "expand-all": "展开全部",
       "no-data": "尚未收集任何请求和响应。请点击刷新按钮",
       "refresh": "刷新"
@@ -1755,7 +1755,7 @@
     },
     "signup": {
       "button-label": "注册",
-      "new-to-question": "初次使用 Grafana？"
+      "new-to-question": "初次使用 Lagoon？"
     }
   },
   "logs": {
@@ -1803,16 +1803,16 @@
     "can-i-move": {
       "body": "将此安装连接到云堆栈后，就可以上传数据源和仪表盘。",
       "link-title": "了解如何迁移其他设置",
-      "title": "我可以将此安装移动到Grafana Cloud吗？"
+      "title": "我可以将此安装移动到Lagoon Cloud吗？"
     },
     "connect-modal": {
       "body-cloud-stack": "您还需要一个云堆栈。如果您刚刚注册，我们会自动创建您的第一个堆栈。 如果您已有帐户，您需要选择或创建一个堆栈。",
       "body-get-started": "要开始使用，您需要一个 Grafana.com 账户。",
       "body-sign-up": "注册 Grafana.com 帐户",
-      "body-token": "自我管理的 Grafana 安装需要特殊访问权限才能安全迁移内容。您需要在所选云栈上创建一个迁移令牌。",
+      "body-token": "自我管理的 Lagoon 安装需要特殊访问权限才能安全迁移内容。您需要在所选云栈上创建一个迁移令牌。",
       "body-token-field": "迁移令牌",
       "body-token-field-placeholder": "在此粘贴令牌",
-      "body-token-instructions": "登录云堆栈，并导航至“管理”、“通用”、“迁移到 Grafana Cloud”。在该屏幕上创建迁移令牌，并将令牌粘贴到此处。",
+      "body-token-instructions": "登录云堆栈，并导航至“管理”、“通用”、“迁移到 Lagoon Cloud”。在该屏幕上创建迁移令牌，并将令牌粘贴到此处。",
       "body-view-stacks": "查看我的云堆栈。",
       "cancel": "取消",
       "connect": "连接到这个堆栈",
@@ -1833,7 +1833,7 @@
     },
     "cta": {
       "button": "将此实例迁移到云端",
-      "header": "让我们管理你的 Grafana 堆栈"
+      "header": "让我们管理你的 Lagoon 堆栈"
     },
     "delete-migration-token-confirm": {
       "body": "",
@@ -1850,10 +1850,10 @@
       "title": "断开云堆栈连接"
     },
     "get-started": {
-      "body": "迁移过程必须从您自己管理的 Grafana 实例开始。",
+      "body": "迁移过程必须从您自己管理的 Lagoon 实例开始。",
       "configure-pdc-link": "配置此堆栈的 PDC",
       "link-title": "了解更多关于私人数据源连接的信息",
-      "step-1": "登录到您自己管理的实例，并导航到“管理”、“通用”、“迁移到 Grafana Cloud”。",
+      "step-1": "登录到您自己管理的实例，并导航到“管理”、“通用”、“迁移到 Lagoon Cloud”。",
       "step-2": "选择“将此实例迁移到云端”。",
       "step-3": "系统将提示您输入迁移令牌。您可以从该屏幕生成一个。",
       "step-4": "在您自己管理的实例中，选择“上传所有内容”，以将数据源和仪表盘上传到此云堆栈。",
@@ -1861,8 +1861,8 @@
       "title": ""
     },
     "is-it-secure": {
-      "body": "Grafana Labs 致力于维护最高标准的数据隐私和安全。通过实施行业标准的安全技术和程序，我们帮助保护客户的数据免遭未经授权的访问、使用或披露。",
-      "link-title": "Grafana 实验室信任中心",
+      "body": "Lagoon Labs 致力于维护最高标准的数据隐私和安全。通过实施行业标准的安全技术和程序，我们帮助保护客户的数据免遭未经授权的访问、使用或披露。",
+      "link-title": "Lagoon 实验室信任中心",
       "title": "它是否安全？"
     },
     "migrate-to-this-stack": {
@@ -1919,13 +1919,13 @@
       "upload-snapshot-error-title": ""
     },
     "pdc": {
-      "body": "将您的数据源暴露在互联网上可能会引发安全问题。专用数据源连接 (PDC) 允许 Grafana Cloud 通过安全的网络隧道访问您的现有数据源。",
+      "body": "将您的数据源暴露在互联网上可能会引发安全问题。专用数据源连接 (PDC) 允许 Lagoon Cloud 通过安全的网络隧道访问您的现有数据源。",
       "link-title": "了解 PDC",
       "title": "并非我所有的数据源都在公共互联网上"
     },
     "pricing": {
-      "body": "Grafana Cloud 提供宽松的免费计划和 14 天的无限使用试用期。试用到期后，您将根据超出免费计划限制的使用量付费。",
-      "link-title": "Grafana Cloud 价格",
+      "body": "Lagoon Cloud 提供宽松的免费计划和 14 天的无限使用试用期。试用到期后，您将根据超出免费计划限制的使用量付费。",
+      "link-title": "Lagoon Cloud 价格",
       "title": "费用如何？"
     },
     "public-preview": {
@@ -2011,14 +2011,14 @@
       "unknown-error": ""
     },
     "what-is-cloud": {
-      "body": "Grafana Cloud 是一个完全托管的云托管观测平台，是云原生环境的理想选择。它拥有您所喜爱的 Grafana 的一切，而无需维护、升级和支持安装。",
+      "body": "Lagoon Cloud 是一个完全托管的云托管观测平台，是云原生环境的理想选择。它拥有您所喜爱的 Lagoon 的一切，而无需维护、升级和支持安装。",
       "link-title": "了解云端功能",
-      "title": "Grafana Cloud 是什么？"
+      "title": "Lagoon Cloud 是什么？"
     },
     "why-host": {
-      "body": "除了托管的便利性外，Grafana Cloud 还包括许多云专属功能，如 SLO、事件管理、机器学习和强大的观测能力集成。",
+      "body": "除了托管的便利性外，Lagoon Cloud 还包括许多云专属功能，如 SLO、事件管理、机器学习和强大的观测能力集成。",
       "link-title": "还有问题？咨询专家",
-      "title": "为什么使用 Grafana 托管？"
+      "title": "为什么使用 Lagoon 托管？"
     }
   },
   "nav": {
@@ -2070,7 +2070,7 @@
       "title": "静默"
     },
     "alerting-upgrade": {
-      "subtitle": "将您现有的旧版警报和通知通道升级到新的 Grafana 告警",
+      "subtitle": "将您现有的旧版警报和通知通道升级到新的 Lagoon 告警",
       "title": "Alerting 升级"
     },
     "alerts-and-incidents": {
@@ -2078,14 +2078,14 @@
       "title": "警报和 IRM"
     },
     "api-keys": {
-      "subtitle": "管理和创建用于与 Grafana HTTP API 交互的 API 密钥",
+      "subtitle": "管理和创建用于与 Lagoon HTTP API 交互的 API 密钥",
       "title": "API 密钥"
     },
     "application": {
       "title": "应用程序"
     },
     "apps": {
-      "subtitle": "扩展 Grafana 体验的应用插件",
+      "subtitle": "扩展 Lagoon 体验的应用插件",
       "title": ""
     },
     "authentication": {
@@ -2108,7 +2108,7 @@
       "title": "用户和访问权限"
     },
     "config-general": {
-      "subtitle": "管理 Grafana 上的默认首选项和设置",
+      "subtitle": "管理 Lagoon 上的默认首选项和设置",
       "title": "概况"
     },
     "config-plugins": {
@@ -2170,15 +2170,15 @@
       "title": "前端"
     },
     "global-orgs": {
-      "subtitle": "在同一服务器上运行的 Grafana 的孤立实例",
+      "subtitle": "在同一服务器上运行的 Lagoon 的孤立实例",
       "title": "组织"
     },
     "global-users": {
-      "subtitle": "在 Grafana 中管理用户",
+      "subtitle": "在 Lagoon 中管理用户",
       "title": "用户"
     },
     "grafana-quaderno": {
-      "title": "Grafana Quaderno"
+      "title": "Lagoon Quaderno"
     },
     "groupsync": {
       "subtitle": ""
@@ -2231,7 +2231,7 @@
     },
     "migrate-to-cloud": {
       "subtitle": "将配置从您自己管理的安装复制到云堆栈",
-      "title": "迁移到Grafana Cloud"
+      "title": "迁移到Lagoon Cloud"
     },
     "monitoring": {
       "subtitle": "",
@@ -2258,11 +2258,11 @@
       "title": "播放列表"
     },
     "plugins": {
-      "subtitle": "使用插件扩展 Grafana 体验",
+      "subtitle": "使用插件扩展 Lagoon 体验",
       "title": "插件"
     },
     "private-data-source-connections": {
-      "subtitle": "查询安全网络中的数据，无需打开网络从 Grafana Cloud 传入流量。请在我们的文档中了解更多信息。",
+      "subtitle": "查询安全网络中的数据，无需打开网络从 Lagoon Cloud 传入流量。请在我们的文档中了解更多信息。",
       "title": "私有数据源连接"
     },
     "profile/notifications": {
@@ -2300,11 +2300,11 @@
       "title": "搜索仪表板"
     },
     "server-settings": {
-      "subtitle": "查看 Grafana 配置中定义的设置",
+      "subtitle": "查看 Lagoon 配置中定义的设置",
       "title": "设置"
     },
     "service-accounts": {
-      "subtitle": "使用服务帐户在 Grafana 中运行自动化工作负载",
+      "subtitle": "使用服务帐户在 Lagoon 中运行自动化工作负载",
       "title": "服务帐户"
     },
     "setup-guide": {
@@ -2507,7 +2507,7 @@
     },
     "details": {
       "labels": {
-        "contactGrafanaLabs": "",
+        "contactLagoonLabs": "",
         "dependencies": "",
         "downloads": "",
         "from": "",

@@ -167,6 +167,7 @@ export const availableIconsIndex = {
   'key-skeleton-alt': true,
   keyboard: true,
   kubernetes: true,
+  lagoon: true,
   'layer-group': true,
   'layers-alt': true,
   'legend-hide': true,

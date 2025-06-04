@@ -2,6 +2,7 @@ import { IconName, IconSize, IconType } from '../../types/icon';
 
 const alwaysMonoIcons: IconName[] = [
   'grafana',
+  'lagoon',
   'favorite',
   'heart-break',
   'heart',

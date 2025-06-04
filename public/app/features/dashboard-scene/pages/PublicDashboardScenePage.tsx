@@ -96,7 +96,7 @@ function PublicDashboardSceneRenderer({ model }: SceneComponentProps<DashboardSc
       <div className={styles.controls}>
         <Stack alignItems="center">
           <div className={styles.iconTitle}>
-            <Icon name="grafana" size="lg" aria-hidden />
+            <Icon name="lagoon" size="lg" aria-hidden />
           </div>
           <span className={styles.title}>{title}</span>
         </Stack>

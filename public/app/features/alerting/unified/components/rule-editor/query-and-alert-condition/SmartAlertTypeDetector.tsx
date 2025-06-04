@@ -80,6 +80,12 @@ export function SmartAlertTypeDetector({
   queries,
   onClickSwitch,
 }: SmartAlertTypeDetectorProps) {
+
+  // Lagoon alert rules are fixed to Grafana-managed, so we don't show the type switcher
+  return (
+    <div></div>
+  )
+
   const { getValues } = useFormContext<RuleFormValues>();
   const [ruleFormType] = getValues(['type']);
   const canSwitch = getCanSwitch({ queries, ruleFormType, rulesSourcesWithRuler });
