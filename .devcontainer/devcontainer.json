@@ -1,0 +1,48 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the
+// README at: https://github.com/devcontainers/templates/tree/main/src/go
+{
+  "name": "Go",
+  // Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
+  "dockerFile": "Dockerfile",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-vscode.makefile-tools",
+        "esbenp.prettier-vscode",
+        "ms-azuretools.vscode-docker",
+        "arcanis.vscode-zipfs",
+        "dbaeumer.vscode-eslint"
+      ]
+    }
+  },
+  "initializeCommand": [
+    ".devcontainer/checkenv"
+  ],
+  // Features to add to the dev container. More info: https://containers.dev/features.
+  // "features": {},
+  // Use 'forwardPorts' to make a list of ports inside the container available locally.
+  // "forwardPorts": [],
+  "additionalProperties": {},
+  "postStartCommand": {
+    "yarn-install": "yarn install"
+  },
+  "postCreateCommand": "if [ -n \"$SSH_AUTH_SOCK\" ]; then nohup bash -c 'while true; do sleep 20; ps aux | grep -E \"vscode.*[b]ootstrap-fork.*extensionHost.*\" > /dev/null || kill -15 1; done &' > /dev/null 2>&1; else echo \"Not Remote-SSH — skipping watchdog\"; fi",
+  "mounts": [
+    {
+      // Grafana data directory (logs and db)
+      "source": "${localEnv:LAGOON_HOST_DATA_DIR}",
+      "target": "/grafana/data",
+      "type": "bind"
+    },
+    {
+      // The environment variable must be set to a path where the lagoon plugin repos are located
+      "source": "${localEnv:LAGOON_HOST_PLUGINS_DIR}",
+      "target": "/grafana/plugins",
+      "type": "bind"
+    }
+  ]
+  // Configure tool-specific properties.
+  // "customizations": {},
+  // Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
+  // "remoteUser": "root"
+}
