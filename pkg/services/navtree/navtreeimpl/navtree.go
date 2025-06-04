@@ -130,19 +130,21 @@ func (s *ServiceImpl) GetNavTree(c *contextmodel.ReqContext, prefs *pref.Prefere
 		})
 	}
 
-	if hasAccess(ac.EvalPermission(ac.ActionDatasourcesExplore)) {
-		drilldownChildNavLinks := s.buildDrilldownNavLinks(c)
-		treeRoot.AddSection(&navtree.NavLink{
-			Text:       "Drilldown",
-			Id:         navtree.NavIDDrilldown,
-			SubTitle:   "Drill down into your data using Grafana's powerful queryless apps",
-			Icon:       "drilldown",
-			IsNew:      true,
-			SortWeight: navtree.WeightDrilldown,
-			Url:        s.cfg.AppSubURL + "/drilldown",
-			Children:   drilldownChildNavLinks,
-		})
-	}
+	/*
+		if hasAccess(ac.EvalPermission(ac.ActionDatasourcesExplore)) {
+			drilldownChildNavLinks := s.buildDrilldownNavLinks(c)
+			treeRoot.AddSection(&navtree.NavLink{
+				Text:       "Drilldown",
+				Id:         navtree.NavIDDrilldown,
+				SubTitle:   "Drill down into your data using Grafana's powerful queryless apps",
+				Icon:       "drilldown",
+				IsNew:      true,
+				SortWeight: navtree.WeightDrilldown,
+				Url:        s.cfg.AppSubURL + "/drilldown",
+				Children:   drilldownChildNavLinks,
+			})
+		}
+	*/
 
 	if s.cfg.ProfileEnabled && c.IsSignedIn {
 		treeRoot.AddSection(s.getProfileNode(c))

@@ -1,9 +1,5 @@
 import { css, cx } from '@emotion/css';
-<<<<<<< HEAD
-import { FC } from 'react';
-=======
-import React, { FC, useState } from 'react';
->>>>>>> ac69218bfde (Custom logo changes)
+import { FC, useState } from 'react';
 
 import { colorManipulator } from '@grafana/data';
 import { useTheme2 } from '@grafana/ui';
@@ -14,13 +10,8 @@ export interface BrandComponentProps {
   children?: JSX.Element | JSX.Element[];
 }
 
-<<<<<<< HEAD
 export const LoginLogo: FC<BrandComponentProps & { logo?: string }> = ({ className, logo }) => {
-  return <img className={className} src={`${logo ? logo : 'public/img/grafana_icon.svg'}`} alt="Grafana" />;
-=======
-const LoginLogo: FC<BrandComponentProps> = ({ className }) => {
-  return <img className={className} src="public/img/lagoon-logo-cl.svg" alt="Lagoon" />;
->>>>>>> ac69218bfde (Custom logo changes)
+  return <img className={className} src={`${logo ? logo : 'public/img/lagoon-logo-cl.svg'}`} alt="Lagoon" />;
 };
 
 const LoginBackground: FC<BrandComponentProps> = ({ className, children }) => {

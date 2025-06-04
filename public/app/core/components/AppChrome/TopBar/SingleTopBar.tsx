@@ -53,6 +53,8 @@ export const SingleTopBar = memo(function SingleTopBar({
   const breadcrumbs = buildBreadcrumbs(sectionNav, pageNav, homeNav);
   const unifiedHistoryEnabled = config.featureToggles.unifiedHistory;
 
+  const operatorId = config.bootData.user.orgName || '';
+
   return (
     <div className={styles.layout}>
       <Stack minWidth={0} gap={0.5} alignItems="center">
@@ -64,7 +66,7 @@ export const SingleTopBar = memo(function SingleTopBar({
             tooltip={t('navigation.megamenu.open', 'Open menu')}
           >
             <Stack gap={0} alignItems="center">
-              <Branding.MenuLogo className={styles.img} />
+              <Branding.MenuLogo operatorId={operatorId} className={styles.img} />
               <Icon size="sm" name="angle-down" />
             </Stack>
           </ToolbarButton>

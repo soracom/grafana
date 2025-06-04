@@ -160,10 +160,11 @@ func (hs *HTTPServer) getFrontendSettings(c *contextmodel.ReqContext) (*dtos.Fro
 
 	hideVersion := hs.Cfg.Anonymous.HideVersion && !c.IsSignedIn
 	version := setting.BuildVersion
+	lagoonVersion := "3"
 	commit := setting.BuildCommit
 	commitShort := getShortCommitHash(setting.BuildCommit, 10)
 	buildstamp := setting.BuildStamp
-	versionString := fmt.Sprintf(`%s v%s (%s)`, setting.ApplicationName, version, commitShort)
+	versionString := fmt.Sprintf(`%s v%s (v%s) (%s)`, setting.ApplicationName, lagoonVersion, version, commitShort)
 
 	if hideVersion {
 		version = ""
