@@ -21,21 +21,21 @@ export let getFooterLinks = (): FooterLink[] => {
       id: 'documentation',
       text: t('nav.help/documentation', 'Documentation'),
       icon: 'document-info',
-      url: 'https://grafana.com/docs/grafana/latest/?utm_source=grafana_footer',
+      url: 'https://developers.soracom.io/en/docs/lagoon/',
     },
     {
       target: '_blank',
-      id: 'support',
-      text: t('nav.help/support', 'Support'),
-      icon: 'question-circle',
-      url: 'https://grafana.com/products/enterprise/?utm_source=grafana_footer',
+      id: 'documentationjp',
+      text: 'ドキュメント',
+      icon: 'document-info',
+      url: 'https://users.soracom.io/ja-jp/docs/lagoon-v3/',
     },
     {
       target: '_blank',
-      id: 'community',
-      text: t('nav.help/community', 'Community'),
-      icon: 'comments-alt',
-      url: 'https://community.grafana.com/?utm_source=grafana_footer',
+      id: 'userconsole',
+      text: 'User Console',
+      icon: 'cog',
+      url: 'https://console.soracom.io',
     },
   ];
 };
@@ -50,8 +50,12 @@ export function getVersionMeta(version: string) {
 }
 
 export function getVersionLinks(hideEdition?: boolean): FooterLink[] {
+  /*
   const { buildInfo, licenseInfo } = config;
+  */
+  const { buildInfo } = config;
   const links: FooterLink[] = [];
+  /*
   const stateInfo = licenseInfo.stateInfo ? ` (${licenseInfo.stateInfo})` : '';
 
   if (!hideEdition) {
@@ -62,20 +66,27 @@ export function getVersionLinks(hideEdition?: boolean): FooterLink[] {
       url: licenseInfo.licenseUrl,
     });
   }
+  */
 
   if (buildInfo.hideVersion) {
     return links;
   }
 
+  /*
   const { hasReleaseNotes } = getVersionMeta(buildInfo.version);
+  */
 
   links.push({
     target: '_blank',
     id: 'version',
     text: buildInfo.versionString,
+    /*
     url: hasReleaseNotes ? `https://github.com/grafana/grafana/blob/main/CHANGELOG.md` : undefined,
+    */
+    url: undefined,
   });
 
+  /*
   if (buildInfo.hasUpdate) {
     links.push({
       target: '_blank',
@@ -85,6 +96,7 @@ export function getVersionLinks(hideEdition?: boolean): FooterLink[] {
       url: 'https://grafana.com/grafana/download?utm_source=grafana_footer',
     });
   }
+  */
 
   return links;
 }
