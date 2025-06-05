@@ -1,16 +1,17 @@
 import { css, cx } from '@emotion/css';
-import { FC } from 'react';
+import { FC, useState } from 'react';
 
 import { colorManipulator } from '@grafana/data';
 import { useTheme2 } from '@grafana/ui';
 
 export interface BrandComponentProps {
+  operatorId?: string;
   className?: string;
   children?: JSX.Element | JSX.Element[];
 }
 
 export const LoginLogo: FC<BrandComponentProps & { logo?: string }> = ({ className, logo }) => {
-  return <img className={className} src={`${logo ? logo : 'public/img/grafana_icon.svg'}`} alt="Grafana" />;
+  return <img className={className} src={`${logo ? logo : 'public/img/lagoon-logo-cl.svg'}`} alt="Grafana" />;
 };
 
 const LoginBackground: FC<BrandComponentProps> = ({ className, children }) => {
@@ -42,8 +43,45 @@ const LoginBackground: FC<BrandComponentProps> = ({ className, children }) => {
   return <div className={cx(background, className)}>{children}</div>;
 };
 
-const MenuLogo: FC<BrandComponentProps> = ({ className }) => {
-  return <img className={className} src="public/img/grafana_icon.svg" alt="Grafana" />;
+async function imageExists(imageURL: string) {
+  const response = await fetch(imageURL, {
+    method: 'HEAD',
+  });
+
+  if (response.status === 200) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
+const MenuLogo: FC<BrandComponentProps> = ({ operatorId, className }) => {
+  const [isChecking, setIsChecking] = useState(false);
+  const [imageURL, setImageURL] = useState('');
+  const lagoonIcon = 'public/img/lagoon-logo-cl.svg';
+
+  if (!isChecking && imageURL === '' && operatorId && operatorId.endsWith('-PRO')) {
+    setIsChecking(true);
+    const url = 'https://soracom-customer-images.s3.amazonaws.com/lagoon/' + operatorId + '/logo';
+    imageExists(url)
+      .then((result) => {
+        if (result) {
+          setImageURL(url);
+        } else {
+          setImageURL(lagoonIcon);
+        }
+      })
+      .finally(() => {
+        setIsChecking(false);
+      });
+  } else if (operatorId && !operatorId.endsWith('-PRO')) {
+    return <img className={className} src={lagoonIcon} alt="Lagoon" />;
+  }
+
+  if (imageURL === '') {
+    return null;
+  }
+  return <img className={className} src={imageURL} alt="Lagoon" />;
 };
 
 const LoginBoxBackground = () => {
@@ -59,8 +97,8 @@ export class Branding {
   static LoginBackground = LoginBackground;
   static MenuLogo = MenuLogo;
   static LoginBoxBackground = LoginBoxBackground;
-  static AppTitle = 'Grafana';
-  static LoginTitle = 'Welcome to Grafana';
+  static AppTitle = 'SORACOM Lagoon';
+  static LoginTitle = 'SORACOM Lagoon';
   static HideEdition = false;
   static GetLoginSubTitle = (): null | string => {
     return null;

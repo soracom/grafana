@@ -64,7 +64,7 @@ export const GrafanaRules = ({ namespaces, expandAll }: Props) => {
       <div className={styles.sectionHeader}>
         <div className={styles.headerRow}>
           <Text element="h2" variant="h5">
-            <Trans i18nKey="alerting.list-view.section.grafanaManaged.title">Grafana-managed</Trans>
+            <Trans i18nKey="alerting.list-view.section.grafanaManaged.title">Lagoon-managed</Trans>
           </Text>
           {loading ? (
             <LoadingPlaceholder
@@ -80,7 +80,7 @@ export const GrafanaRules = ({ namespaces, expandAll }: Props) => {
                 aria-label="export all grafana rules"
                 data-testid="export-all-grafana-rules"
                 icon="download-alt"
-                tooltip="Export all Grafana-managed rules"
+                tooltip="Export all Lagoon-managed rules"
                 onClick={toggleShowExportDrawer}
                 variant="secondary"
               >
@@ -94,7 +94,7 @@ export const GrafanaRules = ({ namespaces, expandAll }: Props) => {
                 })}
                 icon="plus"
                 variant="secondary"
-                tooltip="Create new Grafana-managed recording rule"
+                tooltip="Create new Lagoon-managed recording rule"
                 onClick={() => logInfo(LogMessages.grafanaRecording)}
               >
                 <Trans i18nKey="alerting.list-view.section.grafanaManaged.new-recording-rule">New recording rule</Trans>

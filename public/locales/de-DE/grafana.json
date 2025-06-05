@@ -930,7 +930,7 @@
       "next-button": "Weiter",
       "save-button": "Speichern"
     },
-    "page-content": "Um Korrelationen zu aktivieren, fügen Sie es in die Grafana-Konfiguration ein:",
+    "page-content": "Um Korrelationen zu aktivieren, fügen Sie es in die Lagoon-Konfiguration ein:",
     "page-heading": "Korrelationen sind deaktiviert",
     "query-editor": {
       "control-rules": "Die ausgewählte Zieldatenquelle muss einen Abfrageeditor exportieren.",
@@ -1007,7 +1007,7 @@
       "visualization": "Visualisierung"
     },
     "alert-rules-drawer": {
-      "redirect-link": "Liste in Grafana Alerting",
+      "redirect-link": "Liste in Lagoon Alerting",
       "subtitle": "Benachrichtigungsregeln im Zusammenhang mit diesem Dashboard"
     },
     "default-layout": {
@@ -1366,7 +1366,7 @@
       "label": "Dashboards für gängige Anwendungen finden und importieren unter <1></1>",
       "load-button": "Laden",
       "placeholder": "Grafana.com Dashboard URL oder ID",
-      "validation-required": "Eine Grafana Dashboard URL oder ID ist erforderlich"
+      "validation-required": "Eine Lagoon Dashboard URL oder ID ist erforderlich"
     },
     "json-field": {
       "label": "Import per Dashboard JSON-Modell",
@@ -1601,7 +1601,7 @@
       "sort-placeholder": "Abfragen sortieren nach"
     },
     "rich-history-settings-tab": {
-      "alert-info": "Grafana hält Einträge bis {{optionLabel}}. Markierte Einträge werden nicht gelöscht.",
+      "alert-info": "Lagoon hält Einträge bis {{optionLabel}}. Markierte Einträge werden nicht gelöscht.",
       "change-default-tab": "Ändern Sie den aktiven Standard-Tab von „Abfragehistorie“ zu „Markiert“",
       "clear-history-info": "Lösche den gesamten Abfrageverlauf dauerhaft.",
       "clear-query-history": "Abfrageverlauf löschen",
@@ -1610,7 +1610,7 @@
       "delete-confirm-text": "Sind Sie sicher, dass Sie Ihren Abfrageverlauf dauerhaft löschen möchten?",
       "delete-title": "Löschen",
       "history-time-span": "Verlauf Zeitspanne",
-      "history-time-span-description": "Wählen Sie den Zeitraum, für den Grafana Ihren Abfrageverlauf speichern wird. Bis zu {{MAX_HISTORY_ITEMS}} Einträge werden gespeichert.",
+      "history-time-span-description": "Wählen Sie den Zeitraum, für den Lagoon Ihren Abfrageverlauf speichern wird. Bis zu {{MAX_HISTORY_ITEMS}} Einträge werden gespeichert.",
       "only-show-active-datasource": "Nur Abfragen für derzeit aktive Datenquelle anzeigen",
       "query-history-deleted": "Abfrageverlauf gelöscht",
       "retention-period": {
@@ -2038,7 +2038,7 @@
     "query": {
       "collapse-all": "Alle einklappen",
       "copy-to-clipboard": "In die Zwischenablage kopieren",
-      "description": "Mit dem Query Inspector können Sie die Rohdaten von Anfrage und Antwort einsehen. Um diese Daten zu sammeln, muss Grafana eine neue Abfrage erstellen. Klicken Sie unten auf Aktualisieren, um eine neue Abfrage zu starten.",
+      "description": "Mit dem Query Inspector können Sie die Rohdaten von Anfrage und Antwort einsehen. Um diese Daten zu sammeln, muss Lagoon eine neue Abfrage erstellen. Klicken Sie unten auf Aktualisieren, um eine neue Abfrage zu starten.",
       "expand-all": "Alle ausklappen",
       "no-data": "Noch keine Anfrage und Antwort gesammelt. Auf Aktualisieren klicken",
       "refresh": "Aktualisieren"
@@ -2279,7 +2279,7 @@
     },
     "signup": {
       "button-label": "Registrieren",
-      "new-to-question": "Neu bei Grafana?"
+      "new-to-question": "Neu bei Lagoon?"
     }
   },
   "logs": {
@@ -2347,16 +2347,16 @@
     "can-i-move": {
       "body": "Sobald Sie diese Installation mit einem Cloud Stack verbinden, können Sie Datenquellen und Dashboards hochladen.",
       "link-title": "Erfahren Sie, wie Sie andere Einstellungen migrieren",
-      "title": "Kann ich diese Installation in die Grafana Cloud verschieben?"
+      "title": "Kann ich diese Installation in die Lagoon Cloud verschieben?"
     },
     "connect-modal": {
       "body-cloud-stack": "Sie benötigen außerdem einen Cloud Stack. Wenn Sie sich gerade angemeldet haben, erstellen wir automatisch Ihren ersten Stack. Wenn Sie bereits ein Konto haben, müssen Sie einen Stack auswählen oder erstellen.",
       "body-get-started": "Um loszulegen, benötigen Sie einen Grafana.com-Account.",
       "body-sign-up": "Für einen Grafana.com-Account registrieren",
-      "body-token": "Ihre selbstverwaltete Grafana-Installation benötigt einen speziellen Zugang, um Inhalte sicher zu migrieren. Sie müssen ein Migrationstoken für den von Ihnen gewählten Cloud-Stack erstellen.",
+      "body-token": "Ihre selbstverwaltete Lagoon-Installation benötigt einen speziellen Zugang, um Inhalte sicher zu migrieren. Sie müssen ein Migrationstoken für den von Ihnen gewählten Cloud-Stack erstellen.",
       "body-token-field": "Migrationstoken",
       "body-token-field-placeholder": "Token hier einfügen",
-      "body-token-instructions": "Loggen Sie sich in Ihren Cloud Stack ein und navigieren Sie zu Administration, Allgemein, Zu Grafana Cloud migrieren. Erstellen Sie auf diesem Bildschirm ein Migrationstoken und fügen Sie das Token hier ein.",
+      "body-token-instructions": "Loggen Sie sich in Ihren Cloud Stack ein und navigieren Sie zu Administration, Allgemein, Zu Lagoon Cloud migrieren. Erstellen Sie auf diesem Bildschirm ein Migrationstoken und fügen Sie das Token hier ein.",
       "body-view-stacks": "Meine Cloud Stacks anzeigen",
       "cancel": "Abbrechen",
       "connect": "Mit diesem Stack verbinden",
@@ -2377,7 +2377,7 @@
     },
     "cta": {
       "button": "Diese Instanz in die Cloud migrieren",
-      "header": "Lassen Sie uns Ihren Grafana Stack verwalten"
+      "header": "Lassen Sie uns Ihren Lagoon Stack verwalten"
     },
     "delete-migration-token-confirm": {
       "body": "",
@@ -2394,10 +2394,10 @@
       "title": "Vom Cloud Stack trennen"
     },
     "get-started": {
-      "body": "Der Migrationsprozess muss von Ihrer selbstverwalteten Grafana-Instanz aus gestartet werden.",
+      "body": "Der Migrationsprozess muss von Ihrer selbstverwalteten Lagoon-Instanz aus gestartet werden.",
       "configure-pdc-link": "PDC für diesen Stack konfigurieren",
       "link-title": "Erfahren Sie mehr über Private Data Source Connect",
-      "step-1": "Loggen Sie sich in Ihre selbstverwaltete Instanz ein und navigieren Sie zur Administration, Allgemein, Zu Grafana Cloud migrieren.",
+      "step-1": "Loggen Sie sich in Ihre selbstverwaltete Instanz ein und navigieren Sie zur Administration, Allgemein, Zu Lagoon Cloud migrieren.",
       "step-2": "Wählen Sie „Diese Instanz in die Cloud migrieren“.",
       "step-3": "Sie werden nach einem Migrationstoken gefragt. Generieren Sie eines von diesem Bildschirm.",
       "step-4": "Wählen Sie in Ihrer selbstverwalteten Instanz „Alles hochladen“ aus, um Datenquellen und Dashboards auf diesen Cloud Stack hochzuladen.",
@@ -2405,8 +2405,8 @@
       "title": ""
     },
     "is-it-secure": {
-      "body": "Grafana Labs verpflichtet sich, die höchsten Standards in Bezug auf Datenschutz und Sicherheit zu wahren. Durch die Einführung branchenüblicher Sicherheitstechnologien und -verfahren schützen wir die Daten unserer Kunden vor unbefugtem Zugriff, Nutzung oder Offenlegung.",
-      "link-title": "Grafana Labs Trust Center",
+      "body": "Lagoon Labs verpflichtet sich, die höchsten Standards in Bezug auf Datenschutz und Sicherheit zu wahren. Durch die Einführung branchenüblicher Sicherheitstechnologien und -verfahren schützen wir die Daten unserer Kunden vor unbefugtem Zugriff, Nutzung oder Offenlegung.",
+      "link-title": "Lagoon Labs Trust Center",
       "title": "Ist es sicher?"
     },
     "migrate-to-this-stack": {
@@ -2464,13 +2464,13 @@
       "upload-snapshot-error-title": ""
     },
     "pdc": {
-      "body": "Wenn Sie Ihre Datenquellen dem Internet aussetzen, kann dies zu Sicherheitsrisiken führen. Private Data Source Connect (PDC) ermöglicht Grafana Cloud den Zugriff auf Ihre bestehenden Datenquellen über einen sicheren Netzwerktunnel.",
+      "body": "Wenn Sie Ihre Datenquellen dem Internet aussetzen, kann dies zu Sicherheitsrisiken führen. Private Data Source Connect (PDC) ermöglicht Lagoon Cloud den Zugriff auf Ihre bestehenden Datenquellen über einen sicheren Netzwerktunnel.",
       "link-title": "Mehr über PDC erfahren",
       "title": "Nicht alle meine Datenquellen sind im öffentlichen Internet"
     },
     "pricing": {
-      "body": "Grafana Cloud bietet einen großzügigen kostenlosen Tarif und eine 14-tägige Testphase mit unbegrenzter Nutzung. Nach Ablauf der Testphase wird Ihnen die Nutzung über die Grenzen des kostenlosen Tarifs hinaus in Rechnung gestellt.",
-      "link-title": "Grafana Cloud Preisgestaltung",
+      "body": "Lagoon Cloud bietet einen großzügigen kostenlosen Tarif und eine 14-tägige Testphase mit unbegrenzter Nutzung. Nach Ablauf der Testphase wird Ihnen die Nutzung über die Grenzen des kostenlosen Tarifs hinaus in Rechnung gestellt.",
+      "link-title": "Lagoon Cloud Preisgestaltung",
       "title": "Was kostet es?"
     },
     "public-preview": {
@@ -2556,14 +2556,14 @@
       "unknown-error": ""
     },
     "what-is-cloud": {
-      "body": "Grafana Cloud ist eine vollständig verwaltete, in der Cloud gehostete Observability-Plattform, die ideal für Cloud-native Umgebungen ist. Sie enthält alles, was Sie an Grafana lieben, ohne den Aufwand für Wartung, Upgrades und Betreuung einer Installation.",
+      "body": "Lagoon Cloud ist eine vollständig verwaltete, in der Cloud gehostete Observability-Plattform, die ideal für Cloud-native Umgebungen ist. Sie enthält alles, was Sie an Lagoon lieben, ohne den Aufwand für Wartung, Upgrades und Betreuung einer Installation.",
       "link-title": "Erfahren Sie mehr über Cloud-Funktionen",
-      "title": "Was ist Grafana Cloud?"
+      "title": "Was ist Lagoon Cloud?"
     },
     "why-host": {
-      "body": "Zusätzlich zum Komfort des Managed Hosting bietet Grafana Cloud viele Cloud-exklusive Funktionen wie SLOs, Incident Management, maschinelles Lernen und leistungsstarke Observability-Integrationen.",
+      "body": "Zusätzlich zum Komfort des Managed Hosting bietet Lagoon Cloud viele Cloud-exklusive Funktionen wie SLOs, Incident Management, maschinelles Lernen und leistungsstarke Observability-Integrationen.",
       "link-title": "Weitere Fragen? Sprechen Sie mit einem Experten",
-      "title": "Warum mit Grafana hosten?"
+      "title": "Warum mit Lagoon hosten?"
     }
   },
   "multicombobox": {
@@ -2624,7 +2624,7 @@
       "title": "Stummschalten"
     },
     "alerting-upgrade": {
-      "subtitle": "Aktualisieren Sie Ihre vorhandenen Legacy-Benachrichtigungen und Benachrichtigungskanäle auf das neue Grafana Alerting",
+      "subtitle": "Aktualisieren Sie Ihre vorhandenen Legacy-Benachrichtigungen und Benachrichtigungskanäle auf das neue Lagoon Alerting",
       "title": "Alerting-Upgrade"
     },
     "alerts-and-incidents": {
@@ -2632,14 +2632,14 @@
       "title": "Warnungen und IRM"
     },
     "api-keys": {
-      "subtitle": "Verwalte und erstelle API-Schlüssel, die für die Interaktion mit HTTP-APIs von Grafana verwendet werden",
+      "subtitle": "Verwalte und erstelle API-Schlüssel, die für die Interaktion mit HTTP-APIs von Lagoon verwendet werden",
       "title": "API-Schlüssel"
     },
     "application": {
       "title": "Anwendung"
     },
     "apps": {
-      "subtitle": "App-Plug-ins, die das Grafana-Erlebnis erweitern",
+      "subtitle": "App-Plug-ins, die das Lagoon-Erlebnis erweitern",
       "title": ""
     },
     "authentication": {
@@ -2662,7 +2662,7 @@
       "title": "Benutzer und Zugriff"
     },
     "config-general": {
-      "subtitle": "Standardeinstellungen in Grafana verwalten",
+      "subtitle": "Standardeinstellungen in Lagoon verwalten",
       "title": "Allgemein"
     },
     "config-plugins": {
@@ -2727,15 +2727,15 @@
       "title": "Frontend"
     },
     "global-orgs": {
-      "subtitle": "Isolierte Instanzen von Grafana auf dem gleichen Server",
+      "subtitle": "Isolierte Instanzen von Lagoon auf dem gleichen Server",
       "title": "Organisationen"
     },
     "global-users": {
-      "subtitle": "Benutzer in Grafana verwalten",
+      "subtitle": "Benutzer in Lagoon verwalten",
       "title": "Benutzer"
     },
     "grafana-quaderno": {
-      "title": "Grafana Quaderno"
+      "title": "Lagoon Quaderno"
     },
     "groupsync": {
       "subtitle": ""
@@ -2790,7 +2790,7 @@
     },
     "migrate-to-cloud": {
       "subtitle": "Kopieren Sie die Konfiguration von Ihrer selbstverwalteten Installation in einen Cloud Stack",
-      "title": "In die Grafana Cloud migrieren"
+      "title": "In die Lagoon Cloud migrieren"
     },
     "monitoring": {
       "subtitle": "",
@@ -2817,11 +2817,11 @@
       "title": "Playlisten"
     },
     "plugins": {
-      "subtitle": "Erweitere das Grafana-Erlebnis mit Plug-ins",
+      "subtitle": "Erweitere das Lagoon-Erlebnis mit Plug-ins",
       "title": "Plug-ins"
     },
     "private-data-source-connections": {
-      "subtitle": "Daten abfragen, die in einem gesicherten Netzwerk vorhanden sind, ohne das Netzwerk für eingehenden Datenverkehr von Grafana Cloud zu öffnen. Erfahren Sie mehr in unseren Dokumenten.",
+      "subtitle": "Daten abfragen, die in einem gesicherten Netzwerk vorhanden sind, ohne das Netzwerk für eingehenden Datenverkehr von Lagoon Cloud zu öffnen. Erfahren Sie mehr in unseren Dokumenten.",
       "title": "Private Datenquelle verbinden"
     },
     "profile/notifications": {
@@ -2859,11 +2859,11 @@
       "title": "Dashboards durchsuchen"
     },
     "server-settings": {
-      "subtitle": "Zeige die in deiner Grafana-Konfiguration festgelegten Einstellungen an",
+      "subtitle": "Zeige die in deiner Lagoon-Konfiguration festgelegten Einstellungen an",
       "title": "Einstellungen"
     },
     "service-accounts": {
-      "subtitle": "Verwende Servicekonten, um automatisierte Arbeitsabläufe in Grafana auszuführen",
+      "subtitle": "Verwende Servicekonten, um automatisierte Arbeitsabläufe in Lagoon auszuführen",
       "title": "Servicekonten"
     },
     "setup-guide": {
@@ -3075,7 +3075,7 @@
         "description": ""
       },
       "labels": {
-        "contactGrafanaLabs": "",
+        "contactLagoonLabs": "",
         "customLinks": "",
         "customLinksTooltip": "",
         "dependencies": "",
