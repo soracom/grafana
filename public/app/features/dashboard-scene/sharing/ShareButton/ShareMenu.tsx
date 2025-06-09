@@ -46,6 +46,7 @@ export default function ShareMenu({ dashboard, panel }: { dashboard: DashboardSc
 
   const buildMenuItems = useCallback(() => {
     const menuItems: ShareDrawerMenuItem[] = [];
+    const operatorId = config.bootData.user.orgName || '';
 
     menuItems.push({
       shareId: shareDashboardType.link,
@@ -61,7 +62,7 @@ export default function ShareMenu({ dashboard, panel }: { dashboard: DashboardSc
       testId: newShareButtonSelector.shareExternally,
       icon: 'share-alt',
       label: t('share-dashboard.menu.share-externally-title', 'Share externally'),
-      renderCondition: !panel && isPublicDashboardsEnabled(),
+      renderCondition: !panel && isPublicDashboardsEnabled() && operatorId.endsWith('-PRO'),
       onClick: () => {
         onMenuItemClick(shareDashboardType.publicDashboard);
       },
@@ -75,7 +76,8 @@ export default function ShareMenu({ dashboard, panel }: { dashboard: DashboardSc
       renderCondition:
         contextSrv.isSignedIn &&
         config.snapshotEnabled &&
-        contextSrv.hasPermission(AccessControlAction.SnapshotsCreate),
+        contextSrv.hasPermission(AccessControlAction.SnapshotsCreate) &&
+        operatorId.endsWith('-PRO'),
       onClick: () => {
         onMenuItemClick(shareDashboardType.snapshot);
       },

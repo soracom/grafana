@@ -12,6 +12,7 @@ import (
 
 	"github.com/grafana/grafana/pkg/api/dtos"
 	"github.com/grafana/grafana/pkg/api/webassets"
+	"github.com/grafana/grafana/pkg/lagoon"
 	"github.com/grafana/grafana/pkg/login/social"
 	"github.com/grafana/grafana/pkg/plugins"
 	"github.com/grafana/grafana/pkg/services/accesscontrol"
@@ -411,6 +412,19 @@ func (hs *HTTPServer) getFrontendSettings(c *contextmodel.ReqContext) (*dtos.Fro
 		frontendSettings.ListScopesEndpoint = hs.Cfg.ScopesListScopesURL
 		frontendSettings.ListDashboardScopesEndpoint = hs.Cfg.ScopesListDashboardsURL
 	}
+
+	// Lagoon Custom Settings Start
+	plan := lagoon.GetPlanFromOrgName(c.OrgName)
+	minRefresh := lagoon.AlertFrequencyForPlan(plan)
+	frontendSettings.MinRefreshInterval = fmt.Sprintf("%vs", minRefresh)
+	frontendSettings.UnifiedAlerting.MinInterval = fmt.Sprintf("%vs", minRefresh)
+
+	features := frontendSettings.FeatureToggles
+
+	if !c.IsGrafanaAdmin && !c.IsPublicDashboardView() {
+		features["publicDashboards"] = lagoon.PublicDashboardsEnabledForPlan(plan)
+	}
+	// Lagoon Custom Settings End
 
 	return frontendSettings, nil
 }

@@ -100,6 +100,7 @@ export const AddPermission = ({
             <Select
               aria-label={'Built-in role picker'}
               options={Object.values(OrgRole)
+                .filter((e) => e !== 'Admin')
                 .filter((r) => r !== OrgRole.None)
                 .map((r) => ({ value: r, label: r }))}
               onChange={(r) => setBuiltinRole(r.value || '')}

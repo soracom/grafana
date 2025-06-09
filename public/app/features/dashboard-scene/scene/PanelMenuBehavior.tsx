@@ -124,10 +124,12 @@ export function panelMenuBehavior(menu: VizPanelMenu) {
         },
       });
 
+      const operatorId = config.bootData.user.orgName || '';
       if (
         contextSrv.isSignedIn &&
         config.snapshotEnabled &&
-        contextSrv.hasPermission(AccessControlAction.SnapshotsCreate)
+        contextSrv.hasPermission(AccessControlAction.SnapshotsCreate) &&
+        operatorId.endsWith('-PRO')
       ) {
         subMenu.push({
           text: t('share-panel.menu.share-snapshot-title', 'Share snapshot'),
