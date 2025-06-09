@@ -577,7 +577,7 @@ func (hs *HTTPServer) declareFixedRoles() error {
 				{Action: dashboards.ActionDashboardsPublicWrite, Scope: dashboards.ScopeDashboardsAll},
 			},
 		},
-		Grants: []string{"Admin"},
+		Grants: []string{string(org.RoleEditor)},
 	}
 
 	featuremgmtReaderRole := ac.RoleRegistration{
