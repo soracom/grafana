@@ -113,6 +113,9 @@ func (*OSSMigrations) AddMigration(mg *Migrator) {
 	// main.
 	//
 	// addFolderMigrations(mg)
+
+	// Soracom Migrations
+	addSoracomDatasourceNameMigration(mg)
 }
 
 func addMigrationLogMigrations(mg *Migrator) {
