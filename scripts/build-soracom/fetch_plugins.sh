@@ -137,7 +137,7 @@ download_artifact_from_s3 () {
   fi
 }
 
-clone_private_repo soracom-harvest-backend cee35d8c77a3fe2481d29c37371ca45e3c15b69d
+clone_private_repo soracom-harvest-backend c524edcdc188e868754a668b24964fc68cc42a05
 clone_private_repo soracom-plot-panel a166c5f3da64896d6ac6a2ddc39b4551dbc5c9c3
 
 download_artifact_from_s3 soracom-dynamic-image-panel 2.0.0
