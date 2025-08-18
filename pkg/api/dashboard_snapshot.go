@@ -11,6 +11,7 @@ import (
 	"github.com/grafana/grafana/pkg/apimachinery/identity"
 	dashboardsnapshot "github.com/grafana/grafana/pkg/apis/dashboardsnapshot/v0alpha1"
 	"github.com/grafana/grafana/pkg/infra/metrics"
+	"github.com/grafana/grafana/pkg/lagoon"
 	ac "github.com/grafana/grafana/pkg/services/accesscontrol"
 	"github.com/grafana/grafana/pkg/services/apiserver/endpoints/request"
 	contextmodel "github.com/grafana/grafana/pkg/services/contexthandler/model"
@@ -69,6 +70,12 @@ func (hs *HTTPServer) GetSharingOptions(c *contextmodel.ReqContext) {
 // 403: forbiddenError
 // 500: internalServerError
 func (hs *HTTPServer) CreateDashboardSnapshot(c *contextmodel.ReqContext) {
+	// Check if the organization's plan allows snapshots
+	if !lagoon.IsProPlan(c.SignedInUser.GetOrgName()) {
+		c.JsonApiErr(http.StatusForbidden, "Dashboard snapshots are not available on your current plan", nil)
+		return
+	}
+
 	cmd := dashboardsnapshots.CreateDashboardSnapshotCommand{}
 	if err := web.Bind(c.Req, &cmd); err != nil {
 		c.JsonApiErr(http.StatusBadRequest, "bad request data", err)
@@ -266,6 +273,12 @@ func (hs *HTTPServer) DeleteDashboardSnapshot(c *contextmodel.ReqContext) respon
 func (hs *HTTPServer) SearchDashboardSnapshots(c *contextmodel.ReqContext) response.Response {
 	if !hs.Cfg.SnapshotEnabled {
 		c.JsonApiErr(http.StatusForbidden, "Dashboard Snapshots are disabled", nil)
+		return nil
+	}
+
+	// Check if the organization's plan allows snapshots
+	if !lagoon.IsProPlan(c.SignedInUser.GetOrgName()) {
+		c.JsonApiErr(http.StatusForbidden, "Dashboard snapshots are not available on your current plan", nil)
 		return nil
 	}
 

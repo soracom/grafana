@@ -24,5 +24,6 @@ var (
 	ErrPublicDashboardUidExists            = errutil.BadRequest("publicdashboards.uidExists", errutil.WithPublicMessage("Dashboard Uid already exists"))
 	ErrPublicDashboardAccessTokenExists    = errutil.BadRequest("publicdashboards.accessTokenExists", errutil.WithPublicMessage("Dashboard Access Token already exists"))
 
-	ErrPublicDashboardNotEnabled = errutil.Forbidden("publicdashboards.notEnabled", errutil.WithPublicMessage("Dashboard paused"))
+	ErrPublicDashboardNotEnabled       = errutil.Forbidden("publicdashboards.notEnabled", errutil.WithPublicMessage("Dashboard paused"))
+	ErrPublicDashboardFeatureDisabled = errutil.Forbidden("publicdashboards.featureDisabled", errutil.WithPublicMessage("Public dashboards feature is disabled"))
 )
