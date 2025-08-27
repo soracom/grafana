@@ -5,7 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"os"
 	"strconv"
+	"strings"
 
 	"github.com/grafana/grafana/pkg/api/dtos"
 	"github.com/grafana/grafana/pkg/api/response"
@@ -169,6 +171,31 @@ func (hs *HTTPServer) GetOrgUsersForCurrentOrgLookup(c *contextmodel.ReqContext)
 	}
 
 	return response.JSON(http.StatusOK, result)
+}
+
+func filterAdminUsers(inDTOs []*org.OrgUserDTO) []*org.OrgUserDTO {
+
+	outDTOs := make([]*org.OrgUserDTO, 0)
+	for _, dto := range inDTOs {
+		if isSoracomAdminUser(dto.Login) || dto.Role == "Admin" {
+			continue
+		}
+		outDTOs = append(outDTOs, dto)
+	}
+	return outDTOs
+}
+
+var adminUsers = os.Getenv("LAGOON_ADMIN_USERNAMES")
+
+func isSoracomAdminUser(user string) bool {
+	users := strings.Split(adminUsers, ",")
+
+	for _, adminName := range users {
+		if user == adminName {
+			return true
+		}
+	}
+	return false
 }
 
 // swagger:route GET /orgs/{org_id}/users orgs getOrgUsers
@@ -342,6 +369,10 @@ func (hs *HTTPServer) searchOrgUsersHelper(c *contextmodel.ReqContext, query *or
 			filteredUsers[i].AuthLabels = []string{login.GetAuthProviderLabel(module)}
 			filteredUsers[i].IsExternallySynced = hs.isExternallySynced(hs.Cfg, module)
 		}
+	}
+
+	if !c.SignedInUser.GetIsGrafanaAdmin() {
+		filteredUsers = filterAdminUsers(filteredUsers)
 	}
 
 	result.OrgUsers = filteredUsers
