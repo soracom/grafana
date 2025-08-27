@@ -855,10 +855,6 @@ func (st DBstore) GetAlertRulesForScheduling(ctx context.Context, query *ngmodel
 			}
 		}
 		st.Logger.Info("Alerts found for processing", "numAlerts", len(query.ResultRules), "numFolders", len(query.ResultFoldersTitles))
-
-		resultRulesJson, _ := json.Marshal(query.ResultRules)
-		resultFoldersJson, _ := json.Marshal(query.ResultFoldersTitles)
-		st.Logger.Info("Debug alert info:", "alertInfo", string(resultRulesJson), "folders", string(resultFoldersJson))
 		return nil
 	})
 }
