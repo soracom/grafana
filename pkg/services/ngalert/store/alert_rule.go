@@ -777,6 +777,8 @@ func (st DBstore) GetAlertRulesForScheduling(ctx context.Context, query *ngmodel
 			}
 		}
 
+		alertRulesSql.Where("labels NOT LIKE '%ALERT_DISABLED%'") // exclude rules that have ALERT_DISABLED label set
+
 		rule := new(alertRule)
 		rows, err := alertRulesSql.Rows(rule)
 		if err != nil {
@@ -852,6 +854,11 @@ func (st DBstore) GetAlertRulesForScheduling(ctx context.Context, query *ngmodel
 				}
 			}
 		}
+		st.Logger.Info("Alerts found for processing", "numAlerts", len(query.ResultRules), "numFolders", len(query.ResultFoldersTitles))
+
+		resultRulesJson, _ := json.Marshal(query.ResultRules)
+		resultFoldersJson, _ := json.Marshal(query.ResultFoldersTitles)
+		st.Logger.Info("Debug alert info:", "alertInfo", string(resultRulesJson), "folders", string(resultFoldersJson))
 		return nil
 	})
 }
