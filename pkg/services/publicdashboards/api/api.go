@@ -9,12 +9,14 @@ import (
 	"github.com/grafana/grafana/pkg/api/response"
 	"github.com/grafana/grafana/pkg/api/routing"
 	"github.com/grafana/grafana/pkg/infra/log"
+	"github.com/grafana/grafana/pkg/lagoon"
 	"github.com/grafana/grafana/pkg/middleware"
 	"github.com/grafana/grafana/pkg/services/accesscontrol"
 	contextmodel "github.com/grafana/grafana/pkg/services/contexthandler/model"
 	"github.com/grafana/grafana/pkg/services/dashboards"
 	"github.com/grafana/grafana/pkg/services/featuremgmt"
 	"github.com/grafana/grafana/pkg/services/licensing"
+	"github.com/grafana/grafana/pkg/services/org"
 	"github.com/grafana/grafana/pkg/services/publicdashboards"
 	. "github.com/grafana/grafana/pkg/services/publicdashboards/models"
 	"github.com/grafana/grafana/pkg/services/publicdashboards/validation"
@@ -31,6 +33,7 @@ type Api struct {
 	features      featuremgmt.FeatureToggles
 	license       licensing.Licensing
 	log           log.Logger
+	orgService    org.Service
 	routeRegister routing.RouteRegister
 }
 
@@ -42,6 +45,7 @@ func ProvideApi(
 	md publicdashboards.Middleware,
 	cfg *setting.Cfg,
 	license licensing.Licensing,
+	orgService org.Service,
 ) *Api {
 	api := &Api{
 		PublicDashboardService: pd,
@@ -51,6 +55,7 @@ func ProvideApi(
 		features:               features,
 		license:                license,
 		log:                    log.New("publicdashboards.api"),
+		orgService:             orgService,
 		routeRegister:          rr,
 	}
 
@@ -60,6 +65,15 @@ func ProvideApi(
 	}
 
 	return api
+}
+
+// checkPlanPermission verifies if the current organization's plan allows public dashboards
+func (api *Api) checkPlanPermission(ctx context.Context, orgID int64) error {
+	plan := lagoon.GetPlan(api.orgService, ctx, orgID)
+	if !lagoon.PublicDashboardsEnabledForPlan(plan) {
+		return ErrPublicDashboardFeatureDisabled.Errorf("Public dashboards are not available on your current plan")
+	}
+	return nil
 }
 
 // RegisterAPIEndpoints Registers Endpoints on Grafana Router
@@ -179,6 +193,11 @@ func (api *Api) GetPublicDashboard(c *contextmodel.ReqContext) response.Response
 // 403: forbiddenPublicError
 // 500: internalServerPublicError
 func (api *Api) CreatePublicDashboard(c *contextmodel.ReqContext) response.Response {
+	// Check if the organization's plan allows public dashboards
+	if err := api.checkPlanPermission(c.Req.Context(), c.SignedInUser.GetOrgID()); err != nil {
+		return response.Err(err)
+	}
+
 	// exit if we don't have a valid dashboardUid
 	dashboardUid := web.Params(c.Req)[":dashboardUid"]
 	if !validation.IsValidShortUID(dashboardUid) {
@@ -233,6 +252,11 @@ func (api *Api) CreatePublicDashboard(c *contextmodel.ReqContext) response.Respo
 // 403: forbiddenPublicError
 // 500: internalServerPublicError
 func (api *Api) UpdatePublicDashboard(c *contextmodel.ReqContext) response.Response {
+	// Check if the organization's plan allows public dashboards
+	if err := api.checkPlanPermission(c.Req.Context(), c.SignedInUser.GetOrgID()); err != nil {
+		return response.Err(err)
+	}
+
 	// exit if we don't have a valid dashboardUid
 	dashboardUid := web.Params(c.Req)[":dashboardUid"]
 	if !validation.IsValidShortUID(dashboardUid) {

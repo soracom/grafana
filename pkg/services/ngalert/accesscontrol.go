@@ -61,10 +61,12 @@ var (
 					Action: accesscontrol.ActionAlertingRuleDelete,
 					Scope:  dashboards.ScopeFoldersAll,
 				},
+				/* Commented out to make rebasing easier in the future
 				{
 					Action: accesscontrol.ActionAlertingRuleExternalWrite,
 					Scope:  datasources.ScopeAll,
 				},
+				*/
 				{
 					Action: accesscontrol.ActionAlertingSilencesWrite,
 					Scope:  dashboards.ScopeFoldersAll,
