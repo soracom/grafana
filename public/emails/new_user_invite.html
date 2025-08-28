@@ -2,7 +2,7 @@
 <html lang="und" dir="auto" xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
 
 <head>
-  <title>{{ Subject .Subject .TemplateData "{{ .InvitedBy }} has invited you to join Grafana" }}</title>
+  <title>{{ Subject .Subject .TemplateData "{{ .InvitedBy }} has invited you to join SORACOM Lagoon" }}</title>
   {{ __dangerouslyInjectHTML `<!--[if !mso]><!-->` }}
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   {{ __dangerouslyInjectHTML `<!--<![endif]-->` }}
@@ -112,7 +112,7 @@
                           <tbody>
                             <tr>
                               <td style="width:200px;">
-                                <img alt src="https://grafana.com/static/assets/img/logo_new_transparent_light_400x100.png" style="border:0;display:block;outline:none;text-decoration:none;height:auto;width:100%;font-size:13px;" width="200" height="auto">
+                                <img alt src="https://assets.soracom.io/brand/logo/assets/soracom-logo-white.svg?fm=png&w=400" style="border:0;display:block;outline:none;text-decoration:none;height:auto;width:100%;font-size:13px;" width="200" height="auto">
                               </td>
                             </tr>
                           </tbody>
@@ -194,7 +194,7 @@
                   <tbody>
                     <tr>
                       <td align="center" class="txt" style="font-size:0px;padding:10px 25px;word-break:break-word;">
-                        <div style="font-family: Inter, Helvetica, Arial; font-size: 13px; line-height: 150%; text-align: center; color: #000000;">&copy; {{ now | date "2006" }} Grafana Labs. Sent by <a href="{{ .AppUrl }}" style="color: #6E9FFF;">Grafana v{{ .BuildVersion }}</a>.</div>
+                        <div style="font-family: Inter, Helvetica, Arial; font-size: 13px; line-height: 150%; text-align: center; color: #000000;">Sent by <a href="{{ .AppUrl }}" style="color: #6E9FFF;">SORACOM Lagoon</a>.</div>
                       </td>
                     </tr>
                   </tbody>
