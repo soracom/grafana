@@ -16,12 +16,13 @@ import (
 
 var (
 	datasourceTypes = []string{
-		"mysql",
-		"influxdb",
-		"elasticsearch",
-		"graphite",
-		"prometheus",
-		"opentsdb",
+		// "mysql",
+		// "influxdb",
+		// "elasticsearch",
+		// "graphite",
+		// "prometheus",
+		// "opentsdb",
+		"soracom-harvest-datasource",
 	}
 )
 
@@ -128,6 +129,9 @@ func getUpdatedSecureJSONData(secretKey string, row map[string][]byte, passwordF
 	}
 
 	jsonFieldName := util.ToCamelCase(passwordFieldName)
+	if jsonFieldName == "password" {
+		jsonFieldName = "authKey"
+	}
 	secureJSONData[jsonFieldName] = encryptedPassword
 	return secureJSONData, nil
 }
