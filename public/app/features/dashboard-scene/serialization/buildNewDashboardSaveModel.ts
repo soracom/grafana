@@ -44,6 +44,117 @@ export async function buildNewDashboardSaveModel(urlFolderUid?: string): Promise
     }
   }
 
+  // Add SORACOM Built-in default variables
+  // Try to bind variables to the soracom-backend if available
+  const dsSrv = getDatasourceSrv();
+  const defaultDs = await dsSrv.get();
+  let soracomDsRef: { type?: string; uid?: string };
+
+  if (defaultDs && defaultDs.type === 'harvest-backend-datasource') {
+    soracomDsRef = {
+      type: defaultDs.type,
+      uid: defaultDs.uid,
+    };
+  } else {
+    soracomDsRef = {
+      type: 'harvest-backend-datasource',
+    };
+
+    try {
+      const dsList = dsSrv.getList?.() ?? [];
+      const harvest = dsList.find(
+        (d: any) => d?.meta?.id === 'harvest-backend-datasource'
+      );
+      if (harvest) {
+        soracomDsRef = {
+          type: harvest.type ?? harvest.meta?.id ?? 'harvest-backend-datasource',
+          uid: harvest.uid,
+        };
+      }
+    } catch {
+      // ignore and use type-only ref
+    }
+  }
+
+  //resource_types
+  const resourceTypesVariable = {
+    name: 'resource_types',
+    label: 'Resource types',
+    type: 'query',
+    datasource: soracomDsRef,
+    query: 'resource_types',
+    definition: 'resource_types',
+    hide: 0,
+    includeAll: false,
+    multi: false,
+    options: [],
+    refresh: 1,
+    regex: '',
+    skipUrlSync: false,
+    sort: 0,
+  } as VariableModel;
+
+  //groups
+  const groupsVariable = {
+    name: 'groups',
+    label: 'Groups',
+    type: 'query',
+    datasource: soracomDsRef,
+    query: 'groups',
+    definition: 'groups',
+    hide: 0,
+    includeAll: false,
+    multi: false,
+    options: [],
+    refresh: 1,
+    regex: '',
+    skipUrlSync: false,
+    sort: 0,
+  } as VariableModel;
+
+  //resources
+  const resourcesVariable = {
+    name: 'resources',
+    label: 'Resources',
+    type: 'query',
+    datasource: soracomDsRef,
+    query: '$resource_types?group=$groups',
+    definition: '$resource_types?group=$groups',
+    hide: 0,
+    includeAll: true,
+    multi: true,
+    options: [],
+    refresh: 1,
+    regex: '',
+    skipUrlSync: false,
+    sort: 0,
+  } as VariableModel;
+
+  //properties
+  const propertiesVariable = {
+    name: 'properties',
+    label: 'Properties',
+    type: 'query',
+    datasource: soracomDsRef,
+    query: '$resource_types||$resources',
+    definition: '$resource_types||$resources',
+    hide: 0,
+    includeAll: false,
+    multi: true,
+    options: [],
+    refresh: 1,
+    regex: '',
+    skipUrlSync: false,
+    sort: 0,
+  } as VariableModel;
+
+  variablesList = (variablesList || []).concat([
+    resourceTypesVariable,
+    groupsVariable,
+    resourcesVariable,
+    propertiesVariable,
+  ]);
+
   const data: DashboardDTO = {
     meta: {
       canStar: false,
