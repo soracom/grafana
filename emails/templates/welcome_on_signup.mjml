@@ -24,9 +24,10 @@
         </mj-text>
         <mj-text>
           If you are new to SORACOM Lagoon, refer to our documentation:
+          <br>
           <a href="https://users.soracom.io/ja-jp/docs/lagoon-v3/">SORACOM Lagoon 3 (JP)</a>
+          <br>
           <a href="https://developers.soracom.io/en/docs/lagoon/">SORACOM Lagoon 3 (Global)</a>
-          guide.
         </mj-text>
         <mj-text>
           Thank you for joining our community.
