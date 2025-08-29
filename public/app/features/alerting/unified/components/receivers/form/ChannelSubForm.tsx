@@ -210,6 +210,23 @@ export function ChannelSubForm<R extends ChannelValues>({
               </Trans>
             </Alert>
           )}
+          {notifier.dto?.alert?.length && notifier.dto?.alert.length > 0 && notifier.dto?.alert[0] !== '' && (
+            <Alert title="" severity="warning">
+              {notifier.dto.alert.map((alert, index) => {
+                try {
+                  // Check to see if the alert message is a URL
+                  new URL(alert);
+                  return (
+                    <div key={index}>
+                      <a href={alert}>{alert}</a>
+                    </div>
+                  );
+                } catch {
+                  return <div key={index}>{alert}</div>;
+                }
+              })}
+            </Alert>
+          )}
           <ChannelOptions<R>
             defaultValues={defaultValues}
             selectedChannelOptions={mandatoryOptions?.length ? mandatoryOptions! : optionalOptions!}
