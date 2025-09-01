@@ -85,6 +85,7 @@ export interface NotifierDTO<T = NotifierType> {
   heading: string;
   options: NotificationChannelOption[];
   info?: string;
+  alert?: string[];
   secure?: boolean;
 }
 
@@ -125,15 +126,15 @@ export interface ChannelTypeSettings {
 
 export interface NotificationChannelOption {
   element:
-    | 'input'
-    | 'select'
-    | 'checkbox'
-    | 'radio'
-    | 'textarea'
-    | 'subform'
-    | 'subform_array'
-    | 'key_value_map'
-    | 'string_array';
+  | 'input'
+  | 'select'
+  | 'checkbox'
+  | 'radio'
+  | 'textarea'
+  | 'subform'
+  | 'subform_array'
+  | 'key_value_map'
+  | 'string_array';
   inputType: string;
   label: string;
   description: string;
