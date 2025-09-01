@@ -5,7 +5,7 @@ ARG BUILDOS
 
 # Override Go version (until microsoft Go devcontainer image is updated)
 # Remove this when the image is updated
-RUN rm -rf /usr/local/go && curl "https://dl.google.com/go/go1.24.3.${BUILDOS}-${BUILDARCH}.tar.gz" | tar -C /usr/local -xz
+RUN rm -rf /usr/local/go && curl "https://dl.google.com/go/go1.25.0.${BUILDOS}-${BUILDARCH}.tar.gz" | tar -C /usr/local -xz
 
 RUN curl -s https://deb.nodesource.com/setup_22.x | bash
 RUN apt update && apt install -y nodejs gcc g++ make
