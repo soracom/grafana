@@ -89,7 +89,7 @@ export const SaveLibraryVizPanelModal = ({ libraryPanel, isUnsavedPrompt, onDism
             Cancel
           </Button>
           {isUnsavedPrompt && (
-            <Button variant="destructive" onClick={discardAndClose}>
+            <Button variant="destructive" onClick={discardAndClose} fill="outline">
               Discard
             </Button>
           )}

@@ -134,7 +134,7 @@ export const UnsavedChangesModal = ({ onDiscard, onDismiss, onSaveDashboardClick
         <Button variant="secondary" onClick={onDismiss} fill="outline">
           Cancel
         </Button>
-        <Button variant="destructive" onClick={onDiscard}>
+        <Button variant="destructive" onClick={onDiscard} fill="outline">
           Discard
         </Button>
         <Button onClick={onSaveDashboardClick}>Save dashboard</Button>

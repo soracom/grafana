@@ -111,7 +111,7 @@ const UnsavedChangesModal = ({ onDiscard, onBackToForm, isOpen }: UnsavedChanges
         <Button variant="secondary" onClick={onBackToForm} fill="outline">
           <Trans i18nKey="form-prompt.continue-button">Continue editing</Trans>
         </Button>
-        <Button variant="destructive" onClick={onDiscard}>
+        <Button variant="destructive" onClick={onDiscard} fill="outline">
           <Trans i18nKey="form-prompt.discard-button">Discard unsaved changes</Trans>
         </Button>
       </Modal.ButtonRow>
