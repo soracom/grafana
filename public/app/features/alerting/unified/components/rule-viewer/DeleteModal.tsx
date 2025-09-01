@@ -69,7 +69,8 @@ export const useDeleteModal = (redirectToListView = false): DeleteModalHook => {
       <ConfirmModal
         isOpen={Boolean(ruleToDelete)}
         title="Delete rule"
-        body="Deleting this rule will permanently remove it from your alert rule list. Are you sure you want to delete this rule?"
+        body="Deleting this rule will permanently remove it from your alert rule list. Are you sure you want to delete this rule? Type DELETE to confirm."
+        confirmationText="DELETE"
         confirmText="Yes, delete"
         icon="exclamation-triangle"
         onConfirm={deleteRule}
