@@ -20,6 +20,11 @@ export const UserProfileEditForm = ({ user, isSavingUser, updateProfile }: Props
     updateProfile(data);
   };
 
+  // This disables Profile editing for non-admin users (name, password, etc)
+  if (!user || !user.isGrafanaAdmin) {
+    return null;
+  }
+
   // check if authLabels is longer than 0 otherwise false
   const isExternalUser: boolean = (user && user.isExternal) ?? false;
   const authSource = isExternalUser && user && user.authLabels ? user.authLabels[0] : '';

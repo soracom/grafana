@@ -59,10 +59,13 @@ export class ShareModal extends SceneObjectBase<ShareModalState> implements Moda
       tabs.push(new ShareExportTab({ modalRef }));
     }
 
+    const operatorId = config.bootData.user.orgName || '';
+
     if (
       contextSrv.isSignedIn &&
       config.snapshotEnabled &&
-      contextSrv.hasPermission(AccessControlAction.SnapshotsCreate)
+      contextSrv.hasPermission(AccessControlAction.SnapshotsCreate) &&
+      operatorId.endsWith('-PRO')
     ) {
       tabs.push(new ShareSnapshotTab({ panelRef, dashboardRef: dashboard.getRef(), modalRef }));
     }

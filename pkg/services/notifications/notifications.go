@@ -199,7 +199,27 @@ func __dangerouslyInjectHTML(s string) template.HTML {
 	return template.HTML(s)
 }
 
+// removeDefaultEmail just prevents any emails being sent to the default
+// example@email.com address
+func removeDefaultEmail(emails []string) []string {
+
+	filtered := []string{}
+
+	for _, email := range emails {
+		if !strings.Contains(email, "example@email.com") {
+			filtered = append(filtered, email)
+		}
+	}
+
+	return filtered
+}
+
 func (ns *NotificationService) SendEmailCommandHandlerSync(ctx context.Context, cmd *SendEmailCommandSync) error {
+	cmd.To = removeDefaultEmail(cmd.To)
+	if len(cmd.To) == 0 {
+		return nil //silently drop emails that were only to the default email
+	}
+
 	message, err := ns.buildEmailMessage(&SendEmailCommand{
 		Data:             cmd.Data,
 		Info:             cmd.Info,

@@ -58,6 +58,8 @@ export function setupKeyboardShortcuts(scene: DashboardScene) {
 
   // Panel share
   if (config.featureToggles.newDashboardSharingComponent) {
+    const operatorId = config.bootData.user.orgName || '';
+
     keybindings.addBinding({
       key: 'p u',
       onTrigger: withFocusedPanel(scene, async (vizPanel: VizPanel) => {
@@ -84,7 +86,8 @@ export function setupKeyboardShortcuts(scene: DashboardScene) {
     if (
       contextSrv.isSignedIn &&
       config.snapshotEnabled &&
-      contextSrv.hasPermission(AccessControlAction.SnapshotsCreate)
+      contextSrv.hasPermission(AccessControlAction.SnapshotsCreate) &&
+      operatorId.endsWith('-PRO')
     ) {
       keybindings.addBinding({
         key: 'p s',

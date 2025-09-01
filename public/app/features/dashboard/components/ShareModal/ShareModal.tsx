@@ -34,11 +34,13 @@ export function addPanelShareTab(tab: ShareModalTabModel) {
 function getTabs(canEditDashboard: boolean, panel?: PanelModel, activeTab?: string) {
   const linkLabel = t('share-modal.tab-title.link', 'Link');
   const tabs: ShareModalTabModel[] = [{ label: linkLabel, value: shareDashboardType.link, component: ShareLink }];
+  const operatorId = config.bootData.user.orgName || '';
 
   if (
     contextSrv.isSignedIn &&
     config.snapshotEnabled &&
-    contextSrv.hasPermission(AccessControlAction.SnapshotsCreate)
+    contextSrv.hasPermission(AccessControlAction.SnapshotsCreate) &&
+    operatorId.endsWith('-PRO')
   ) {
     const snapshotLabel = t('share-modal.tab-title.snapshot', 'Snapshot');
     tabs.push({ label: snapshotLabel, value: shareDashboardType.snapshot, component: ShareSnapshot });
