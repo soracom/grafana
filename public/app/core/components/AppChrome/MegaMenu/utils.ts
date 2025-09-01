@@ -128,10 +128,13 @@ export const getActiveItem = (
 };
 
 export function getEditionAndUpdateLinks(): NavModelItem[] {
+  /* Commenting out disabled code so rebases are easier
   const { buildInfo, licenseInfo } = config;
   const stateInfo = licenseInfo.stateInfo ? ` (${licenseInfo.stateInfo})` : '';
+  */
   const links: NavModelItem[] = [];
 
+  /*
   links.push({
     target: '_blank',
     id: 'version',
@@ -149,6 +152,7 @@ export function getEditionAndUpdateLinks(): NavModelItem[] {
       url: 'https://grafana.com/grafana/download?utm_source=grafana_footer',
     });
   }
+  */
 
   return links;
 }
