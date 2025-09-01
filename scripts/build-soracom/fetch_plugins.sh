@@ -137,12 +137,12 @@ download_artifact_from_s3 () {
   fi
 }
 
-clone_private_repo soracom-harvest-backend 6f1bab7b89bade7af8a7f04cb54740174dd2ff26
+clone_private_repo soracom-harvest-backend 8e0ca55851f74d1e4edd34f45f5168e76a04727a
 clone_private_repo soracom-plot-panel a166c5f3da64896d6ac6a2ddc39b4551dbc5c9c3
 
 download_artifact_from_s3 soracom-dynamic-image-panel 2.0.0
 download_artifact_from_s3 soracom-image-panel 2.0.0
-download_artifact_from_s3 soracom-map-panel 2.0.0 sc-134811-migrate-soracom-map-panel-to-react-from
+download_artifact_from_s3 soracom-map-panel 2.0.0
 
 #Add any pre-built plugins to the dir
 cp -R ../pre-built-plugins/* .
