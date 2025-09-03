@@ -15,12 +15,12 @@ ARG JS_SRC=js-builder
 
 # Dependabot cannot update dependencies listed in ARGs
 # By using FROM instructions we can delegate dependency updates to dependabot
-FROM alpine:3.21.3 AS alpine-base
-FROM ubuntu:22.04 AS ubuntu-base
-FROM golang:1.24.6-alpine AS go-builder-base
-FROM --platform=${JS_PLATFORM} node:22-alpine AS js-builder-base
+FROM ${REPOSITORY}alpine:3.21.3 AS alpine-base
+FROM ${REPOSITORY}ubuntu:22.04 AS ubuntu-base
+FROM ${REPOSITORY}golang:1.24.6-alpine AS go-builder-base
+FROM --platform=${JS_PLATFORM} ${REPOSITORY}node:22-alpine AS js-builder-base
 
-FROM --platform=${JS_PLATFORM} ${REPOSITORY}${JS_IMAGE} as js-builder
+FROM --platform=${JS_PLATFORM} ${JS_IMAGE} as js-builder
 
 ENV NODE_OPTIONS=--max_old_space_size=8000
 
@@ -45,7 +45,7 @@ COPY emails emails
 ENV NODE_ENV=production
 RUN yarn build
 
-FROM ${REPOSITORY}${GO_IMAGE} as go-builder
+FROM ${GO_IMAGE} as go-builder
 
 ARG COMMIT_SHA=""
 ARG BUILD_BRANCH=""
@@ -110,7 +110,7 @@ ENV BUILD_BRANCH=${BUILD_BRANCH}
 
 RUN make build-go GO_BUILD_TAGS=${GO_BUILD_TAGS} WIRE_TAGS=${WIRE_TAGS}
 
-FROM ${REPOSITORY}${BASE_IMAGE} as tgz-builder
+FROM ${BASE_IMAGE} as tgz-builder
 
 WORKDIR /tmp/grafana
 
@@ -126,7 +126,7 @@ FROM ${GO_SRC} as go-src
 FROM ${JS_SRC} as js-src
 
 # Final stage
-FROM ${REPOSITORY}${BASE_IMAGE}
+FROM ${BASE_IMAGE}
 
 LABEL maintainer="Soracom Inc <shogo@soracom.co.jp>"
 
