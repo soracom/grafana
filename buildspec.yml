@@ -1,0 +1,55 @@
+version: 0.2
+
+env:
+  parameter-store:
+    hgd_id: "/lagoon-access/ro-deploy-key/hgd-id"
+    hgd_idpub: "/lagoon-access/ro-deploy-key/hgd-idpub"
+    smp_id: "/lagoon-access/ro-deploy-key/smp-id"
+    smp_idpub: "/lagoon-access/ro-deploy-key/smp-idpub"
+    sip_id: "/lagoon-access/ro-deploy-key/sim-id"
+    sip_idpub: "/lagoon-access/ro-deploy-key/sip-idpub"
+    sdip_id: "/lagoon-access/ro-deploy-key/sdip-id"
+    sdip_idpub: "/lagoon-access/ro-deploy-key/sdip-idpub"
+    spp_id: "/lagoon-access/ro-deploy-key/spp-id"
+    spp_idpub: "/lagoon-access/ro-deploy-key/spp-idpub"
+    shb_id: "/lagoon-access/ro-deploy-key/shb-id"
+    shb_idpub: "/lagoon-access/ro-deploy-key/shb-idpub"
+
+phases:
+  pre_build:
+    commands:
+      - ./scripts/build-soracom/precheck.sh
+      - echo "$hgd_id" > scripts/build-soracom/deploy_keys/harvest-grafana-datasource/id_rsa
+      - echo "$hgd_idpub" > scripts/build-soracom/deploy_keys/harvest-grafana-datasource/id_rsa.pub
+      - echo "$smp_id" > scripts/build-soracom/deploy_keys/soracom-map-panel/id_rsa
+      - echo "$smp_idpub" > scripts/build-soracom/deploy_keys/soracom-map-panel/id_rsa.pub
+      - echo "$sip_id" > scripts/build-soracom/deploy_keys/soracom-image-panel/id_rsa
+      - echo "$sip_idpub" > scripts/build-soracom/deploy_keys/soracom-image-panel/id_rsa.pub
+      - echo "$sdip_id" > scripts/build-soracom/deploy_keys/soracom-dynamic-image-panel/id_rsa
+      - echo "$sdip_idpub" > scripts/build-soracom/deploy_keys/soracom-dynamic-image-panel/id_rsa.pub
+      - echo "$spp_id" > scripts/build-soracom/deploy_keys/soracom-plot-panel/id_rsa
+      - echo "$spp_idpub" > scripts/build-soracom/deploy_keys/soracom-plot-panel/id_rsa.pub
+      - echo "$shb_id" > scripts/build-soracom/deploy_keys/soracom-harvest-backend/id_rsa
+      - echo "$shb_idpub" > scripts/build-soracom/deploy_keys/soracom-harvest-backend/id_rsa.pub
+      - chmod 0400 scripts/build-soracom/deploy_keys/**/id_rsa
+      - aws ecr get-login-password --region ap-northeast-1 | docker login --username AWS --password-stdin 903921708000.dkr.ecr.ap-northeast-1.amazonaws.com
+      - echo Setting Image tag $CODEBUILD_RESOLVED_SOURCE_VERSION
+      - echo $CODEBUILD_WEBHOOK_TRIGGER
+      - COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
+      - |
+        if [ "$CODEBUILD_WEBHOOK_TRIGGER" = "branch/master" ]; then
+          echo Branch is master setting tag to "latest"
+          IMAGE_TAG="G9-master-${COMMIT_HASH:=latest}"
+        else 
+          echo Branch is NOT master setting tag to commit id
+          IMAGE_TAG="G9-${COMMIT_HASH:=latest}"
+        fi
+      - echo $IMAGE_TAG
+  build:
+    commands:
+      - ./scripts/build-soracom/fetch_plugins.sh
+      - docker buildx rm lagoon-build || true
+      - docker buildx create --use --bootstrap --name lagoon-build --driver docker-container --config buildkitd.toml
+      - docker buildx build -t $IMAGE_REPO_NAME:$IMAGE_TAG -f Dockerfile.lagoon . --build-arg CONFIG_FILE=$LAGOON_CONFIG_FILE --load
+      - docker tag $IMAGE_REPO_NAME:$IMAGE_TAG $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME:$IMAGE_TAG
+      - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$IMAGE_REPO_NAME:$IMAGE_TAG
