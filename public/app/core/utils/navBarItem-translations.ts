@@ -132,7 +132,7 @@ export function getNavTitle(navId: string | undefined) {
     case 'storage':
       return t('nav.storage.title', 'Storage');
     case 'migrate-to-cloud':
-      return t('nav.migrate-to-cloud.title', 'Migrate to Grafana Cloud');
+      return t('nav.migrate-to-cloud.title', 'Migrate to Lagoon Cloud');
     case 'upgrading':
       return t('nav.upgrading.title', 'Stats and license');
     case 'monitoring':
@@ -233,12 +233,12 @@ export function getNavSubTitle(navId: string | undefined) {
     case 'alerting-upgrade':
       return t(
         'nav.alerting-upgrade.subtitle',
-        'Upgrade your existing legacy alerts and notification channels to the new Grafana Alerting'
+        'Upgrade your existing legacy alerts and notification channels to the new Lagoon Alerting'
       );
     case 'alerting-admin':
       return t(
         'nav.alerting-admin.subtitle',
-        'Manage Alertmanager configurations and enable receiving Grafana-managed alerts'
+        'Manage Alertmanager configurations and enable receiving Lagoon-managed alerts'
       );
     case 'alert-list':
       return t('nav.alerting-list.subtitle', 'Rules that determine whether an alert will fire');
@@ -262,21 +262,21 @@ export function getNavSubTitle(navId: string | undefined) {
     case 'teams':
       return t('nav.teams.subtitle', 'Groups of users that have common dashboard and permission needs');
     case 'plugins':
-      return t('nav.plugins.subtitle', 'Extend the Grafana experience with plugins');
+      return t('nav.plugins.subtitle', 'Extend the Lagoon experience with plugins');
     case 'org-settings':
       return t('nav.org-settings.subtitle', 'Manage preferences across an organization');
     case 'apikeys':
-      return t('nav.api-keys.subtitle', 'Manage and create API keys that are used to interact with Grafana HTTP APIs');
+      return t('nav.api-keys.subtitle', 'Manage and create API keys that are used to interact with Lagoon HTTP APIs');
     case 'serviceaccounts':
-      return t('nav.service-accounts.subtitle', 'Use service accounts to run automated workloads in Grafana');
+      return t('nav.service-accounts.subtitle', 'Use service accounts to run automated workloads in Lagoon');
     case 'groupsync':
-      return t('nav.groupsync.subtitle', 'Manage mappings of Identity Provider groups to Grafana Roles');
+      return t('nav.groupsync.subtitle', 'Manage mappings of Identity Provider groups to Lagoon Roles');
     case 'global-users':
-      return t('nav.global-users.subtitle', 'Manage users in Grafana');
+      return t('nav.global-users.subtitle', 'Manage users in Lagoon');
     case 'global-orgs':
-      return t('nav.global-orgs.subtitle', 'Isolated instances of Grafana running on the same server');
+      return t('nav.global-orgs.subtitle', 'Isolated instances of Lagoon running on the same server');
     case 'server-settings':
-      return t('nav.server-settings.subtitle', 'View the settings defined in your Grafana config');
+      return t('nav.server-settings.subtitle', 'View the settings defined in your Lagoon config');
     case 'storage':
       return t('nav.storage.subtitle', 'Manage file storage');
     case 'migrate-to-cloud':
@@ -292,13 +292,13 @@ export function getNavSubTitle(navId: string | undefined) {
         'Manage server-wide settings and access to resources such as organizations, users, and licenses'
       );
     case 'cfg/general':
-      return t('nav.config-general.subtitle', 'Manage default preferences and settings across Grafana');
+      return t('nav.config-general.subtitle', 'Manage default preferences and settings across Lagoon');
     case 'cfg/plugins':
       return t('nav.config-plugins.subtitle', 'Install plugins and define the relationships between data');
     case 'cfg/access':
       return t('nav.config-access.subtitle', 'Configure access for individual users, teams, and service accounts');
     case 'apps':
-      return t('nav.apps.subtitle', 'App plugins that extend the Grafana experience');
+      return t('nav.apps.subtitle', 'App plugins that extend the Lagoon experience');
     case 'monitoring':
       return t('nav.monitoring.subtitle', 'Out-of-the-box observability solutions');
     case 'infrastructure':
@@ -316,7 +316,7 @@ export function getNavSubTitle(navId: string | undefined) {
     case 'connections-private-data-source-connections':
       return t(
         'nav.private-data-source-connections.subtitle',
-        'Query data that lives within a secured network without opening the network to inbound traffic from Grafana Cloud. Learn more in our docs.'
+        'Query data that lives within a secured network without opening the network to inbound traffic from Lagoon Cloud. Learn more in our docs.'
       );
     default:
       return undefined;

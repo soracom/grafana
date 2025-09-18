@@ -2,6 +2,7 @@ import { css } from '@emotion/css';
 
 import { GrafanaTheme2 } from '@grafana/data';
 import { IconButton, Stack, ToolbarButton, useTheme2 } from '@grafana/ui';
+import { config } from 'app/core/config';
 import { useGrafana } from 'app/core/context/GrafanaContext';
 import { t } from 'app/core/internationalization';
 
@@ -24,6 +25,8 @@ export function MegaMenuHeader({ handleMegaMenu, handleDockedMenu, onClose }: Pr
   const state = chrome.useState();
   const styles = getStyles(theme);
 
+  const operatorId = config.bootData.user.orgName || '';
+
   return (
     <div className={styles.header}>
       <Stack alignItems="center" minWidth={0} gap={0.25}>
@@ -33,7 +36,7 @@ export function MegaMenuHeader({ handleMegaMenu, handleDockedMenu, onClose }: Pr
           onClick={handleMegaMenu}
           tooltip={t('navigation.megamenu.close', 'Close menu')}
         >
-          <Branding.MenuLogo className={styles.img} />
+          <Branding.MenuLogo operatorId={operatorId} className={styles.img} />
         </ToolbarButton>
         <OrganizationSwitcher />
       </Stack>

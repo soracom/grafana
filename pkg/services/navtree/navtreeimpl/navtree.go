@@ -130,6 +130,7 @@ func (s *ServiceImpl) GetNavTree(c *contextmodel.ReqContext, prefs *pref.Prefere
 		})
 	}
 
+	/* Disable drilldown menu which is effectively disabled
 	if hasAccess(ac.EvalPermission(ac.ActionDatasourcesExplore)) {
 		drilldownChildNavLinks := s.buildDrilldownNavLinks(c)
 		treeRoot.AddSection(&navtree.NavLink{
@@ -143,6 +144,7 @@ func (s *ServiceImpl) GetNavTree(c *contextmodel.ReqContext, prefs *pref.Prefere
 			Children:   drilldownChildNavLinks,
 		})
 	}
+	*/
 
 	if s.cfg.ProfileEnabled && c.IsSignedIn {
 		treeRoot.AddSection(s.getProfileNode(c))
