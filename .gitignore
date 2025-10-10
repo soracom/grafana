@@ -19,6 +19,7 @@ vendor/
 /requests
 tsconfig.tsbuildinfo
 
+.cache/*
 # Yarn
 .yarn/*
 !.yarn/patches

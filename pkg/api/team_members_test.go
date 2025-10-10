@@ -172,6 +172,19 @@ func TestAddTeamMembersAPIEndpoint_LegacyAccessControl(t *testing.T) {
 		assert.Equal(t, http.StatusOK, response.Code)
 	})
 
+	outsideUser, err := sc.db.CreateUser(context.Background(), user.CreateUserCommand{
+		Login:        fmt.Sprintf("outside-user-%d", rand.Int()),
+		SkipOrgSetup: true,
+	})
+	require.NoError(t, err)
+	_, err = sc.db.CreateOrgWithMember(fmt.Sprintf("OutsideOrg-%d", rand.Int()), outsideUser.ID)
+	require.NoError(t, err)
+	input = strings.NewReader(fmt.Sprintf(createTeamMemberCmd, outsideUser.ID))
+	t.Run("Organisation admins cannot add users from other organisations", func(t *testing.T) {
+		response := callAPI(sc.server, http.MethodPost, fmt.Sprintf(teamMemberAddRoute, "1"), input, t)
+		assert.Equal(t, http.StatusNotFound, response.Code)
+	})
+
 	setInitCtxSignedInEditor(sc.initCtx)
 	sc.initCtx.IsGrafanaAdmin = true
 	newUserId = createUser(sc.db, testOrgId, t)
@@ -271,6 +284,20 @@ func TestAddTeamMembersAPIEndpoint_RBAC(t *testing.T) {
 		setAccessControlPermissions(sc.acmock, []ac.Permission{{Action: ac.ActionTeamsPermissionsWrite, Scope: "teams:id:1"}}, 1)
 		response := callAPI(sc.server, http.MethodPost, fmt.Sprintf(teamMemberAddRoute, "1"), input, t)
 		assert.Equal(t, http.StatusOK, response.Code)
+	})
+
+	outsideUser, err := sc.db.CreateUser(context.Background(), user.CreateUserCommand{
+		Login:        fmt.Sprintf("outside-user-rbac-%d", rand.Int()),
+		SkipOrgSetup: true,
+	})
+	require.NoError(t, err)
+	_, err = sc.db.CreateOrgWithMember(fmt.Sprintf("OutsideOrgRBAC-%d", rand.Int()), outsideUser.ID)
+	require.NoError(t, err)
+	input = strings.NewReader(fmt.Sprintf(createTeamMemberCmd, outsideUser.ID))
+	t.Run("Access control denies adding users outside the organisation", func(t *testing.T) {
+		setAccessControlPermissions(sc.acmock, []ac.Permission{{Action: ac.ActionTeamsPermissionsWrite, Scope: "teams:id:1"}}, 1)
+		response := callAPI(sc.server, http.MethodPost, fmt.Sprintf(teamMemberAddRoute, "1"), input, t)
+		assert.Equal(t, http.StatusNotFound, response.Code)
 	})
 
 	setInitCtxSignedInOrgAdmin(sc.initCtx)

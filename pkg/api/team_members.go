@@ -12,6 +12,7 @@ import (
 	"github.com/grafana/grafana/pkg/models"
 	"github.com/grafana/grafana/pkg/services/accesscontrol"
 	"github.com/grafana/grafana/pkg/services/login"
+	"github.com/grafana/grafana/pkg/services/org"
 	"github.com/grafana/grafana/pkg/util"
 	"github.com/grafana/grafana/pkg/web"
 )
@@ -100,6 +101,20 @@ func (hs *HTTPServer) AddTeamMember(c *models.ReqContext) response.Response {
 	}
 	if isTeamMember {
 		return response.Error(400, "User is already added to this team", nil)
+	}
+
+	orgUsers, err := hs.orgService.GetOrgUsers(c.Req.Context(), &org.GetOrgUsersQuery{
+		OrgID:                    cmd.OrgId,
+		UserID:                   cmd.UserId,
+		Limit:                    1,
+		DontEnforceAccessControl: true,
+		User:                     c.SignedInUser,
+	})
+	if err != nil {
+		return response.Error(500, "Failed to validate organization membership.", err)
+	}
+	if len(orgUsers) == 0 {
+		return response.Error(http.StatusNotFound, "User not found in this organization", nil)
 	}
 
 	err = addOrUpdateTeamMember(c.Req.Context(), hs.teamPermissionsService, cmd.UserId, cmd.OrgId, cmd.TeamId, getPermissionName(cmd.Permission))
