@@ -375,7 +375,7 @@ func TestApi_setUserPermission(t *testing.T) {
 		},
 		{
 			desc:           "should set return http 400 when user does not exist",
-			userID:         2,
+			userID:         3,
 			resourceID:     "1",
 			expectedStatus: http.StatusBadRequest,
 			permission:     "View",
@@ -386,12 +386,24 @@ func TestApi_setUserPermission(t *testing.T) {
 		},
 		{
 			desc:           "should set return http 403 when missing permissions",
-			userID:         2,
+			userID:         3,
 			resourceID:     "1",
 			expectedStatus: http.StatusForbidden,
 			permission:     "View",
 			permissions: []accesscontrol.Permission{
 				{Action: "dashboards.permissions:read", Scope: "dashboards:id:1"},
+			},
+		},
+		{
+			desc: "should return http 400 when user is not part of the org",
+			// userID 1 will be created in orgID 1 but we will try to assign permission in orgID 2
+			userID:         2,
+			resourceID:     "1",
+			expectedStatus: http.StatusBadRequest,
+			permission:     "View",
+			permissions: []accesscontrol.Permission{
+				{Action: "dashboards.permissions:read", Scope: "dashboards:id:1"},
+				{Action: "dashboards.permissions:write", Scope: "dashboards:id:1"},
 			},
 		},
 	}
@@ -403,6 +415,10 @@ func TestApi_setUserPermission(t *testing.T) {
 
 			// seed user
 			_, err := sql.CreateUser(context.Background(), user.CreateUserCommand{Login: "test", OrgID: 1})
+			require.NoError(t, err)
+
+			// seed otherOrg user
+			_, err = sql.CreateUser(context.Background(), user.CreateUserCommand{Login: "test2", OrgID: 2, OrgName: "otherOrg"})
 			require.NoError(t, err)
 
 			recorder := setPermission(t, server, testOptions.Resource, tt.resourceID, tt.permission, "users", strconv.Itoa(int(tt.userID)))

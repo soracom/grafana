@@ -17,6 +17,8 @@ import (
 	ac "github.com/grafana/grafana/pkg/services/accesscontrol"
 	"github.com/grafana/grafana/pkg/services/licensing"
 	"github.com/grafana/grafana/pkg/services/org"
+	"github.com/grafana/grafana/pkg/services/org/orgimpl"
+	"github.com/grafana/grafana/pkg/services/quota/quotatest"
 	"github.com/grafana/grafana/pkg/services/sqlstore"
 	"github.com/grafana/grafana/pkg/services/sqlstore/mockstore"
 	"github.com/grafana/grafana/pkg/services/team/teamimpl"
@@ -38,17 +40,30 @@ func (t *TeamGuardianMock) DeleteByUser(ctx context.Context, userID int64) error
 	return t.result
 }
 
-func setUpGetTeamMembersHandler(t *testing.T, sqlStore *sqlstore.SQLStore) {
-	const testOrgID int64 = 1
+func setUpGetTeamMembersHandler(t *testing.T, sqlStore *sqlstore.SQLStore, orgSvc org.Service) {
+	o, err := orgSvc.CreateWithMember(context.Background(), &org.CreateOrgCommand{
+		Name: "TestOrg",
+	})
+	require.NoError(t, err)
+
+	o2, err := orgSvc.CreateWithMember(context.Background(), &org.CreateOrgCommand{
+		Name: "OtherOrg",
+	})
+	require.NoError(t, err)
+
+	testOrgID := o.ID
 	var userCmd user.CreateUserCommand
+	sqlStore.Cfg.AutoAssignOrg = true
 	teamSvc := teamimpl.ProvideService(sqlStore, setting.NewCfg())
 	team, err := teamSvc.CreateTeam("group1 name", "test1@test.com", testOrgID)
 	require.NoError(t, err)
+
 	for i := 0; i < 3; i++ {
 		userCmd = user.CreateUserCommand{
 			Email: fmt.Sprint("user", i, "@test.com"),
 			Name:  fmt.Sprint("user", i),
 			Login: fmt.Sprint("loginuser", i),
+			OrgID: testOrgID,
 		}
 		// user
 		user, err := sqlStore.CreateUser(context.Background(), userCmd)
@@ -56,6 +71,18 @@ func setUpGetTeamMembersHandler(t *testing.T, sqlStore *sqlstore.SQLStore) {
 		err = teamSvc.AddTeamMember(user.ID, testOrgID, team.Id, false, 1)
 		require.NoError(t, err)
 	}
+
+	userCmd = user.CreateUserCommand{
+		Email: fmt.Sprint("user_otherOrg", "@test.com"),
+		Name:  "user_otherOrg",
+		Login: "loginuser_otherOrg",
+		OrgID: o2.ID,
+	}
+	// user
+	user, err := sqlStore.CreateUser(context.Background(), userCmd)
+	require.NoError(t, err)
+	err = teamSvc.AddTeamMember(user.ID, testOrgID, team.Id, false, 1)
+	require.NoError(t, err)
 }
 
 func TestTeamMembersAPIEndpoint_userLoggedIn(t *testing.T) {
@@ -68,11 +95,14 @@ func TestTeamMembersAPIEndpoint_userLoggedIn(t *testing.T) {
 	hs.teamService = teamimpl.ProvideService(sqlStore, settings)
 	hs.License = &licensing.OSSLicensingService{}
 	hs.teamGuardian = &TeamGuardianMock{}
+	var err error
+	hs.orgService, err = orgimpl.ProvideService(sqlStore, settings, quotatest.New(false, nil))
+	require.NoError(t, err)
 	mock := mockstore.NewSQLStoreMock()
 
 	loggedInUserScenarioWithRole(t, "When calling GET on", "GET", "api/teams/1/members",
 		"api/teams/:teamId/members", org.RoleAdmin, func(sc *scenarioContext) {
-			setUpGetTeamMembersHandler(t, sqlStore)
+			setUpGetTeamMembersHandler(t, sqlStore, hs.orgService)
 
 			sc.handlerFunc = hs.GetTeamMembers
 			sc.fakeReqWithParams("GET", sc.url, map[string]string{}).exec()
@@ -94,7 +124,7 @@ func TestTeamMembersAPIEndpoint_userLoggedIn(t *testing.T) {
 
 		loggedInUserScenarioWithRole(t, "When calling GET on", "GET", "api/teams/1/members",
 			"api/teams/:teamId/members", org.RoleAdmin, func(sc *scenarioContext) {
-				setUpGetTeamMembersHandler(t, sqlStore)
+				setUpGetTeamMembersHandler(t, sqlStore, hs.orgService)
 
 				sc.handlerFunc = hs.GetTeamMembers
 				sc.fakeReqWithParams("GET", sc.url, map[string]string{}).exec()
@@ -117,6 +147,17 @@ func createUser(db sqlstore.Store, orgId int64, t *testing.T) int64 {
 		Login:    fmt.Sprintf("TestUser%d", rand.Int()),
 		OrgID:    orgId,
 		Password: "password",
+	})
+	require.NoError(t, err)
+
+	return user.ID
+}
+
+func createUserWithoutOrg(db sqlstore.Store, t *testing.T) int64 {
+	user, err := db.CreateUser(context.Background(), user.CreateUserCommand{
+		Login:        fmt.Sprintf("TestUser%d", rand.Int()),
+		Password:     "password",
+		SkipOrgSetup: true,
 	})
 	require.NoError(t, err)
 
@@ -157,9 +198,12 @@ func TestAddTeamMembersAPIEndpoint_LegacyAccessControl(t *testing.T) {
 	cfg := setting.NewCfg()
 	cfg.RBACEnabled = false
 	cfg.EditorsCanAdmin = true
+	cfg.AutoAssignOrg = true
 	sc := setupHTTPServerWithCfg(t, true, cfg)
 	guardian := manager.ProvideService(database.ProvideTeamGuardianStore(sc.db, sc.teamService))
 	sc.hs.teamGuardian = guardian
+	sc.db.Cfg = cfg
+	sc.hs.orgService, _ = orgimpl.ProvideService(sc.db, cfg, sc.hs.QuotaService)
 
 	teamMemberCount := 3
 	testOrgId := setupTeamTestScenario(teamMemberCount, sc.db, t)
@@ -172,17 +216,18 @@ func TestAddTeamMembersAPIEndpoint_LegacyAccessControl(t *testing.T) {
 		assert.Equal(t, http.StatusOK, response.Code)
 	})
 
-	outsideUser, err := sc.db.CreateUser(context.Background(), user.CreateUserCommand{
-		Login:        fmt.Sprintf("outside-user-%d", rand.Int()),
-		SkipOrgSetup: true,
+	otherUserId := createUserWithoutOrg(sc.db, t)
+	// Create another org and move the user to that org
+	err := sc.db.CreateOrg(context.Background(), &models.CreateOrgCommand{
+		Name:   "OtherOrg",
+		UserId: otherUserId,
 	})
 	require.NoError(t, err)
-	_, err = sc.db.CreateOrgWithMember(fmt.Sprintf("OutsideOrg-%d", rand.Int()), outsideUser.ID)
-	require.NoError(t, err)
-	input = strings.NewReader(fmt.Sprintf(createTeamMemberCmd, outsideUser.ID))
+
+	input = strings.NewReader(fmt.Sprintf(createTeamMemberCmd, otherUserId))
 	t.Run("Organisation admins cannot add users from other organisations", func(t *testing.T) {
 		response := callAPI(sc.server, http.MethodPost, fmt.Sprintf(teamMemberAddRoute, "1"), input, t)
-		assert.Equal(t, http.StatusNotFound, response.Code)
+		assert.Equal(t, http.StatusBadRequest, response.Code)
 	})
 
 	setInitCtxSignedInEditor(sc.initCtx)
@@ -194,7 +239,7 @@ func TestAddTeamMembersAPIEndpoint_LegacyAccessControl(t *testing.T) {
 		assert.Equal(t, http.StatusForbidden, response.Code)
 	})
 
-	err := sc.teamService.AddTeamMember(sc.initCtx.UserID, 1, 1, false, 0)
+	err = sc.teamService.AddTeamMember(sc.initCtx.UserID, 1, 1, false, 0)
 	require.NoError(t, err)
 	input = strings.NewReader(fmt.Sprintf(createTeamMemberCmd, newUserId))
 	t.Run("Team members cannot add team members", func(t *testing.T) {
@@ -273,6 +318,10 @@ func TestGetTeamMembersAPIEndpoint_RBAC(t *testing.T) {
 func TestAddTeamMembersAPIEndpoint_RBAC(t *testing.T) {
 	sc := setupHTTPServer(t, true)
 	sc.hs.License = &licensing.OSSLicensingService{}
+	cfg := sc.cfg
+	cfg.AutoAssignOrg = true
+	sc.db.Cfg = cfg
+	sc.hs.orgService, _ = orgimpl.ProvideService(sc.db, cfg, sc.hs.QuotaService)
 
 	teamMemberCount := 3
 	testOrgId := setupTeamTestScenario(teamMemberCount, sc.db, t)
@@ -297,7 +346,7 @@ func TestAddTeamMembersAPIEndpoint_RBAC(t *testing.T) {
 	t.Run("Access control denies adding users outside the organisation", func(t *testing.T) {
 		setAccessControlPermissions(sc.acmock, []ac.Permission{{Action: ac.ActionTeamsPermissionsWrite, Scope: "teams:id:1"}}, 1)
 		response := callAPI(sc.server, http.MethodPost, fmt.Sprintf(teamMemberAddRoute, "1"), input, t)
-		assert.Equal(t, http.StatusNotFound, response.Code)
+		assert.Equal(t, http.StatusBadRequest, response.Code)
 	})
 
 	setInitCtxSignedInOrgAdmin(sc.initCtx)

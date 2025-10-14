@@ -47,9 +47,28 @@ func (hs *HTTPServer) GetTeamMembers(c *models.ReqContext) response.Response {
 		return response.Error(500, "Failed to get Team Members", err)
 	}
 
+	allOrgUsers, err := hs.orgService.GetOrgUsers(c.Req.Context(), &org.GetOrgUsersQuery{
+		OrgID:                    c.OrgID,
+		DontEnforceAccessControl: true,
+	})
+	if err != nil {
+		return response.Error(500, "Failed to get organization users", err)
+	}
+
+	userByID := make(map[int64]*org.OrgUserDTO, len(allOrgUsers))
+	for _, orgUser := range allOrgUsers {
+		userByID[orgUser.UserID] = orgUser
+	}
+
 	filteredMembers := make([]*models.TeamMemberDTO, 0, len(query.Result))
 	for _, member := range query.Result {
 		if dtos.IsHiddenUser(member.Login, c.SignedInUser, hs.Cfg) {
+			continue
+		}
+
+		// only include members that are part of the org
+		_, ok := userByID[member.UserId]
+		if !ok {
 			continue
 		}
 
@@ -114,7 +133,7 @@ func (hs *HTTPServer) AddTeamMember(c *models.ReqContext) response.Response {
 		return response.Error(500, "Failed to validate organization membership.", err)
 	}
 	if len(orgUsers) == 0 {
-		return response.Error(http.StatusNotFound, "User not found in this organization", nil)
+		return response.Error(http.StatusBadRequest, "User not found in this organization", nil)
 	}
 
 	err = addOrUpdateTeamMember(c.Req.Context(), hs.teamPermissionsService, cmd.UserId, cmd.OrgId, cmd.TeamId, getPermissionName(cmd.Permission))

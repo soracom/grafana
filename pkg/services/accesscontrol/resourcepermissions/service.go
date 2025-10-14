@@ -289,8 +289,17 @@ func (s *Service) validateUser(ctx context.Context, orgID, userID int64) error {
 		return ErrInvalidAssignment
 	}
 
-	_, err := s.userService.GetSignedInUser(ctx, &user.GetSignedInUserQuery{OrgID: orgID, UserID: userID})
-	return err
+	user, err := s.userService.GetSignedInUser(ctx, &user.GetSignedInUserQuery{OrgID: orgID, UserID: userID})
+	if err != nil {
+		return err
+	}
+
+	// GetSignedInUser outer joins so it will return users from other orgs
+	if user.OrgID != orgID {
+		return fmt.Errorf("user %d does not belong to org %d", userID, orgID)
+	}
+
+	return nil
 }
 
 func (s *Service) validateTeam(ctx context.Context, orgID, teamID int64) error {
