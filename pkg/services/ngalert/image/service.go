@@ -22,7 +22,7 @@ import (
 
 const (
 	screenshotCacheTTL = 60 * time.Second
-	screenshotTimeout  = 10 * time.Second
+	screenshotTimeout  = 20 * time.Second
 )
 
 // DeleteExpiredService is a service to delete expired images.
