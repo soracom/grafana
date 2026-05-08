@@ -137,11 +137,11 @@ download_artifact_from_s3 () {
   fi
 }
 
-clone_private_repo soracom-harvest-backend 8e0ca55851f74d1e4edd34f45f5168e76a04727a
+clone_private_repo soracom-harvest-backend 917248bb3f1b47cdcf2107ff5dc4b302cb1f5b4e
 clone_private_repo soracom-plot-panel a166c5f3da64896d6ac6a2ddc39b4551dbc5c9c3
 
-download_artifact_from_s3 soracom-dynamic-image-panel 2.0.0
-download_artifact_from_s3 soracom-image-panel 2.0.0
+download_artifact_from_s3 soracom-dynamic-image-panel 2.1.0 sc-166822-disable-production-source-maps
+download_artifact_from_s3 soracom-image-panel 2.0.1 sc-166822-disable-production-source-maps
 download_artifact_from_s3 soracom-map-panel 2.0.0
 
 #Add any pre-built plugins to the dir
