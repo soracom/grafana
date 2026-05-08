@@ -7,7 +7,7 @@ node_version=$(node --version)
 echo "Node.js version: $node_version"
 
 #install this package in a throwaway dir so we can reuse it a few times
-npm install --prefix ./local  @grafana/sign-plugin@latest -g
+npm install --prefix ./local  @grafana/sign-plugin@3.1.4 -g
 PLUGIN_DIR=./plugins
 
 mkdir -p $PLUGIN_DIR
