@@ -18,7 +18,9 @@
   "initializeCommand": [".devcontainer/checkenv"],
 
   // Features to add to the dev container. More info: https://containers.dev/features.
-  // "features": {},
+  "features": {
+    "ghcr.io/anthropics/devcontainer-features/claude-code:1.0": {}
+  },
 
   // Use 'forwardPorts' to make a list of ports inside the container available locally.
   // "forwardPorts": [],
@@ -38,6 +40,18 @@
       // The environment variable must be set to a path where the lagoon plugin repos are located
       "source": "${localEnv:LAGOON_HOST_PLUGINS_DIR}",
       "target": "/grafana/plugins",
+      "type": "bind"
+    },
+    {
+      // Claude Code config file — disable if not using Claude Code
+      "source": "${localEnv:HOME}${localEnv:USERPROFILE}/.claude.json",
+      "target": "/home/vscode/.claude.json",
+      "type": "bind"
+    },
+    {
+      // Claude Code state/credentials directory — disable if not using Claude Code
+      "source": "${localEnv:HOME}${localEnv:USERPROFILE}/.claude",
+      "target": "/home/vscode/.claude",
       "type": "bind"
     }
   ]

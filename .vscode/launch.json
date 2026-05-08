@@ -8,6 +8,7 @@
       "mode": "auto",
       "program": "${workspaceFolder}/pkg/cmd/grafana/",
       "env": {},
+      "envFile": "${workspaceFolder}/.vscode/.env",
       "cwd": "${workspaceFolder}",
       "args": [
         "server",
