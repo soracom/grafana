@@ -29,8 +29,8 @@ clone_private_repo () {
   
   if [ -d $1 ]; then
     cd $1 || exit
-    echo "git fetch origin $COMMIT"
-    git fetch origin $COMMIT
+    echo "git fetch --depth 1 origin $COMMIT"
+    git fetch --depth 1 origin $COMMIT
 
     echo "git checkout FETCH_HEAD"
     git checkout FETCH_HEAD
@@ -53,8 +53,8 @@ clone_private_repo () {
     echo "git remote add origin git@github.com:soracom/$1.git"
     git remote add origin git@github.com:soracom/$1.git
 
-    echo "git fetch origin $COMMIT"
-    git fetch origin $COMMIT
+    echo "git fetch --depth 1 origin $COMMIT"
+    git fetch --depth 1 origin $COMMIT
 
     echo "git checkout FETCH_HEAD"
     git checkout FETCH_HEAD
@@ -137,7 +137,7 @@ download_artifact_from_s3 () {
   fi
 }
 
-clone_private_repo soracom-harvest-backend 548496021ab2b96827fd99ae82820f6935c8c60e
+clone_private_repo soracom-harvest-backend 1419e634b9dd08bc9bf018da3c4884f7b8e4525a
 clone_private_repo soracom-plot-panel a166c5f3da64896d6ac6a2ddc39b4551dbc5c9c3
 
 download_artifact_from_s3 soracom-dynamic-image-panel 2.1.0 sc-166822-disable-production-source-maps
