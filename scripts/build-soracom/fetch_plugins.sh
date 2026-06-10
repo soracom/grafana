@@ -27,7 +27,7 @@ clone_private_repo () {
   git config --global init.defaultBranch main
   git config --global advice.detachedHead false
   
-  if [ -d $1 ]; then
+  if [ -d $1/.git ]; then
     cd $1 || exit
     echo "git fetch --depth 1 origin $COMMIT"
     git fetch --depth 1 origin $COMMIT
@@ -36,6 +36,9 @@ clone_private_repo () {
     git checkout FETCH_HEAD
     cd ..
   else
+    # The dir may exist without .git from a previous run; start fresh
+    rm -rf $1
+
     echo "$(pwd)"
     echo `ls ..`
     echo `ls ../deploy_keys`
@@ -63,11 +66,14 @@ clone_private_repo () {
     cd ..
   fi
 
-  if [ -f "$1/signplugin.sh" ]; then 
+  if [ -f "$1/signplugin.sh" ]; then
     cd $1 || exit
     ./signplugin.sh || exit 1
     cd ..
   fi
+
+  # Drop the git history so it doesn't get copied into the docker image
+  rm -rf "$1/.git"
 }
 
 clone_public_repo () {
