@@ -143,7 +143,7 @@ download_artifact_from_s3 () {
   fi
 }
 
-clone_private_repo soracom-harvest-backend 1419e634b9dd08bc9bf018da3c4884f7b8e4525a
+clone_private_repo soracom-harvest-backend 95b078d1a6891ffa3358755a1bfa87b7ba011264
 clone_private_repo soracom-plot-panel a166c5f3da64896d6ac6a2ddc39b4551dbc5c9c3
 
 download_artifact_from_s3 soracom-dynamic-image-panel 2.1.0 sc-166822-disable-production-source-maps
