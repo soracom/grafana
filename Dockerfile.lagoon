@@ -61,6 +61,21 @@ WORKDIR $GF_PATHS_HOME
 RUN apk add --no-cache ca-certificates bash tzdata musl-utils
 RUN apk info -vv | sort
 
+# Distrust the roots behind the compromised eMudhra intermediates (CVE-2026-111943,
+# https://bugzilla.mozilla.org/show_bug.cgi?id=2083449). Each intermediate chains to
+# emSign ECC Root CA - G3 and is also cross-signed under Comodo AAA Services, so both
+# have to go. The other three emSign roots aren't in those chains but go too, so nothing
+# from eMudhra is left. Go also reads every file in /etc/ssl/certs, so this goes through
+# update-ca-certificates instead of editing the bundle. Alpine 3.15 will never get a fixed
+# ca-certificates, so this can only be removed once the base image moves off 3.15.
+RUN set -e; \
+  for c in emSign_ECC_Root_CA_-_G3 emSign_ECC_Root_CA_-_C3 emSign_Root_CA_-_C1 emSign_Root_CA_-_G1 Comodo_AAA_Services_root; do \
+    sed -i "s|^mozilla/$c\.crt\$|!&|" /etc/ca-certificates.conf; \
+    grep -qxF "!mozilla/$c.crt" /etc/ca-certificates.conf || { echo "$c not found in /etc/ca-certificates.conf"; exit 1; }; \
+  done; \
+  update-ca-certificates; \
+  if ls /etc/ssl/certs | grep -iE 'emsign|aaa'; then echo "distrusted roots still in /etc/ssl/certs"; exit 1; fi
+
 COPY conf ./conf
 
 RUN if [ ! $(getent group "$GF_GID") ]; then \
