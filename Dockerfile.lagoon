@@ -66,15 +66,23 @@ RUN apk info -vv | sort
 # emSign ECC Root CA - G3 and is also cross-signed under Comodo AAA Services, so both
 # have to go. The other three emSign roots aren't in those chains but go too, so nothing
 # from eMudhra is left. Go also reads every file in /etc/ssl/certs, so this goes through
-# update-ca-certificates instead of editing the bundle. Alpine 3.15 will never get a fixed
-# ca-certificates, so this can only be removed once the base image moves off 3.15.
+# update-ca-certificates instead of editing the bundle. This can be removed once the base
+# image ships ca-certificates 20261020 or later (Alpine 3.20+), which drops both roots.
+# The checks match ca-cert-* names and file contents, not "aaa", because c_rehash's hash
+# links can contain it (Security_Communication_ECC_RootCA1 is 5860aaa6.0).
 RUN set -e; \
-  for c in emSign_ECC_Root_CA_-_G3 emSign_ECC_Root_CA_-_C3 emSign_Root_CA_-_C1 emSign_Root_CA_-_G1 Comodo_AAA_Services_root; do \
+  roots="emSign_ECC_Root_CA_-_G3 emSign_ECC_Root_CA_-_C3 emSign_Root_CA_-_C1 emSign_Root_CA_-_G1 Comodo_AAA_Services_root"; \
+  for c in $roots; do \
     sed -i "s|^mozilla/$c\.crt\$|!&|" /etc/ca-certificates.conf; \
     grep -qxF "!mozilla/$c.crt" /etc/ca-certificates.conf || { echo "$c not found in /etc/ca-certificates.conf"; exit 1; }; \
   done; \
   update-ca-certificates; \
-  if ls /etc/ssl/certs | grep -iE 'emsign|aaa'; then echo "distrusted roots still in /etc/ssl/certs"; exit 1; fi
+  if ls /etc/ssl/certs | grep -E '^ca-cert-(emSign_|Comodo_AAA_)'; then echo "distrusted roots still linked in /etc/ssl/certs"; exit 1; fi; \
+  for f in /etc/ssl/certs/*; do \
+    for c in $roots; do \
+      if cmp -s "$f" "/usr/share/ca-certificates/mozilla/$c.crt"; then echo "$f is still $c"; exit 1; fi; \
+    done; \
+  done
 
 COPY conf ./conf
 
