@@ -30,6 +30,7 @@ import (
 
 const (
 	gravatarSource = "https://secure.gravatar.com/avatar/"
+	avatarFetchConcurrency = 10
 )
 
 // Avatar represents the avatar object.
@@ -56,6 +57,7 @@ var (
 		"d": {"404"},
 	}.Encode()
 	cacheInitOnce sync.Once
+	avatarFetchSlots = make(chan struct{}, avatarFetchConcurrency)
 )
 
 func New(hash string) *Avatar {
@@ -75,6 +77,12 @@ func (a *Avatar) update(ctx context.Context, baseUrl string) error {
 	customUrl := baseUrl + a.hash + "?"
 	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
+	select {
+	case avatarFetchSlots <- struct{}{}:
+		defer func() { <-avatarFetchSlots }()
+	case <-ctx.Done():
+		return ctx.Err()
+	}
 	return avatarFetch(ctx, a, customUrl)
 }
 

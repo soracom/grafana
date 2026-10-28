@@ -135,6 +135,37 @@ func TestAvatar_CancelsFetchWhenRequestEnds(t *testing.T) {
 	}
 }
 
+func TestAvatar_CancelsWhileFetchCapacityIsFull(t *testing.T) {
+	called := make(chan struct{}, 1)
+	mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		select {
+		case called <- struct{}{}:
+		default:
+		}
+	}))
+	defer mockServer.Close()
+
+	for i := 0; i < avatarFetchConcurrency; i++ {
+		avatarFetchSlots <- struct{}{}
+	}
+	defer func() {
+		for i := 0; i < avatarFetchConcurrency; i++ {
+			<-avatarFetchSlots
+		}
+	}()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+	defer cancel()
+	avc := newCacheServer(setting.NewCfg())
+	avatar := avc.getAvatarForHashContext(ctx, DEFAULT_NONSENSE_HASH, mockServer.URL+"/avatar/")
+	require.Same(t, avc.notFound, avatar)
+	select {
+	case <-called:
+		t.Fatal("avatar fetch started without available capacity")
+	default:
+	}
+}
+
 func setupMockGravatarServer(counter *int, simulateError bool) *httptest.Server {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		(*counter)++
