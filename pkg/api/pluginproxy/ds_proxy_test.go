@@ -279,6 +279,21 @@ func TestDataSourceProxy_routeRule(t *testing.T) {
 				require.ErrorContains(t, proxy.validateRequest(), "plugin proxy route access denied")
 			})
 
+			t.Run("route ending in slash does not shadow a restricted route", func(t *testing.T) {
+				boundaryRoutes := []*plugins.Route{
+					{Path: "api/anon/"},
+					{Path: "api/anon2", ReqRole: org.RoleAdmin},
+				}
+				ctx, _ := setUp()
+				proxy, err := NewDataSourceProxy(ds, boundaryRoutes, ctx, "api/anon2", cfg, httpClientProvider, &oauthtoken.Service{}, nil, tracer)
+				require.NoError(t, err)
+				require.ErrorContains(t, proxy.validateRequest(), "plugin proxy route access denied")
+
+				proxy.proxyPath = "api/anon/child"
+				require.NoError(t, proxy.validateRequest())
+				require.Same(t, boundaryRoutes[0], proxy.matchedRoute)
+			})
+
 			t.Run("plugin route with admin role and user is admin", func(t *testing.T) {
 				ctx, _ := setUp()
 				ctx.SignedInUser.OrgRole = org.RoleAdmin

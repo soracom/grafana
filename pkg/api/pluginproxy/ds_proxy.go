@@ -311,6 +311,9 @@ func (proxy *DataSourceProxy) validateRequest() error {
 	if cleanProxyPath == "." && unescapedProxyPath != "." {
 		cleanProxyPath = ""
 	}
+	if strings.HasSuffix(unescapedProxyPath, "/") {
+		cleanProxyPath += "/"
+	}
 
 	// found route if there are any
 	for _, route := range proxy.pluginRoutes {
@@ -327,6 +330,9 @@ func (proxy *DataSourceProxy) validateRequest() error {
 		// An empty path is a fallback route and must still match every request.
 		if cleanRoutePath == "." && route.Path != "." {
 			cleanRoutePath = ""
+		}
+		if strings.HasSuffix(route.Path, "/") {
+			cleanRoutePath += "/"
 		}
 		if !strings.HasPrefix(cleanProxyPath, cleanRoutePath) {
 			continue
