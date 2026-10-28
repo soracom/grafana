@@ -8,7 +8,6 @@ import (
 	"hash/fnv"
 	"net"
 	"net/mail"
-	"path"
 	"reflect"
 	"strings"
 	"time"
@@ -381,7 +380,15 @@ func (auth *AuthProxy) Remember(reqCtx *models.ReqContext, id int64) error {
 func coerceProxyAddress(proxyAddr string) (*net.IPNet, error) {
 	proxyAddr = strings.TrimSpace(proxyAddr)
 	if !strings.Contains(proxyAddr, "/") {
-		proxyAddr = path.Join(proxyAddr, "32")
+		ip := net.ParseIP(proxyAddr)
+		if ip == nil {
+			return nil, fmt.Errorf("could not parse the IP address: %q", proxyAddr)
+		}
+		maskBits := 128
+		if !strings.Contains(proxyAddr, ":") {
+			maskBits = 32
+		}
+		proxyAddr = fmt.Sprintf("%s/%d", proxyAddr, maskBits)
 	}
 
 	_, network, err := net.ParseCIDR(proxyAddr)

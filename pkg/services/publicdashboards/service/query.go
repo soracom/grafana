@@ -2,10 +2,12 @@ package service
 
 import (
 	"context"
+	"strconv"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana/pkg/api/dtos"
 	"github.com/grafana/grafana/pkg/components/simplejson"
+	"github.com/grafana/grafana/pkg/expr"
 	dashmodels "github.com/grafana/grafana/pkg/models"
 	"github.com/grafana/grafana/pkg/services/accesscontrol"
 	"github.com/grafana/grafana/pkg/services/annotations"
@@ -18,7 +20,7 @@ import (
 )
 
 // FindAnnotations returns annotations for a public dashboard
-func (pd *PublicDashboardServiceImpl) FindAnnotations(ctx context.Context, reqDTO models.AnnotationsQueryDTO, accessToken string) ([]models.AnnotationEvent, error) {
+func (pd *PublicDashboardServiceImpl) FindAnnotations(ctx context.Context, _ models.AnnotationsQueryDTO, accessToken string) ([]models.AnnotationEvent, error) {
 	pub, dash, err := pd.FindPublicDashboardAndDashboardByAccessToken(ctx, accessToken)
 	if err != nil {
 		return nil, err
@@ -32,6 +34,17 @@ func (pd *PublicDashboardServiceImpl) FindAnnotations(ctx context.Context, reqDT
 	if err != nil {
 		return nil, models.ErrInternalServerError.Errorf("FindAnnotations: failed to unmarshal dashboard annotations: %w", err)
 	}
+	// Public dashboard panel queries use the dashboard's fixed time range. Apply
+	// the same range to annotations, regardless of the requested from and to.
+	timeSettings := pub.BuildTimeSettings(dash)
+	from, err := strconv.ParseInt(timeSettings.From, 10, 64)
+	if err != nil {
+		return nil, models.ErrInternalServerError.Errorf("FindAnnotations: invalid dashboard start time: %w", err)
+	}
+	to, err := strconv.ParseInt(timeSettings.To, 10, 64)
+	if err != nil {
+		return nil, models.ErrInternalServerError.Errorf("FindAnnotations: invalid dashboard end time: %w", err)
+	}
 
 	anonymousUser := buildAnonymousUser(ctx, dash)
 
@@ -42,8 +55,8 @@ func (pd *PublicDashboardServiceImpl) FindAnnotations(ctx context.Context, reqDT
 			continue
 		}
 		annoQuery := &annotations.ItemQuery{
-			From:         reqDTO.From,
-			To:           reqDTO.To,
+			From:         from,
+			To:           to,
 			OrgId:        dash.OrgId,
 			DashboardId:  dash.Id,
 			DashboardUid: dash.Uid,
@@ -243,9 +256,21 @@ func groupQueriesByPanelId(dashboard *simplejson.Json) map[int64][]*simplejson.J
 		panel := simplejson.NewFromAny(panelObj)
 
 		var panelQueries []*simplejson.Json
+		hasExpression := false
+		for _, queryObj := range panel.Get("targets").MustArray() {
+			if getDataSourceUidFromJson(simplejson.NewFromAny(queryObj)) == expr.DatasourceType {
+				hasExpression = true
+				break
+			}
+		}
 
 		for _, queryObj := range panel.Get("targets").MustArray() {
 			query := simplejson.NewFromAny(queryObj)
+			// The expression handler needs hidden inputs and removes them from its
+			// response. Without an expression, do not execute hidden queries.
+			if !hasExpression && query.Get("hide").MustBool() {
+				continue
+			}
 
 			// We dont support exemplars for public dashboards currently
 			query.Del("exemplar")

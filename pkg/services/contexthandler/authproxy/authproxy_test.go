@@ -51,6 +51,25 @@ func prepareMiddleware(t *testing.T, remoteCache *remotecache.RemoteCache, confi
 	return ProvideAuthProxy(cfg, remoteCache, loginService, nil, nil), ctx
 }
 
+func TestIsAllowedIPWithBareIPv6Whitelist(t *testing.T) {
+	auth := &AuthProxy{cfg: &setting.Cfg{AuthProxyWhitelist: "2001:db8::1"}}
+	require.NoError(t, auth.IsAllowedIP("[2001:db8::1]:1234"))
+	require.Error(t, auth.IsAllowedIP("[2001:db8::2]:1234"))
+	require.Error(t, auth.IsAllowedIP("[2001:db8:1::1]:1234"))
+}
+
+func TestIsAllowedIPWithBareIPv4Whitelist(t *testing.T) {
+	auth := &AuthProxy{cfg: &setting.Cfg{AuthProxyWhitelist: "192.0.2.1"}}
+	require.NoError(t, auth.IsAllowedIP("192.0.2.1:1234"))
+	require.Error(t, auth.IsAllowedIP("192.0.2.2:1234"))
+}
+
+func TestIsAllowedIPWithBareIPv4MappedIPv6Whitelist(t *testing.T) {
+	auth := &AuthProxy{cfg: &setting.Cfg{AuthProxyWhitelist: "::ffff:192.0.2.1"}}
+	require.NoError(t, auth.IsAllowedIP("[::ffff:192.0.2.1]:1234"))
+	require.Error(t, auth.IsAllowedIP("[::ffff:192.0.2.2]:1234"))
+}
+
 func TestMiddlewareContext(t *testing.T) {
 	cache := remotecache.NewFakeStore(t)
 
