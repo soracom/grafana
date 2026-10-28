@@ -3,6 +3,7 @@ package api
 import (
 	"crypto/sha256"
 	"encoding/base64"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -14,13 +15,44 @@ import (
 
 	"github.com/grafana/grafana/pkg/infra/db"
 	"github.com/grafana/grafana/pkg/login/social"
+	"github.com/grafana/grafana/pkg/models"
 	"github.com/grafana/grafana/pkg/services/featuremgmt"
 	"github.com/grafana/grafana/pkg/services/hooks"
 	"github.com/grafana/grafana/pkg/services/licensing"
+	"github.com/grafana/grafana/pkg/services/login/loginservice"
 	"github.com/grafana/grafana/pkg/services/secrets/fakes"
+	"github.com/grafana/grafana/pkg/services/user"
 	"github.com/grafana/grafana/pkg/setting"
 	"github.com/grafana/grafana/pkg/web"
 )
+
+type oauthConnectorForSyncTest struct{ social.SocialConnector }
+
+func (oauthConnectorForSyncTest) IsSignupAllowed() bool { return true }
+
+func TestSyncUserDoesNotMatchOAuthIdentityByEmailByDefault(t *testing.T) {
+	for _, allowInsecureEmailLookup := range []bool{false, true} {
+		t.Run(fmt.Sprintf("allowInsecureEmailLookup=%t", allowInsecureEmailLookup), func(t *testing.T) {
+			cfg := setting.NewCfg()
+			cfg.OAuthAllowInsecureEmailLookup = allowInsecureEmailLookup
+			hs := &HTTPServer{
+				Cfg: cfg,
+				Login: loginservice.LoginServiceMock{ExpectedUserFunc: func(cmd *models.UpsertUserCommand) *user.User {
+					if allowInsecureEmailLookup {
+						require.NotNil(t, cmd.UserLookupParams.Email)
+						assert.Equal(t, "spoofable@example.com", *cmd.UserLookupParams.Email)
+					} else {
+						assert.Nil(t, cmd.UserLookupParams.Email)
+					}
+					return &user.User{ID: 1}
+				}},
+			}
+			ctx := &models.ReqContext{Context: &web.Context{Req: httptest.NewRequest(http.MethodGet, "/login/azuread", nil)}}
+			_, err := hs.SyncUser(ctx, &models.ExternalUserInfo{AuthModule: "oauth_azuread", AuthId: "tenant-identity", Email: "spoofable@example.com"}, oauthConnectorForSyncTest{})
+			require.NoError(t, err)
+		})
+	}
+}
 
 func setupOAuthTest(t *testing.T, cfg *setting.Cfg) *web.Mux {
 	t.Helper()

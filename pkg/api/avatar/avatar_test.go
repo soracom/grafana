@@ -1,6 +1,7 @@
 package avatar
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -94,6 +95,75 @@ func TestAvatar_ExpirationHandler(t *testing.T) {
 	avc.getAvatarForHash(DEFAULT_NONSENSE_HASH, mockServer.URL+"/avatar/")
 	//since the avatar is expired, there should be two more REST calls
 	require.Equal(t, callCounter, 4)
+}
+
+func TestAvatar_CancelsFetchWhenRequestEnds(t *testing.T) {
+	avc := newCacheServer(setting.NewCfg())
+	started := make(chan struct{})
+	canceled := make(chan struct{})
+	mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		close(started)
+		<-r.Context().Done()
+		close(canceled)
+	}))
+	defer mockServer.Close()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	result := make(chan *Avatar, 1)
+	go func() {
+		result <- avc.getAvatarForHashContext(ctx, DEFAULT_NONSENSE_HASH, mockServer.URL+"/avatar/")
+	}()
+
+	select {
+	case <-started:
+	case <-time.After(time.Second):
+		t.Fatal("avatar fetch did not start")
+	}
+	cancel()
+
+	select {
+	case avatar := <-result:
+		require.Same(t, avc.notFound, avatar)
+	case <-time.After(time.Second):
+		t.Fatal("avatar fetch did not stop after request cancellation")
+	}
+	select {
+	case <-canceled:
+	case <-time.After(time.Second):
+		t.Fatal("upstream avatar request was not canceled")
+	}
+}
+
+func TestAvatar_CancelsWhileFetchCapacityIsFull(t *testing.T) {
+	called := make(chan struct{}, 1)
+	mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		select {
+		case called <- struct{}{}:
+		default:
+		}
+	}))
+	defer mockServer.Close()
+
+	for i := 0; i < avatarFetchConcurrency; i++ {
+		avatarFetchSlots <- struct{}{}
+	}
+	defer func() {
+		for i := 0; i < avatarFetchConcurrency; i++ {
+			<-avatarFetchSlots
+		}
+	}()
+
+	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+	defer cancel()
+	avc := newCacheServer(setting.NewCfg())
+	avatar := avc.getAvatarForHashContext(ctx, DEFAULT_NONSENSE_HASH, mockServer.URL+"/avatar/")
+	require.Same(t, avc.notFound, avatar)
+	select {
+	case <-called:
+		t.Fatal("avatar fetch started without available capacity")
+	default:
+	}
 }
 
 func setupMockGravatarServer(counter *int, simulateError bool) *httptest.Server {

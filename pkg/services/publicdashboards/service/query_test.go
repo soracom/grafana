@@ -412,6 +412,36 @@ func TestGetQueryDataResponse(t *testing.T) {
 func TestGetAnnotations(t *testing.T) {
 	color := "red"
 	name := "annoName"
+	t.Run("uses the public dashboard time range instead of the requested range", func(t *testing.T) {
+		dashboard := grafanamodels.NewDashboard("test")
+		dashboard.Data.Set("time", map[string]interface{}{
+			"from": "2021-01-01T00:00:00Z",
+			"to":   "2021-01-02T00:00:00Z",
+		})
+		dashboard = AddAnnotationsToDashboard(t, dashboard, []DashAnnotation{{
+			Datasource: CreateDatasource("grafana", "grafana"),
+			Enable:     true,
+			Name:       &name,
+			IconColor:  &color,
+			Target:     &dashboard2.AnnotationTarget{Type: "dashboard"},
+		}})
+		annotationsRepo := annotations.FakeAnnotationsRepo{}
+		fakeStore := FakePublicDashboardStore{}
+		service := &PublicDashboardServiceImpl{store: &fakeStore, AnnotationsRepo: &annotationsRepo}
+		pubdash := &PublicDashboard{IsEnabled: true, AnnotationsEnabled: true}
+		fakeStore.On("FindByAccessToken", mock.Anything, "abc123").Return(pubdash, nil)
+		fakeStore.On("FindDashboard", mock.Anything, mock.Anything, mock.Anything).Return(dashboard, nil)
+		annotationsRepo.On("Find", mock.Anything, mock.AnythingOfType("*annotations.ItemQuery")).
+			Run(func(args mock.Arguments) {
+				query := args.Get(1).(*annotations.ItemQuery)
+				assert.Equal(t, int64(1609459200000), query.From)
+				assert.Equal(t, int64(1609545600000), query.To)
+			}).Return([]*annotations.ItemDTO{}, nil).Once()
+
+		_, err := service.FindAnnotations(context.Background(), AnnotationsQueryDTO{From: 1, To: 2}, "abc123")
+		require.NoError(t, err)
+		annotationsRepo.AssertExpectations(t)
+	})
 	t.Run("will build anonymous user with correct permissions to get annotations", func(t *testing.T) {
 		sqlStore := sqlstore.InitTestDB(t)
 		config := setting.NewCfg()
@@ -1177,6 +1207,19 @@ func TestGroupQueriesByPanelId(t *testing.T) {
 		queries := groupQueriesByPanelId(json)[2]
 
 		require.Len(t, queries, 0)
+	})
+
+	t.Run("hidden inputs are retained for an expression panel", func(t *testing.T) {
+		dashboard := simplejson.MustJson([]byte(`{
+			"panels": [{"id": 2, "targets": [
+				{"refId": "A", "hide": true, "datasource": {"uid": "prometheus"}},
+				{"refId": "B", "datasource": {"uid": "__expr__", "type": "__expr__"}, "expression": "$A * 2"}
+			]}]
+		}`))
+		queries := groupQueriesByPanelId(dashboard)[2]
+		require.Len(t, queries, 2)
+		require.Equal(t, "A", queries[0].Get("refId").MustString())
+		require.Equal(t, "B", queries[1].Get("refId").MustString())
 	})
 }
 

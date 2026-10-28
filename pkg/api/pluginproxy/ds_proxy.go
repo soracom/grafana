@@ -280,6 +280,41 @@ func (proxy *DataSourceProxy) validateRequest() error {
 		}
 	}
 
+	// Match routes against the path that the data source receives. The proxy
+	// path is escaped, while the request sent to the data source is unescaped.
+	unescapedProxyPath, err := url.PathUnescape(proxy.proxyPath)
+	if err != nil {
+		return err
+	}
+	// Another decoder could turn remaining escapes or backslashes into path
+	// separators or navigation segments after this authorization check.
+	if strings.ContainsRune(unescapedProxyPath, '\\') {
+		return errors.New("ambiguous encoding is not allowed on proxied requests")
+	}
+	lowerProxyPath := strings.ToLower(unescapedProxyPath)
+	for _, encoded := range []string{"%2e", "%2f", "%5c", "%25"} {
+		if strings.Contains(lowerProxyPath, encoded) {
+			return errors.New("ambiguous encoding is not allowed on proxied requests")
+		}
+	}
+	// A backend may handle parent-directory segments differently from our
+	// lexical path cleanup, so do not forward them.
+	for _, segment := range strings.Split(unescapedProxyPath, "/") {
+		if segment == ".." {
+			return errors.New("parent-directory segments are not allowed on proxied requests")
+		}
+	}
+	cleanProxyPath, err := util.CleanRelativePath(unescapedProxyPath)
+	if err != nil {
+		return err
+	}
+	if cleanProxyPath == "." && unescapedProxyPath != "." {
+		cleanProxyPath = ""
+	}
+	if strings.HasSuffix(unescapedProxyPath, "/") {
+		cleanProxyPath += "/"
+	}
+
 	// found route if there are any
 	for _, route := range proxy.pluginRoutes {
 		// method match
@@ -288,7 +323,18 @@ func (proxy *DataSourceProxy) validateRequest() error {
 		}
 
 		// route match
-		if !strings.HasPrefix(proxy.proxyPath, route.Path) {
+		cleanRoutePath, err := util.CleanRelativePath(route.Path)
+		if err != nil {
+			return err
+		}
+		// An empty path is a fallback route and must still match every request.
+		if cleanRoutePath == "." && route.Path != "." {
+			cleanRoutePath = ""
+		}
+		if strings.HasSuffix(route.Path, "/") {
+			cleanRoutePath += "/"
+		}
+		if !strings.HasPrefix(cleanProxyPath, cleanRoutePath) {
 			continue
 		}
 
