@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"net/http"
 	"net/textproto"
+	neturl "net/url"
+	"path"
 	"regexp"
 	"strings"
 	"sync"
@@ -157,6 +159,21 @@ func callResource(ctx context.Context, req *backend.CallResourceRequest, sender 
 		return fmt.Errorf("invalid resource URL: %s", url)
 	}
 	lokiURL := fmt.Sprintf("/loki/api/v1/%s", url)
+	// URL parsing decodes escaped path segments before checking whether they
+	// escape the Loki API prefix.
+	parsed, err := neturl.Parse(lokiURL)
+	if err != nil {
+		return sender.Send(&backend.CallResourceResponse{Status: http.StatusBadRequest})
+	}
+	// A remaining percent sign can hide another encoded traversal sequence from
+	// the downstream server or a proxy that decodes the path again. Backslashes
+	// can also become path separators in an intermediary.
+	if strings.ContainsAny(parsed.Path, "%\\") {
+		return sender.Send(&backend.CallResourceResponse{Status: http.StatusBadRequest})
+	}
+	if path.Clean(parsed.Path) != parsed.Path || !validLokiResourcePath(parsed.Path) {
+		return sender.Send(&backend.CallResourceResponse{Status: http.StatusBadRequest})
+	}
 
 	api := newLokiAPI(dsInfo.HTTPClient, dsInfo.URL, plog, getHeadersForCallResource(req.Headers))
 	encodedBytes, err := api.RawQuery(ctx, lokiURL)
@@ -177,6 +194,16 @@ func callResource(ctx context.Context, req *backend.CallResourceRequest, sender 
 		Body:    encodedBytes.Body,
 	})
 }
+
+func validLokiResourcePath(resourcePath string) bool {
+	if resourcePath == "/loki/api/v1/labels" || resourcePath == "/loki/api/v1/series" {
+		return true
+	}
+	parts := strings.Split(strings.TrimPrefix(resourcePath, "/loki/api/v1/"), "/")
+	return len(parts) == 3 && parts[0] == "label" && parts[2] == "values" && lokiLabelNamePattern.MatchString(parts[1])
+}
+
+var lokiLabelNamePattern = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]*$`)
 
 func (s *Service) QueryData(ctx context.Context, req *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
 	dsInfo, err := s.getDSInfo(req.PluginContext)

@@ -10,8 +10,15 @@ import (
 	"reflect"
 )
 
+// MaxBindBodyBytes caps the size of a JSON request body that Bind will read.
+const MaxBindBodyBytes = 100 << 20
+
 // Bind deserializes JSON payload from the request
 func Bind(req *http.Request, v interface{}) error {
+	return bindWithLimit(req, v, MaxBindBodyBytes)
+}
+
+func bindWithLimit(req *http.Request, v interface{}, maxBytes int64) error {
 	if req.Body != nil {
 		m, _, err := mime.ParseMediaType(req.Header.Get("Content-type"))
 		if err != nil {
@@ -21,7 +28,8 @@ func Bind(req *http.Request, v interface{}) error {
 			return errors.New("bad content type")
 		}
 		defer func() { _ = req.Body.Close() }()
-		err = json.NewDecoder(req.Body).Decode(v)
+		body := http.MaxBytesReader(nil, req.Body, maxBytes)
+		err = json.NewDecoder(body).Decode(v)
 		if err != nil && !errors.Is(err, io.EOF) {
 			return err
 		}

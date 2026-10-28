@@ -217,6 +217,68 @@ func TestDataSourceProxy_routeRule(t *testing.T) {
 				require.Error(t, err)
 			})
 
+			for _, proxyPath := range []string{
+				"//api//admin",
+				"api%2Fadmin",
+				"api/%2E/admin",
+			} {
+				t.Run("encoded or repeated separator cannot bypass admin route: "+proxyPath, func(t *testing.T) {
+					ctx, _ := setUp()
+					quotaService := quotatest.New(false, nil)
+					dsService, err := datasourceservice.ProvideService(nil, secretsService, secretsStore, cfg, featuremgmt.WithFeatures(), acmock.New(), acmock.NewMockedPermissionsService(), quotaService)
+					require.NoError(t, err)
+					proxy, err := NewDataSourceProxy(ds, routes, ctx, proxyPath, cfg, httpClientProvider, &oauthtoken.Service{}, dsService, tracer)
+					require.NoError(t, err)
+					require.ErrorContains(t, proxy.validateRequest(), "plugin proxy route access denied")
+				})
+			}
+
+			for _, proxyPath := range []string{
+				"api/admin/../public",
+				"api/admin/%2E%2E/public",
+			} {
+				t.Run("parent-directory segment is rejected: "+proxyPath, func(t *testing.T) {
+					ctx, _ := setUp()
+					quotaService := quotatest.New(false, nil)
+					dsService, err := datasourceservice.ProvideService(nil, secretsService, secretsStore, cfg, featuremgmt.WithFeatures(), acmock.New(), acmock.NewMockedPermissionsService(), quotaService)
+					require.NoError(t, err)
+					proxy, err := NewDataSourceProxy(ds, routes, ctx, proxyPath, cfg, httpClientProvider, &oauthtoken.Service{}, dsService, tracer)
+					require.NoError(t, err)
+					require.ErrorContains(t, proxy.validateRequest(), "parent-directory segments are not allowed")
+				})
+			}
+
+			for _, proxyPath := range []string{
+				"api%252Fadmin",
+				"api%252Eadmin",
+				"api%255Cadmin",
+				"api%2525admin",
+				"api%25252Fadmin",
+				"api%5Cadmin",
+				"api\\admin",
+			} {
+				t.Run("ambiguous encoding is rejected: "+proxyPath, func(t *testing.T) {
+					ctx, _ := setUp()
+					quotaService := quotatest.New(false, nil)
+					dsService, err := datasourceservice.ProvideService(nil, secretsService, secretsStore, cfg, featuremgmt.WithFeatures(), acmock.New(), acmock.NewMockedPermissionsService(), quotaService)
+					require.NoError(t, err)
+					proxy, err := NewDataSourceProxy(ds, routes, ctx, proxyPath, cfg, httpClientProvider, &oauthtoken.Service{}, dsService, tracer)
+					require.NoError(t, err)
+					require.ErrorContains(t, proxy.validateRequest(), "ambiguous encoding is not allowed")
+				})
+			}
+
+			t.Run("empty fallback route still checks its role", func(t *testing.T) {
+				ctx, _ := setUp()
+				quotaService := quotatest.New(false, nil)
+				dsService, err := datasourceservice.ProvideService(nil, secretsService, secretsStore, cfg, featuremgmt.WithFeatures(), acmock.New(), acmock.NewMockedPermissionsService(), quotaService)
+				require.NoError(t, err)
+				fallbackRoutes := []*plugins.Route{{Path: "", ReqRole: org.RoleAdmin}}
+				proxy, err := NewDataSourceProxy(ds, fallbackRoutes, ctx, "api/other", cfg, httpClientProvider, &oauthtoken.Service{}, dsService, tracer)
+				require.NoError(t, err)
+				require.ErrorContains(t, proxy.validateRequest(), "plugin proxy route access denied")
+			})
+
 			t.Run("plugin route with admin role and user is admin", func(t *testing.T) {
 				ctx, _ := setUp()
 				ctx.SignedInUser.OrgRole = org.RoleAdmin
@@ -790,6 +852,7 @@ func TestDataSourceProxy_requestHandling(t *testing.T) {
 		require.NoError(t, writeErr)
 		require.NotNil(t, req)
 		require.Equal(t, "/path/%2Ftest%2Ftest%2F?query=%2Ftest%2Ftest%2F", req.RequestURI)
+		require.Equal(t, "/path//test/test/", req.URL.Path)
 	})
 	t.Run("Data source should handle proxy path url encoding correctly with opentelemetry", func(t *testing.T) {
 		var req *http.Request

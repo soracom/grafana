@@ -21,6 +21,8 @@ import (
 	"github.com/grafana/grafana/pkg/web"
 )
 
+const maxResourceBodySize = 128 * 1024 * 1024 // 128 MiB
+
 // CallResource passes a resource call from a plugin to the backend plugin.
 //
 // /api/plugins/:pluginId/resources/*
@@ -130,7 +132,7 @@ func (hs *HTTPServer) makePluginResourceRequest(w http.ResponseWriter, req *http
 	proxyutil.ClearCookieHeader(req, keepCookieModel.KeepCookies, []string{hs.Cfg.LoginCookieName})
 	proxyutil.PrepareProxyRequest(req)
 
-	body, err := io.ReadAll(req.Body)
+	body, err := readResourceBody(w, req.Body, maxResourceBodySize)
 	if err != nil {
 		return fmt.Errorf("failed to read request body: %w", err)
 	}
@@ -169,6 +171,10 @@ func (hs *HTTPServer) makePluginResourceRequest(w http.ResponseWriter, req *http
 	}
 
 	return flushStreamErr
+}
+
+func readResourceBody(w http.ResponseWriter, body io.ReadCloser, maxBytes int64) ([]byte, error) {
+	return io.ReadAll(http.MaxBytesReader(w, body, maxBytes))
 }
 
 func (hs *HTTPServer) flushStream(stream callResourceClientResponseStream, w http.ResponseWriter) error {
@@ -239,6 +245,12 @@ func (hs *HTTPServer) flushStream(stream callResourceClientResponseStream, w htt
 }
 
 func handleCallResourceError(err error, reqCtx *models.ReqContext) {
+	var maxBytesErr *http.MaxBytesError
+	if errors.As(err, &maxBytesErr) {
+		reqCtx.JsonApiErr(http.StatusRequestEntityTooLarge, "Request body too large", err)
+		return
+	}
+
 	if errors.Is(err, backendplugin.ErrPluginUnavailable) {
 		reqCtx.JsonApiErr(503, "Plugin unavailable", err)
 		return
