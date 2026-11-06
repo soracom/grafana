@@ -144,7 +144,9 @@ func (pd *PublicDashboardServiceImpl) GetQueryDataResponse(ctx context.Context, 
 	}
 
 	if len(metricReq.Queries) == 0 {
-		return nil, models.ErrPanelQueriesNotFound.Errorf("GetQueryDataResponse: failed to extract queries from panel")
+		// An existing panel may have no visible queries. Return an empty result
+		// without invoking the query service; missing panels still fail above.
+		return backend.NewQueryDataResponse(), nil
 	}
 
 	anonymousUser := buildAnonymousUser(ctx, dashboard)
@@ -258,7 +260,7 @@ func groupQueriesByPanelId(dashboard *simplejson.Json) map[int64][]*simplejson.J
 		var panelQueries []*simplejson.Json
 		hasExpression := false
 		for _, queryObj := range panel.Get("targets").MustArray() {
-			if getDataSourceUidFromJson(simplejson.NewFromAny(queryObj)) == expr.DatasourceType {
+			if expr.IsDataSource(getDataSourceUidFromJson(simplejson.NewFromAny(queryObj))) {
 				hasExpression = true
 				break
 			}

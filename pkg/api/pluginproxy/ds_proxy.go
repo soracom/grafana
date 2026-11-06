@@ -304,15 +304,9 @@ func (proxy *DataSourceProxy) validateRequest() error {
 			return errors.New("parent-directory segments are not allowed on proxied requests")
 		}
 	}
-	cleanProxyPath, err := util.CleanRelativePath(unescapedProxyPath)
+	cleanProxyPath, err := normalizeRoutePath(unescapedProxyPath)
 	if err != nil {
 		return err
-	}
-	if cleanProxyPath == "." && unescapedProxyPath != "." {
-		cleanProxyPath = ""
-	}
-	if strings.HasSuffix(unescapedProxyPath, "/") {
-		cleanProxyPath += "/"
 	}
 
 	// found route if there are any
@@ -323,16 +317,9 @@ func (proxy *DataSourceProxy) validateRequest() error {
 		}
 
 		// route match
-		cleanRoutePath, err := util.CleanRelativePath(route.Path)
+		cleanRoutePath, err := normalizeRoutePath(route.Path)
 		if err != nil {
 			return err
-		}
-		// An empty path is a fallback route and must still match every request.
-		if cleanRoutePath == "." && route.Path != "." {
-			cleanRoutePath = ""
-		}
-		if strings.HasSuffix(route.Path, "/") {
-			cleanRoutePath += "/"
 		}
 		if !strings.HasPrefix(cleanProxyPath, cleanRoutePath) {
 			continue

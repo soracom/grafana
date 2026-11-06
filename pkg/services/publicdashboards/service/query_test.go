@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
@@ -371,7 +372,7 @@ func TestGetQueryDataResponse(t *testing.T) {
 		MaxDataPoints: int64(1),
 	}
 
-	t.Run("Returns nil when query is hidden", func(t *testing.T) {
+	t.Run("returns an empty response without querying hidden data", func(t *testing.T) {
 		hiddenQuery := map[string]interface{}{
 			"datasource": map[string]interface{}{
 				"type": "mysql",
@@ -404,8 +405,15 @@ func TestGetQueryDataResponse(t *testing.T) {
 		pubdashDto, err := service.Create(context.Background(), SignedInUser, dto)
 		require.NoError(t, err)
 
-		resp, _ := service.GetQueryDataResponse(context.Background(), true, publicDashboardQueryDTO, 1, pubdashDto.AccessToken)
-		require.Nil(t, resp)
+		resp, err := service.GetQueryDataResponse(context.Background(), true, publicDashboardQueryDTO, 1, pubdashDto.AccessToken)
+		require.NoError(t, err)
+		require.NotNil(t, resp)
+		require.NotNil(t, resp.Responses)
+		require.Empty(t, resp.Responses)
+
+		// An absent panel must not be mistaken for an existing empty panel.
+		_, err = service.GetQueryDataResponse(context.Background(), true, publicDashboardQueryDTO, 99, pubdashDto.AccessToken)
+		require.ErrorIs(t, err, ErrPanelNotFound)
 	})
 }
 
@@ -1209,18 +1217,24 @@ func TestGroupQueriesByPanelId(t *testing.T) {
 		require.Len(t, queries, 0)
 	})
 
-	t.Run("hidden inputs are retained for an expression panel", func(t *testing.T) {
-		dashboard := simplejson.MustJson([]byte(`{
-			"panels": [{"id": 2, "targets": [
-				{"refId": "A", "hide": true, "datasource": {"uid": "prometheus"}},
-				{"refId": "B", "datasource": {"uid": "__expr__", "type": "__expr__"}, "expression": "$A * 2"}
-			]}]
-		}`))
-		queries := groupQueriesByPanelId(dashboard)[2]
-		require.Len(t, queries, 2)
-		require.Equal(t, "A", queries[0].Get("refId").MustString())
-		require.Equal(t, "B", queries[1].Get("refId").MustString())
-	})
+	for _, uid := range []string{"__expr__", "-100"} {
+		for _, datasource := range []interface{}{uid, map[string]interface{}{"uid": uid, "type": "__expr__"}} {
+			t.Run(fmt.Sprintf("hidden inputs retained for expression %v", datasource), func(t *testing.T) {
+				dashboard := simplejson.MustJson([]byte(`{
+					"panels": [{"id": 2, "targets": [
+						{"refId": "A", "hide": true, "datasource": {"uid": "prometheus"}},
+						{"refId": "B", "expression": "$A * 2"}
+					]}]
+				}`))
+				dashboard.Get("panels").GetIndex(0).Get("targets").GetIndex(1).Set("datasource", datasource)
+				queries := groupQueriesByPanelId(dashboard)[2]
+				require.Len(t, queries, 2)
+				require.Equal(t, "A", queries[0].Get("refId").MustString())
+				require.True(t, queries[0].Get("hide").MustBool())
+				require.Equal(t, "B", queries[1].Get("refId").MustString())
+			})
+		}
+	}
 }
 
 func TestGroupQueriesByDataSource(t *testing.T) {

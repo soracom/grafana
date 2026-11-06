@@ -23,8 +23,6 @@ type DSInfo struct {
 // ApplyRoute should use the plugin route data to set auth headers and custom headers.
 func ApplyRoute(ctx context.Context, req *http.Request, proxyPath string, route *plugins.Route,
 	ds DSInfo, cfg *setting.Cfg) {
-	proxyPath = strings.TrimPrefix(proxyPath, route.Path)
-
 	data := templateData{
 		JsonData:       ds.JSONData,
 		SecureJsonData: ds.DecryptedSecureJSONData,
@@ -33,6 +31,26 @@ func ApplyRoute(ctx context.Context, req *http.Request, proxyPath string, route 
 	ctxLogger := logger.FromContext(ctx)
 
 	if len(route.URL) > 0 {
+		// Strip the route using the same decoded, normalized paths used for
+		// authorization. Trimming the original escaped path can forward the
+		// route prefix or double-escape the remaining path.
+		decodedPath, err := url.PathUnescape(proxyPath)
+		if err != nil {
+			ctxLogger.Error("Failed to unescape proxy path", "error", err)
+			return
+		}
+		cleanPath, err := normalizeRoutePath(decodedPath)
+		if err != nil {
+			ctxLogger.Error("Failed to normalize proxy path", "error", err)
+			return
+		}
+		cleanRoute, err := normalizeRoutePath(route.Path)
+		if err != nil {
+			ctxLogger.Error("Failed to normalize route path", "error", err)
+			return
+		}
+		proxyPath = strings.TrimPrefix(cleanPath, cleanRoute)
+
 		interpolatedURL, err := interpolateString(route.URL, data)
 		if err != nil {
 			ctxLogger.Error("Error interpolating proxy url", "error", err)
@@ -49,6 +67,9 @@ func ApplyRoute(ctx context.Context, req *http.Request, proxyPath string, route 
 		req.URL.Host = routeURL.Host
 		req.Host = routeURL.Host
 		req.URL.Path = util.JoinURLFragments(routeURL.Path, proxyPath)
+		// Path is now decoded; let net/url escape it instead of reusing the
+		// original request's RawPath after changing the route destination.
+		req.URL.RawPath = ""
 	}
 
 	if err := addQueryString(req, route, data); err != nil {
@@ -160,4 +181,19 @@ func interpolateAuthParams(tokenAuth *plugins.JWTTokenAuth, data templateData) (
 		Scopes: tokenAuth.Scopes,
 		Params: interpolatedParams,
 	}, nil
+}
+
+// normalizeRoutePath preserves trailing route boundaries and the empty fallback.
+func normalizeRoutePath(routePath string) (string, error) {
+	cleanPath, err := util.CleanRelativePath(routePath)
+	if err != nil {
+		return "", err
+	}
+	if cleanPath == "." && routePath != "." {
+		cleanPath = ""
+	}
+	if strings.HasSuffix(routePath, "/") {
+		cleanPath += "/"
+	}
+	return cleanPath, nil
 }
