@@ -183,7 +183,7 @@ func interpolateAuthParams(tokenAuth *plugins.JWTTokenAuth, data templateData) (
 	}, nil
 }
 
-// normalizeRoutePath preserves trailing route boundaries and the empty fallback.
+// normalizeRoutePath preserves directory boundaries and the empty fallback.
 func normalizeRoutePath(routePath string) (string, error) {
 	cleanPath, err := util.CleanRelativePath(routePath)
 	if err != nil {
@@ -192,7 +192,7 @@ func normalizeRoutePath(routePath string) (string, error) {
 	if cleanPath == "." && routePath != "." {
 		cleanPath = ""
 	}
-	if strings.HasSuffix(routePath, "/") {
+	if strings.HasSuffix(routePath, "/") || strings.HasSuffix(routePath, "/.") {
 		cleanPath += "/"
 	}
 	return cleanPath, nil

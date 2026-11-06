@@ -166,6 +166,9 @@ func TestDataSourceProxy_routeRule(t *testing.T) {
 				{"dot segment", "api/anon", "api/./anon/query", "/base path/query", "/base%20path/query"},
 				{"normalized route", "/api//anon/", "api/anon/query", "/base path/query", "/base%20path/query"},
 				{"trailing slash", "api/anon", "api/anon/query/", "/base path/query/", "/base%20path/query/"},
+				{"terminal dot suffix", "api/anon", "api/anon/query/.", "/base path/query/", "/base%20path/query/"},
+				{"encoded terminal dot suffix", "api/anon", "api/anon/query/%2e", "/base path/query/", "/base%20path/query/"},
+				{"terminal dot route boundary", "api/anon/", "api/anon/.", "/base path", "/base%20path"},
 				{"escaped suffix", "api/anon", "api/anon/a%20b%3Fc%23d", "/base path/a b?c#d", "/base%20path/a%20b%3Fc%23d"},
 				{"empty fallback", "", "api//query", "/base path/api/query", "/base%20path/api/query"},
 				{"exact match", "api/anon", "api/anon", "/base path", "/base%20path"},
@@ -312,6 +315,23 @@ func TestDataSourceProxy_routeRule(t *testing.T) {
 						require.NoError(t, err)
 						require.ErrorContains(t, proxy.validateRequest(), "ambiguous encoding")
 						require.Nil(t, proxy.matchedRoute)
+					})
+				}
+			})
+
+			t.Run("terminal dot cannot bypass a directory route role", func(t *testing.T) {
+				for _, proxyPath := range []string{"api/admin/", "api/admin/.", "api/admin/%2e", "api/admin/%2E", "api/admin/./.", "api/admin//."} {
+					t.Run(proxyPath, func(t *testing.T) {
+						ctx, _ := setUp()
+						route := &plugins.Route{Path: "api/admin/", ReqRole: org.RoleAdmin}
+						proxy, err := NewDataSourceProxy(ds, []*plugins.Route{route}, ctx, proxyPath, cfg, httpClientProvider, &oauthtoken.Service{}, nil, tracer)
+						require.NoError(t, err)
+						require.ErrorContains(t, proxy.validateRequest(), "plugin proxy route access denied")
+						require.Nil(t, proxy.matchedRoute)
+
+						ctx.SignedInUser.OrgRole = org.RoleAdmin
+						require.NoError(t, proxy.validateRequest())
+						require.Same(t, route, proxy.matchedRoute)
 					})
 				}
 			})
