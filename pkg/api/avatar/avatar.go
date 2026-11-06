@@ -9,6 +9,7 @@ package avatar
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"net/http"
@@ -29,6 +30,7 @@ import (
 
 const (
 	gravatarSource = "https://secure.gravatar.com/avatar/"
+	avatarFetchConcurrency = 10
 )
 
 // Avatar represents the avatar object.
@@ -55,6 +57,7 @@ var (
 		"d": {"404"},
 	}.Encode()
 	cacheInitOnce sync.Once
+	avatarFetchSlots = make(chan struct{}, avatarFetchConcurrency)
 )
 
 func New(hash string) *Avatar {
@@ -70,14 +73,17 @@ func (a *Avatar) Encode(wr io.Writer) error {
 	return err
 }
 
-func (a *Avatar) update(baseUrl string) (err error) {
+func (a *Avatar) update(ctx context.Context, baseUrl string) error {
 	customUrl := baseUrl + a.hash + "?"
+	ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
+	defer cancel()
 	select {
-	case <-time.After(time.Second * 3):
-		err = fmt.Errorf("get gravatar image %s timeout", a.hash)
-	case err = <-thunder.GoFetch(customUrl, a):
+	case avatarFetchSlots <- struct{}{}:
+		defer func() { <-avatarFetchSlots }()
+	case <-ctx.Done():
+		return ctx.Err()
 	}
-	return err
+	return avatarFetch(ctx, a, customUrl)
 }
 
 func (a *Avatar) GetIsCustom() bool {
@@ -106,7 +112,7 @@ func (a *AvatarCacheServer) Handler(ctx *models.ReqContext) {
 		return
 	}
 
-	avatar := a.GetAvatarForHash(hash)
+	avatar := a.GetAvatarForHashContext(ctx.Req.Context(), hash)
 
 	ctx.Resp.Header().Set("Content-Type", "image/jpeg")
 
@@ -123,14 +129,22 @@ func (a *AvatarCacheServer) Handler(ctx *models.ReqContext) {
 }
 
 func (a *AvatarCacheServer) GetAvatarForHash(hash string) *Avatar {
+	return a.GetAvatarForHashContext(context.Background(), hash)
+}
+
+func (a *AvatarCacheServer) GetAvatarForHashContext(ctx context.Context, hash string) *Avatar {
 	if setting.DisableGravatar {
 		alog.Warn("'GetGravatarForHash' called despite gravatars being disabled; returning default profile image")
 		return a.notFound
 	}
-	return a.getAvatarForHash(hash, gravatarSource)
+	return a.getAvatarForHashContext(ctx, hash, gravatarSource)
 }
 
 func (a *AvatarCacheServer) getAvatarForHash(hash string, baseUrl string) *Avatar {
+	return a.getAvatarForHashContext(context.Background(), hash, baseUrl)
+}
+
+func (a *AvatarCacheServer) getAvatarForHashContext(ctx context.Context, hash string, baseUrl string) *Avatar {
 	var avatar *Avatar
 	obj, exists := a.cache.Get(hash)
 	if exists {
@@ -141,7 +155,7 @@ func (a *AvatarCacheServer) getAvatarForHash(hash string, baseUrl string) *Avata
 
 	if avatar.Expired() {
 		// The cache item is either expired or newly created, update it from the server
-		if err := avatar.update(baseUrl); err != nil {
+		if err := avatar.update(ctx, baseUrl); err != nil {
 			alog.Debug("avatar update", "err", err)
 			avatar = a.notFound
 		}
@@ -197,63 +211,6 @@ func newNotFound(cfg *setting.Cfg) *Avatar {
 	return avatar
 }
 
-// thunder downloader
-var thunder = &Thunder{QueueSize: 10}
-
-type Thunder struct {
-	QueueSize int // download queue size
-	q         chan *thunderTask
-	once      sync.Once
-}
-
-func (t *Thunder) init() {
-	if t.QueueSize < 1 {
-		t.QueueSize = 1
-	}
-	t.q = make(chan *thunderTask, t.QueueSize)
-	for i := 0; i < t.QueueSize; i++ {
-		go func() {
-			for {
-				task := <-t.q
-				task.Fetch()
-			}
-		}()
-	}
-}
-
-func (t *Thunder) Fetch(baseUrl string, avatar *Avatar) error {
-	t.once.Do(t.init)
-	task := &thunderTask{
-		BaseUrl: baseUrl,
-		Avatar:  avatar,
-	}
-	task.Add(1)
-	t.q <- task
-	task.Wait()
-	return task.err
-}
-
-func (t *Thunder) GoFetch(baseUrl string, avatar *Avatar) chan error {
-	c := make(chan error)
-	go func() {
-		c <- t.Fetch(baseUrl, avatar)
-	}()
-	return c
-}
-
-// thunder download
-type thunderTask struct {
-	BaseUrl string
-	Avatar  *Avatar
-	sync.WaitGroup
-	err error
-}
-
-func (a *thunderTask) Fetch() {
-	a.err = a.fetch()
-	a.Done()
-}
-
 var client = &http.Client{
 	Timeout:   time.Second * 2,
 	Transport: &http.Transport{Proxy: http.ProxyFromEnvironment},
@@ -262,16 +219,16 @@ var client = &http.Client{
 // We fetch the same url with param tweaks twice in a row
 // Break out the fetch function in a way that makes each
 // Portion highly reusable
-func (a *thunderTask) fetch() error {
-	a.Avatar.timestamp = time.Now()
+func avatarFetch(ctx context.Context, avatar *Avatar, baseURL string) error {
+	avatar.timestamp = time.Now()
 
-	alog.Debug("avatar.fetch(fetch new avatar)", "url", a.BaseUrl)
+	alog.Debug("avatar.fetch(fetch new avatar)", "url", baseURL)
 	// First do the fetch to get the Gravatar with a retro icon fallback
-	err := performGet(a.BaseUrl+gravatarReqParams, a.Avatar, getGravatarHandler)
+	err := performGet(ctx, baseURL+gravatarReqParams, avatar, getGravatarHandler)
 
 	if err == nil {
 		// Next do a fetch with a 404 fallback to see if it's a custom gravatar
-		return performGet(a.BaseUrl+hasCustomReqParams, a.Avatar, checkIsCustomHandler)
+		return performGet(ctx, baseURL+hasCustomReqParams, avatar, checkIsCustomHandler)
 	}
 	return err
 }
@@ -299,8 +256,8 @@ func checkIsCustomHandler(av *Avatar, resp *http.Response) error {
 }
 
 // Reusable Get helper that allows us to pass in custom handling depending on the endpoint
-func performGet(url string, av *Avatar, handler ResponseHandler) error {
-	req, err := http.NewRequest("GET", url, nil)
+func performGet(ctx context.Context, url string, av *Avatar, handler ResponseHandler) error {
+	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
 		return err
 	}

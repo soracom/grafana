@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
@@ -371,7 +372,7 @@ func TestGetQueryDataResponse(t *testing.T) {
 		MaxDataPoints: int64(1),
 	}
 
-	t.Run("Returns nil when query is hidden", func(t *testing.T) {
+	t.Run("returns an empty response without querying hidden data", func(t *testing.T) {
 		hiddenQuery := map[string]interface{}{
 			"datasource": map[string]interface{}{
 				"type": "mysql",
@@ -404,14 +405,51 @@ func TestGetQueryDataResponse(t *testing.T) {
 		pubdashDto, err := service.Create(context.Background(), SignedInUser, dto)
 		require.NoError(t, err)
 
-		resp, _ := service.GetQueryDataResponse(context.Background(), true, publicDashboardQueryDTO, 1, pubdashDto.AccessToken)
-		require.Nil(t, resp)
+		resp, err := service.GetQueryDataResponse(context.Background(), true, publicDashboardQueryDTO, 1, pubdashDto.AccessToken)
+		require.NoError(t, err)
+		require.NotNil(t, resp)
+		require.NotNil(t, resp.Responses)
+		require.Empty(t, resp.Responses)
+
+		// An absent panel must not be mistaken for an existing empty panel.
+		_, err = service.GetQueryDataResponse(context.Background(), true, publicDashboardQueryDTO, 99, pubdashDto.AccessToken)
+		require.ErrorIs(t, err, ErrPanelNotFound)
 	})
 }
 
 func TestGetAnnotations(t *testing.T) {
 	color := "red"
 	name := "annoName"
+	t.Run("uses the public dashboard time range instead of the requested range", func(t *testing.T) {
+		dashboard := grafanamodels.NewDashboard("test")
+		dashboard.Data.Set("time", map[string]interface{}{
+			"from": "2021-01-01T00:00:00Z",
+			"to":   "2021-01-02T00:00:00Z",
+		})
+		dashboard = AddAnnotationsToDashboard(t, dashboard, []DashAnnotation{{
+			Datasource: CreateDatasource("grafana", "grafana"),
+			Enable:     true,
+			Name:       &name,
+			IconColor:  &color,
+			Target:     &dashboard2.AnnotationTarget{Type: "dashboard"},
+		}})
+		annotationsRepo := annotations.FakeAnnotationsRepo{}
+		fakeStore := FakePublicDashboardStore{}
+		service := &PublicDashboardServiceImpl{store: &fakeStore, AnnotationsRepo: &annotationsRepo}
+		pubdash := &PublicDashboard{IsEnabled: true, AnnotationsEnabled: true}
+		fakeStore.On("FindByAccessToken", mock.Anything, "abc123").Return(pubdash, nil)
+		fakeStore.On("FindDashboard", mock.Anything, mock.Anything, mock.Anything).Return(dashboard, nil)
+		annotationsRepo.On("Find", mock.Anything, mock.AnythingOfType("*annotations.ItemQuery")).
+			Run(func(args mock.Arguments) {
+				query := args.Get(1).(*annotations.ItemQuery)
+				assert.Equal(t, int64(1609459200000), query.From)
+				assert.Equal(t, int64(1609545600000), query.To)
+			}).Return([]*annotations.ItemDTO{}, nil).Once()
+
+		_, err := service.FindAnnotations(context.Background(), AnnotationsQueryDTO{From: 1, To: 2}, "abc123")
+		require.NoError(t, err)
+		annotationsRepo.AssertExpectations(t)
+	})
 	t.Run("will build anonymous user with correct permissions to get annotations", func(t *testing.T) {
 		sqlStore := sqlstore.InitTestDB(t)
 		config := setting.NewCfg()
@@ -1177,6 +1215,64 @@ func TestGroupQueriesByPanelId(t *testing.T) {
 		queries := groupQueriesByPanelId(json)[2]
 
 		require.Len(t, queries, 0)
+	})
+
+	for _, uid := range []string{"__expr__", "-100"} {
+		for _, datasource := range []interface{}{uid, map[string]interface{}{"uid": uid, "type": "__expr__"}} {
+			t.Run(fmt.Sprintf("hidden inputs retained for expression %v", datasource), func(t *testing.T) {
+				dashboard := simplejson.MustJson([]byte(`{
+					"panels": [{"id": 2, "targets": [
+						{"refId": "A", "hide": true, "datasource": {"uid": "prometheus"}},
+						{"refId": "B", "expression": "$A * 2"}
+					]}]
+				}`))
+				dashboard.Get("panels").GetIndex(0).Get("targets").GetIndex(1).Set("datasource", datasource)
+				queries := groupQueriesByPanelId(dashboard)[2]
+				require.Len(t, queries, 2)
+				require.Equal(t, "A", queries[0].Get("refId").MustString())
+				require.True(t, queries[0].Get("hide").MustBool())
+				require.Equal(t, "B", queries[1].Get("refId").MustString())
+			})
+		}
+	}
+}
+
+func TestInheritedExpressionDatasource(t *testing.T) {
+	for _, uid := range []string{"__expr__", "-100"} {
+		for _, datasource := range []interface{}{uid, map[string]interface{}{"uid": uid, "type": "__expr__"}} {
+			for _, explicitInput := range []bool{false, true} {
+				t.Run(fmt.Sprintf("panel=%v explicitInput=%t", datasource, explicitInput), func(t *testing.T) {
+					dashboard := simplejson.MustJson([]byte(`{"panels": [{"id": 1, "targets": [
+						{"refId": "A", "hide": true, "type": "math", "expression": "1"},
+						{"refId": "B", "type": "math", "expression": "$A * 2"}
+					]}]}`))
+					panel := dashboard.Get("panels").GetIndex(0)
+					panel.Set("datasource", datasource)
+					if explicitInput {
+						panel.Get("targets").GetIndex(0).Set("datasource", "prometheus")
+					}
+					queries := groupQueriesByPanelId(dashboard)[1]
+					require.Len(t, queries, 2)
+					require.Equal(t, "A", queries[0].Get("refId").MustString())
+					require.True(t, queries[0].Get("hide").MustBool())
+					require.Equal(t, uid, getDataSourceUidFromJson(queries[1]))
+					if explicitInput {
+						require.Equal(t, "prometheus", getDataSourceUidFromJson(queries[0]))
+					} else {
+						require.Equal(t, uid, getDataSourceUidFromJson(queries[0]))
+					}
+				})
+			}
+		}
+	}
+	t.Run("explicit non-expression targets override the panel datasource", func(t *testing.T) {
+		dashboard := simplejson.MustJson([]byte(`{"panels": [{"id": 1, "datasource": "__expr__", "targets": [
+			{"refId": "A", "hide": true, "datasource": "prometheus"},
+			{"refId": "B", "datasource": "prometheus"}
+		]}]}`))
+		queries := groupQueriesByPanelId(dashboard)[1]
+		require.Len(t, queries, 1)
+		require.Equal(t, "B", queries[0].Get("refId").MustString())
 	})
 }
 

@@ -4,6 +4,7 @@ import (
 	"math"
 	"math/rand"
 	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"testing"
@@ -12,13 +13,21 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/grafana/grafana/pkg/expr"
+	"github.com/grafana/grafana/pkg/infra/log"
+	contextmodels "github.com/grafana/grafana/pkg/models"
 	ac "github.com/grafana/grafana/pkg/services/accesscontrol"
+	"github.com/grafana/grafana/pkg/services/accesscontrol/acimpl"
 	acmock "github.com/grafana/grafana/pkg/services/accesscontrol/mock"
+	"github.com/grafana/grafana/pkg/services/contexthandler/ctxkey"
 	"github.com/grafana/grafana/pkg/services/dashboards"
 	"github.com/grafana/grafana/pkg/services/datasources"
 	"github.com/grafana/grafana/pkg/services/ngalert/models"
 	"github.com/grafana/grafana/pkg/services/ngalert/store"
+	"github.com/grafana/grafana/pkg/services/org"
+	"github.com/grafana/grafana/pkg/services/user"
+	"github.com/grafana/grafana/pkg/setting"
 	"github.com/grafana/grafana/pkg/util"
+	"github.com/grafana/grafana/pkg/web"
 )
 
 func TestAuthorize(t *testing.T) {
@@ -69,6 +78,49 @@ func TestAuthorize(t *testing.T) {
 			api.authorize("test", "test")
 		})
 	})
+}
+
+func TestAuthorizeReceiverTestRBAC(t *testing.T) {
+	const route = "/api/alertmanager/grafana/config/api/v1/receivers/test"
+	for _, tc := range []struct {
+		name       string
+		role       org.RoleType
+		action     string
+		wantStatus int
+	}{
+		{"read-only editor denied", org.RoleEditor, ac.ActionAlertingNotificationsRead, http.StatusForbidden},
+		{"viewer with write permission allowed", org.RoleViewer, ac.ActionAlertingNotificationsWrite, http.StatusNoContent},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			cfg := setting.NewCfg()
+			cfg.RBACEnabled = true
+			api := &API{AccessControl: acimpl.ProvideAccessControl(cfg)}
+			server := web.New()
+			server.Use(func(c *web.Context) {
+				reqCtx := &contextmodels.ReqContext{
+					Context:    c,
+					IsSignedIn: true,
+					Logger:     log.NewNopLogger(),
+					SignedInUser: &user.SignedInUser{
+						OrgID:       1,
+						OrgRole:     tc.role,
+						Permissions: map[int64]map[string][]string{1: {tc.action: {}}},
+					},
+				}
+				c.Req = c.Req.WithContext(ctxkey.Set(c.Req.Context(), reqCtx))
+			})
+			called := false
+			server.Post(route, api.authorize(http.MethodPost, route), func(c *web.Context) {
+				called = true
+				c.Resp.WriteHeader(http.StatusNoContent)
+			})
+
+			recorder := httptest.NewRecorder()
+			server.ServeHTTP(recorder, httptest.NewRequest(http.MethodPost, route, nil))
+			require.Equal(t, tc.wantStatus, recorder.Code)
+			require.Equal(t, tc.wantStatus == http.StatusNoContent, called)
+		})
+	}
 }
 
 func createAllCombinationsOfPermissions(permissions map[string][]string) []map[string][]string {

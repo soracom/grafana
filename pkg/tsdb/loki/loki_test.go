@@ -1,10 +1,73 @@
 package loki
 
 import (
+	"context"
+	"net/http"
 	"testing"
 
+	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
+	"github.com/grafana/grafana/pkg/infra/log"
 )
+
+func TestCallResourceRejectsPathTraversal(t *testing.T) {
+	for _, resourceURL := range []string{
+		"label/../status/buildinfo",
+		"label/app/../status/buildinfo",
+		"label/../../../admin",
+		"label/%2e%2e/%2e%2e/%2e%2e/admin",
+		"label/%2E%2e%2f..%2f..%2fadmin",
+		"label/%252e%252e/%252e%252e/%252e%252e/admin",
+		"label/%252f..%252f..%252fadmin",
+		"label/%5c..%5c..%5cadmin",
+		"label/%zz",
+	} {
+		t.Run(resourceURL, func(t *testing.T) {
+			dsInfo := makeMockedDsInfoForOauth(nil, func(*http.Request) {
+				t.Fatal("invalid resource path reached the Loki backend")
+			})
+			dsInfo.URL = "http://loki.local"
+			sender := &mockedCallResourceResponseSenderForOauth{}
+			err := callResource(context.Background(), &backend.CallResourceRequest{Method: http.MethodGet, URL: resourceURL}, sender, &dsInfo, log.New("testlog"))
+			require.NoError(t, err)
+			require.NotNil(t, sender.Response)
+			assert.Equal(t, http.StatusBadRequest, sender.Response.Status)
+		})
+	}
+}
+
+func TestCallResourceAllowsLabelValues(t *testing.T) {
+	called := false
+	dsInfo := makeMockedDsInfoForOauth([]byte(`{}`), func(req *http.Request) {
+		called = true
+		assert.Equal(t, "/loki/api/v1/label/app/values", req.URL.Path)
+	})
+	dsInfo.URL = "http://loki.local"
+	sender := &mockedCallResourceResponseSenderForOauth{}
+	err := callResource(context.Background(), &backend.CallResourceRequest{Method: http.MethodGet, URL: "label/app/values"}, sender, &dsInfo, log.New("testlog"))
+	require.NoError(t, err)
+	require.True(t, called)
+	require.NotNil(t, sender.Response)
+	assert.Equal(t, http.StatusOK, sender.Response.Status)
+}
+
+func TestCallResourceAllowsEncodedQueryParameters(t *testing.T) {
+	called := false
+	dsInfo := makeMockedDsInfoForOauth([]byte(`{}`), func(req *http.Request) {
+		called = true
+		assert.Equal(t, "/loki/api/v1/labels", req.URL.Path)
+		assert.Equal(t, "match%5B%5D=%7Bapp%3D%22lagoon%22%7D", req.URL.RawQuery)
+	})
+	dsInfo.URL = "http://loki.local"
+	sender := &mockedCallResourceResponseSenderForOauth{}
+	err := callResource(context.Background(), &backend.CallResourceRequest{Method: http.MethodGet, URL: "labels?match%5B%5D=%7Bapp%3D%22lagoon%22%7D"}, sender, &dsInfo, log.New("testlog"))
+	require.NoError(t, err)
+	require.True(t, called)
+	require.NotNil(t, sender.Response)
+	assert.Equal(t, http.StatusOK, sender.Response.Status)
+}
 
 func TestGetHeadersForCallResource(t *testing.T) {
 	const idTokn1 = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"

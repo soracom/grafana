@@ -336,6 +336,17 @@ func TestMakePluginResourceRequest(t *testing.T) {
 	require.Empty(t, req.Header.Get(customHeader))
 }
 
+func TestReadResourceBodyLimit(t *testing.T) {
+	resp := httptest.NewRecorder()
+	body, err := readResourceBody(resp, io.NopCloser(strings.NewReader("12345")), 4)
+	require.ErrorAs(t, err, new(*http.MaxBytesError))
+	assert.LessOrEqual(t, len(body), 4)
+
+	body, err = readResourceBody(resp, io.NopCloser(strings.NewReader("1234")), 4)
+	require.NoError(t, err)
+	assert.Equal(t, "1234", string(body))
+}
+
 func TestMakePluginResourceRequestSetCookieNotPresent(t *testing.T) {
 	hs := HTTPServer{
 		Cfg: setting.NewCfg(),

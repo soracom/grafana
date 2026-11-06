@@ -17,6 +17,9 @@ import (
 	"github.com/grafana/grafana/pkg/web"
 )
 
+// Pre-authentication forms are small; cap their bodies before decoding them.
+const maxPreAuthFormBodySize = 100 * 1024
+
 // GET /api/user/signup/options
 func GetSignUpOptions(c *models.ReqContext) response.Response {
 	return response.JSON(http.StatusOK, util.DynMap{
@@ -27,6 +30,8 @@ func GetSignUpOptions(c *models.ReqContext) response.Response {
 
 // POST /api/user/signup
 func (hs *HTTPServer) SignUp(c *models.ReqContext) response.Response {
+	c.Req.Body = http.MaxBytesReader(c.Resp, c.Req.Body, maxPreAuthFormBodySize)
+
 	form := dtos.SignUpForm{}
 	var err error
 	if err = web.Bind(c.Req, &form); err != nil {
@@ -75,6 +80,8 @@ func (hs *HTTPServer) SignUp(c *models.ReqContext) response.Response {
 }
 
 func (hs *HTTPServer) SignUpStep2(c *models.ReqContext) response.Response {
+	c.Req.Body = http.MaxBytesReader(c.Resp, c.Req.Body, maxPreAuthFormBodySize)
+
 	form := dtos.SignUpStep2Form{}
 	if err := web.Bind(c.Req, &form); err != nil {
 		return response.Error(http.StatusBadRequest, "bad request data", err)

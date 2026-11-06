@@ -16,6 +16,8 @@ import (
 )
 
 func (hs *HTTPServer) SendResetPasswordEmail(c *models.ReqContext) response.Response {
+	c.Req.Body = http.MaxBytesReader(c.Resp, c.Req.Body, maxPreAuthFormBodySize)
+
 	form := dtos.SendResetPasswordEmailForm{}
 	if err := web.Bind(c.Req, &form); err != nil {
 		return response.Error(http.StatusBadRequest, "bad request data", err)
@@ -54,6 +56,8 @@ func (hs *HTTPServer) SendResetPasswordEmail(c *models.ReqContext) response.Resp
 }
 
 func (hs *HTTPServer) ResetPassword(c *models.ReqContext) response.Response {
+	c.Req.Body = http.MaxBytesReader(c.Resp, c.Req.Body, maxPreAuthFormBodySize)
+
 	form := dtos.ResetUserPasswordForm{}
 	if err := web.Bind(c.Req, &form); err != nil {
 		return response.Error(http.StatusBadRequest, "bad request data", err)

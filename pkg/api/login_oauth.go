@@ -313,16 +313,22 @@ func (hs *HTTPServer) SyncUser(
 	connect social.SocialConnector,
 ) (*user.User, error) {
 	oauthLogger.Debug("Syncing Grafana user with corresponding OAuth profile")
+	// Without a stable identity, signup would create an account that cannot be
+	// found on its next login. Do not fall back to mutable email/login values.
+	if extUser.AuthModule == "oauth_generic_oauth" && extUser.AuthId == "" && !hs.Cfg.OAuthAllowInsecureEmailLookup {
+		return nil, errors.New("generic OAuth provider did not return a non-empty sub claim")
+	}
+	lookupParams := models.UserLookupParams{}
+	if hs.Cfg.OAuthAllowInsecureEmailLookup {
+		lookupParams.Email = &extUser.Email
+	}
+
 	// add/update user in Grafana
 	cmd := &models.UpsertUserCommand{
-		ReqContext:    ctx,
-		ExternalUser:  extUser,
-		SignupAllowed: connect.IsSignupAllowed(),
-		UserLookupParams: models.UserLookupParams{
-			Email:  &extUser.Email,
-			UserID: nil,
-			Login:  nil,
-		},
+		ReqContext:       ctx,
+		ExternalUser:     extUser,
+		SignupAllowed:    connect.IsSignupAllowed(),
+		UserLookupParams: lookupParams,
 	}
 
 	if err := hs.Login.UpsertUser(ctx.Req.Context(), cmd); err != nil {

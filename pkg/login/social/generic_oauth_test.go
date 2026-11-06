@@ -1,6 +1,7 @@
 package social
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -809,6 +810,36 @@ func TestPayloadCompression(t *testing.T) {
 				require.NotNil(t, userInfo, "Testing case %q", test.Name)
 				require.Equal(t, test.ExpectedEmail, userInfo.Email)
 			}
+		})
+	}
+}
+
+func TestGenericOAuthStableSubject(t *testing.T) {
+	for _, tc := range []struct {
+		name, tokenJSON, apiJSON, wantID string
+	}{
+		{"token subject", `{"sub":"token-subject","email":"person@example.com"}`, `{}`, "token-subject"},
+		{"userinfo subject", `{}`, `{"sub":"api-subject","email":"person@example.com"}`, "api-subject"},
+		{"token takes precedence", `{"sub":"token-subject","email":"person@example.com"}`, `{"sub":"api-subject"}`, "token-subject"},
+		{"empty token subject uses userinfo", `{"sub":"","email":"person@example.com"}`, `{"sub":"api-subject"}`, "api-subject"},
+		{"no identity from email or login", `{"email":"person@example.com","login":"mutable-name"}`, `{}`, ""},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+				w.Header().Set("Content-Type", "application/json")
+				_, _ = w.Write([]byte(tc.apiJSON))
+			}))
+			defer server.Close()
+			provider := &SocialGenericOAuth{
+				SocialBase: &SocialBase{log: newLogger("generic_oauth_test", "debug")},
+				apiUrl:     server.URL,
+			}
+			// UserInfo consumes the token returned by the OAuth token endpoint.
+			idToken := "eyJhbGciOiJIUzI1NiJ9." + base64.RawURLEncoding.EncodeToString([]byte(tc.tokenJSON)) + ".test"
+			token := (&oauth2.Token{}).WithExtra(map[string]interface{}{"id_token": idToken})
+			info, err := provider.UserInfo(server.Client(), token)
+			require.NoError(t, err)
+			require.Equal(t, tc.wantID, info.Id)
 		})
 	}
 }
