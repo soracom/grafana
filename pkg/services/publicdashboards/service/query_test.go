@@ -1237,6 +1237,45 @@ func TestGroupQueriesByPanelId(t *testing.T) {
 	}
 }
 
+func TestInheritedExpressionDatasource(t *testing.T) {
+	for _, uid := range []string{"__expr__", "-100"} {
+		for _, datasource := range []interface{}{uid, map[string]interface{}{"uid": uid, "type": "__expr__"}} {
+			for _, explicitInput := range []bool{false, true} {
+				t.Run(fmt.Sprintf("panel=%v explicitInput=%t", datasource, explicitInput), func(t *testing.T) {
+					dashboard := simplejson.MustJson([]byte(`{"panels": [{"id": 1, "targets": [
+						{"refId": "A", "hide": true, "type": "math", "expression": "1"},
+						{"refId": "B", "type": "math", "expression": "$A * 2"}
+					]}]}`))
+					panel := dashboard.Get("panels").GetIndex(0)
+					panel.Set("datasource", datasource)
+					if explicitInput {
+						panel.Get("targets").GetIndex(0).Set("datasource", "prometheus")
+					}
+					queries := groupQueriesByPanelId(dashboard)[1]
+					require.Len(t, queries, 2)
+					require.Equal(t, "A", queries[0].Get("refId").MustString())
+					require.True(t, queries[0].Get("hide").MustBool())
+					require.Equal(t, uid, getDataSourceUidFromJson(queries[1]))
+					if explicitInput {
+						require.Equal(t, "prometheus", getDataSourceUidFromJson(queries[0]))
+					} else {
+						require.Equal(t, uid, getDataSourceUidFromJson(queries[0]))
+					}
+				})
+			}
+		}
+	}
+	t.Run("explicit non-expression targets override the panel datasource", func(t *testing.T) {
+		dashboard := simplejson.MustJson([]byte(`{"panels": [{"id": 1, "datasource": "__expr__", "targets": [
+			{"refId": "A", "hide": true, "datasource": "prometheus"},
+			{"refId": "B", "datasource": "prometheus"}
+		]}]}`))
+		queries := groupQueriesByPanelId(dashboard)[1]
+		require.Len(t, queries, 1)
+		require.Equal(t, "B", queries[0].Get("refId").MustString())
+	})
+}
+
 func TestGroupQueriesByDataSource(t *testing.T) {
 	t.Run("can divide queries by datasource", func(t *testing.T) {
 		queries := []*simplejson.Json{

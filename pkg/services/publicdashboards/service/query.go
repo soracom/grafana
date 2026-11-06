@@ -260,9 +260,15 @@ func groupQueriesByPanelId(dashboard *simplejson.Json) map[int64][]*simplejson.J
 		var panelQueries []*simplejson.Json
 		hasExpression := false
 		for _, queryObj := range panel.Get("targets").MustArray() {
-			if expr.IsDataSource(getDataSourceUidFromJson(simplejson.NewFromAny(queryObj))) {
+			query := simplejson.NewFromAny(queryObj)
+			// Resolve inherited datasources before deciding whether expressions
+			// need the panel's hidden inputs.
+			if _, ok := query.CheckGet("datasource"); !ok {
+				uid := getDataSourceUidFromJson(panel)
+				query.Set("datasource", map[string]interface{}{"type": "public-ds", "uid": uid})
+			}
+			if expr.IsDataSource(getDataSourceUidFromJson(query)) {
 				hasExpression = true
-				break
 			}
 		}
 
@@ -276,13 +282,6 @@ func groupQueriesByPanelId(dashboard *simplejson.Json) map[int64][]*simplejson.J
 
 			// We dont support exemplars for public dashboards currently
 			query.Del("exemplar")
-
-			// if query target has no datasource, set it to have the datasource on the panel
-			if _, ok := query.CheckGet("datasource"); !ok {
-				uid := getDataSourceUidFromJson(panel)
-				datasource := map[string]interface{}{"type": "public-ds", "uid": uid}
-				query.Set("datasource", datasource)
-			}
 
 			panelQueries = append(panelQueries, query)
 
