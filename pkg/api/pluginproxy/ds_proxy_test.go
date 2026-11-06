@@ -304,6 +304,18 @@ func TestDataSourceProxy_routeRule(t *testing.T) {
 				})
 			}
 
+			t.Run("double encoded route names cannot bypass role checks", func(t *testing.T) {
+				for _, proxyPath := range []string{"api/%2561dmin", "%2561pi/admin", "api/%2541dmin", "api/admin/value%2520name"} {
+					t.Run(proxyPath, func(t *testing.T) {
+						ctx, _ := setUp()
+						proxy, err := NewDataSourceProxy(ds, routes, ctx, proxyPath, cfg, httpClientProvider, &oauthtoken.Service{}, nil, tracer)
+						require.NoError(t, err)
+						require.ErrorContains(t, proxy.validateRequest(), "ambiguous encoding")
+						require.Nil(t, proxy.matchedRoute)
+					})
+				}
+			})
+
 			t.Run("empty fallback route still checks its role", func(t *testing.T) {
 				ctx, _ := setUp()
 				quotaService := quotatest.New(false, nil)

@@ -286,16 +286,10 @@ func (proxy *DataSourceProxy) validateRequest() error {
 	if err != nil {
 		return err
 	}
-	// Another decoder could turn remaining escapes or backslashes into path
-	// separators or navigation segments after this authorization check.
-	if strings.ContainsRune(unescapedProxyPath, '\\') {
+	// A downstream decoder can change route names as well as separators.
+	// Reject residual escapes so it sees the same path we authorize here.
+	if strings.ContainsAny(unescapedProxyPath, "%\\") {
 		return errors.New("ambiguous encoding is not allowed on proxied requests")
-	}
-	lowerProxyPath := strings.ToLower(unescapedProxyPath)
-	for _, encoded := range []string{"%2e", "%2f", "%5c", "%25"} {
-		if strings.Contains(lowerProxyPath, encoded) {
-			return errors.New("ambiguous encoding is not allowed on proxied requests")
-		}
 	}
 	// A backend may handle parent-directory segments differently from our
 	// lexical path cleanup, so do not forward them.
