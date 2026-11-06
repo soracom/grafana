@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -189,6 +190,8 @@ func normalizeRoutePath(routePath string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	// CleanRelativePath uses filesystem separators; proxy routes always use URL slashes.
+	cleanPath = filepath.ToSlash(cleanPath)
 	if cleanPath == "." && routePath != "." {
 		cleanPath = ""
 	}
