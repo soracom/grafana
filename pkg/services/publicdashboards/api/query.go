@@ -12,6 +12,8 @@ import (
 	"github.com/grafana/grafana/pkg/web"
 )
 
+const maxPublicDashboardQueryBodySize = 10 * 1024
+
 // ViewPublicDashboard Gets public dashboard
 // GET /api/public/dashboards/:accessToken
 func (api *Api) ViewPublicDashboard(c *models.ReqContext) response.Response {
@@ -57,6 +59,16 @@ func (api *Api) QueryPublicDashboard(c *models.ReqContext) response.Response {
 	if !tokens.IsValidAccessToken(accessToken) {
 		return response.Err(ErrInvalidAccessToken.Errorf("QueryPublicDashboard: invalid access token"))
 	}
+
+	exists, err := api.PublicDashboardService.ExistsEnabledByAccessToken(c.Req.Context(), accessToken)
+	if err != nil {
+		return response.Err(ErrInternalServerError.Errorf("QueryPublicDashboard: failed to query access token: %w", err))
+	}
+	if !exists {
+		return response.Err(ErrPublicDashboardNotFound.Errorf("QueryPublicDashboard: public dashboard not found"))
+	}
+
+	c.Req.Body = http.MaxBytesReader(c.Resp, c.Req.Body, maxPublicDashboardQueryBodySize)
 
 	panelId, err := strconv.ParseInt(web.Params(c.Req)[":panelId"], 10, 64)
 	if err != nil {

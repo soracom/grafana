@@ -67,6 +67,67 @@ Available values are `AutoDetect`, `InParams` and `InHeader`. By default, `AutoD
 
 Set `empty_scopes` to true to use an empty scope during authentication. By default, Grafana uses `user:email` as scope.
 
+### Stable identity and existing Lagoon accounts
+
+Lagoon identifies Generic OAuth accounts by the provider's non-empty `sub` claim,
+not by email or login name. It uses `sub` from the ID token first, then from the
+configured UserInfo endpoint if the ID token has no subject. This follows the
+[upstream Generic OAuth subject fix](https://github.com/grafana/grafana/commit/aa80c1ceda1).
+Configure the provider to return a stable, unique subject for each user. Keep the
+same provider and subject namespace when changing its configuration.
+
+With the default `[auth] oauth_allow_insecure_email_lookup = false`, a missing
+subject rejects login before creating an account. A new account with a subject
+can log in again even after its email or login name changes. Do not enable the
+insecure email lookup option to migrate accounts: it allows a different provider
+identity to claim an existing account through its email address.
+
+Older Lagoon Generic OAuth accounts can have an empty `user_auth.auth_id`.
+They require an explicit administrator mapping before their next login. There is
+no safe automatic mapping from an empty ID to a provider subject using email
+alone. Do not delete these accounts or enable signup as a migration workaround.
+
+For each affected account:
+
+1. Back up the Grafana database and stop every Grafana instance that uses it
+   during the mapping operation. Retain a working local administrator login.
+2. From the configured identity provider's administrative records, verify which
+   provider account owns the Grafana account and obtain its exact `sub`. Check
+   the provider, tenant and client configuration. Do not accept an email match
+   or a subject supplied by an unauthenticated user as proof of ownership.
+3. Inspect the account's `user_auth` rows for `auth_module = 'oauth_generic_oauth'`.
+   Verify the Grafana user ID and authentication-row ID. If there are multiple
+   rows for that user/module, resolve the duplicate records before proceeding;
+   do not guess which one should be mapped. Leave non-empty IDs and other auth
+   modules unchanged.
+4. Begin a database transaction. Confirm that no Generic OAuth row already uses
+   the proposed subject. Bind the verified subject and IDs as parameters in your
+   database client; do not concatenate them into SQL. The `?` markers below
+   denote bound parameters (adapt the marker syntax to your database client).
+
+   ```sql
+   SELECT id, user_id, auth_id
+     FROM user_auth
+    WHERE auth_module = 'oauth_generic_oauth' AND auth_id = ?;
+
+   UPDATE user_auth
+      SET auth_id = ?
+    WHERE id = ? AND user_id = ?
+      AND auth_module = 'oauth_generic_oauth'
+      AND (auth_id = '' OR auth_id IS NULL);
+   ```
+
+5. Commit only if the SELECT returned no rows, the UPDATE affected exactly one
+   row, and a read-back confirms the intended mapping. Otherwise roll back and
+   investigate. Record the previous value for a targeted rollback.
+6. Restart Grafana and verify two consecutive logins reach the same existing
+   account and preserve its organization memberships. Keep insecure email
+   lookup disabled. If verification fails, stop the instances and restore only
+   the recorded mapping before investigating.
+
+This is an administrator maintenance procedure, not an automatic startup
+migration. No production account mappings are changed by the code update.
+
 ### Email address
 
 Grafana determines a user's email address by querying the OAuth provider until it finds an e-mail address:

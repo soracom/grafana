@@ -79,3 +79,23 @@ func TestApplyRoute_interpolateAuthParams(t *testing.T) {
 		})
 	})
 }
+
+// These URL paths must stay slash-separated on every supported OS, including Windows.
+func TestNormalizeRoutePathURLSeparators(t *testing.T) {
+	for _, tc := range []struct {
+		path string
+		want string
+	}{
+		{"api/anon/query", "api/anon/query"},
+		{"/api//anon/query", "api/anon/query"},
+		{"api/./anon/", "api/anon/"},
+		{"api/anon/.", "api/anon/"},
+		{"", ""},
+	} {
+		t.Run(tc.path, func(t *testing.T) {
+			actual, err := normalizeRoutePath(tc.path)
+			require.NoError(t, err)
+			require.Equal(t, tc.want, actual)
+		})
+	}
+}

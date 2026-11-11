@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"regexp"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/datasource"
@@ -37,6 +38,8 @@ type datasourceInfo struct {
 type QueryModel struct {
 	TraceID string `json:"query"`
 }
+
+var traceIDPattern = regexp.MustCompile(`^[0-9A-Fa-f]+$`)
 
 func newInstanceSettings(httpClientProvider httpclient.Provider) datasource.InstanceFactoryFunc {
 	return func(settings backend.DataSourceInstanceSettings) (instancemgmt.Instance, error) {
@@ -119,6 +122,10 @@ func (s *Service) QueryData(ctx context.Context, req *backend.QueryDataRequest) 
 }
 
 func (s *Service) createRequest(ctx context.Context, dsInfo *datasourceInfo, traceID string, start int64, end int64) (*http.Request, error) {
+	if !traceIDPattern.MatchString(traceID) {
+		return nil, fmt.Errorf("invalid trace id")
+	}
+
 	var tempoQuery string
 	if start == 0 || end == 0 {
 		tempoQuery = fmt.Sprintf("%s/api/traces/%s", dsInfo.URL, traceID)

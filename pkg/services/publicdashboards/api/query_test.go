@@ -185,6 +185,7 @@ func TestAPIQueryPublicDashboard(t *testing.T) {
 
 	setup := func(enabled bool) (*web.Mux, *publicdashboards.FakePublicDashboardService) {
 		service := publicdashboards.NewFakePublicDashboardService(t)
+		service.On("ExistsEnabledByAccessToken", mock.Anything, validAccessToken).Return(true, nil).Maybe()
 		cfg := setting.NewCfg()
 		cfg.RBACEnabled = false
 
@@ -212,6 +213,22 @@ func TestAPIQueryPublicDashboard(t *testing.T) {
 		resp := callAPI(server, http.MethodPost, getValidQueryPath("SomeInvalidAccessToken"), strings.NewReader("{}"), t)
 		require.Equal(t, http.StatusBadRequest, resp.Code)
 		require.JSONEq(t, "{\"message\":\"Invalid access token\", \"messageId\":\"publicdashboards.invalidAccessToken\", \"statusCode\":400, \"traceID\":\"\"}", resp.Body.String())
+	})
+
+	t.Run("Status code is 404 before reading the body when the access token does not exist", func(t *testing.T) {
+		server, service := setup(true)
+		unknownToken := strings.Repeat("a", 32)
+		service.On("ExistsEnabledByAccessToken", mock.Anything, unknownToken).Return(false, nil).Once()
+		resp := callAPI(server, http.MethodPost, getValidQueryPath(unknownToken), strings.NewReader(`{"padding":"`+strings.Repeat("A", maxPublicDashboardQueryBodySize)+`"}`), t)
+		require.Equal(t, http.StatusNotFound, resp.Code)
+		service.AssertNotCalled(t, "GetQueryDataResponse", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything)
+	})
+
+	t.Run("Status code is 400 when the request body is too large", func(t *testing.T) {
+		server, service := setup(true)
+		resp := callAPI(server, http.MethodPost, getValidQueryPath(validAccessToken), strings.NewReader(`{"padding":"`+strings.Repeat("A", maxPublicDashboardQueryBodySize)+`"}`), t)
+		require.Equal(t, http.StatusBadRequest, resp.Code)
+		service.AssertNotCalled(t, "GetQueryDataResponse", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything)
 	})
 
 	t.Run("Status code is 400 when the intervalMS is lesser than 0", func(t *testing.T) {

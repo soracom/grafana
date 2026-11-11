@@ -280,6 +280,29 @@ func (proxy *DataSourceProxy) validateRequest() error {
 		}
 	}
 
+	// Match routes against the path that the data source receives. The proxy
+	// path is escaped, while the request sent to the data source is unescaped.
+	unescapedProxyPath, err := url.PathUnescape(proxy.proxyPath)
+	if err != nil {
+		return err
+	}
+	// A downstream decoder can change route names as well as separators.
+	// Reject residual escapes so it sees the same path we authorize here.
+	if strings.ContainsAny(unescapedProxyPath, "%\\") {
+		return errors.New("ambiguous encoding is not allowed on proxied requests")
+	}
+	// A backend may handle parent-directory segments differently from our
+	// lexical path cleanup, so do not forward them.
+	for _, segment := range strings.Split(unescapedProxyPath, "/") {
+		if segment == ".." {
+			return errors.New("parent-directory segments are not allowed on proxied requests")
+		}
+	}
+	cleanProxyPath, err := normalizeRoutePath(unescapedProxyPath)
+	if err != nil {
+		return err
+	}
+
 	// found route if there are any
 	for _, route := range proxy.pluginRoutes {
 		// method match
@@ -288,7 +311,11 @@ func (proxy *DataSourceProxy) validateRequest() error {
 		}
 
 		// route match
-		if !strings.HasPrefix(proxy.proxyPath, route.Path) {
+		cleanRoutePath, err := normalizeRoutePath(route.Path)
+		if err != nil {
+			return err
+		}
+		if !strings.HasPrefix(cleanProxyPath, cleanRoutePath) {
 			continue
 		}
 

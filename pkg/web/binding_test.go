@@ -2,6 +2,9 @@ package web
 
 import (
 	"errors"
+	"net/http"
+	"net/http/httptest"
+	"strings"
 	"testing"
 )
 
@@ -59,6 +62,62 @@ func (sv *StructWithPointerValidation) Validate() error {
 		return errors.New("too small")
 	}
 	return nil
+}
+
+type bindTarget struct {
+	Message string `json:"message"`
+}
+
+// endlessJSONReader supplies a JSON string longer than the body limit without
+// allocating the full payload in the test.
+type endlessJSONReader struct {
+	prefix []byte
+	read   int64
+}
+
+func (r *endlessJSONReader) Read(p []byte) (int, error) {
+	if len(r.prefix) > 0 {
+		n := copy(p, r.prefix)
+		r.prefix = r.prefix[n:]
+		r.read += int64(n)
+		return n, nil
+	}
+	for i := range p {
+		p[i] = 'A'
+	}
+	r.read += int64(len(p))
+	return len(p), nil
+}
+
+func TestBindRejectsOversizedBody(t *testing.T) {
+	const testLimit = 1024
+	body := &endlessJSONReader{prefix: []byte(`{"message":"`)}
+	req := httptest.NewRequest(http.MethodPost, "/", body)
+	req.Header.Set("Content-Type", "application/json")
+
+	var target bindTarget
+	err := bindWithLimit(req, &target, testLimit)
+	var maxBytesErr *http.MaxBytesError
+	if !errors.As(err, &maxBytesErr) {
+		t.Fatalf("expected a body size error, got %v", err)
+	}
+	if body.read > testLimit+1 {
+		t.Fatalf("Bind read %d bytes, want at most %d", body.read, testLimit+1)
+	}
+}
+
+func TestBindAcceptsBodyWithinLimit(t *testing.T) {
+	message := strings.Repeat("A", 1024)
+	req := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(`{"message":"`+message+`"}`))
+	req.Header.Set("Content-Type", "application/json")
+
+	var target bindTarget
+	if err := Bind(req, &target); err != nil {
+		t.Fatalf("Bind failed on small body: %v", err)
+	}
+	if target.Message != message {
+		t.Fatal("Bind did not decode the request body")
+	}
 }
 
 func TestValidationSuccess(t *testing.T) {

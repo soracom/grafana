@@ -163,6 +163,8 @@ func (hs *HTTPServer) LoginAPIPing(c *models.ReqContext) response.Response {
 }
 
 func (hs *HTTPServer) LoginPost(c *models.ReqContext) response.Response {
+	c.Req.Body = http.MaxBytesReader(c.Resp, c.Req.Body, maxPreAuthFormBodySize)
+
 	cmd := dtos.LoginCommand{}
 	if err := web.Bind(c.Req, &cmd); err != nil {
 		return response.Error(http.StatusBadRequest, "bad login data", err)
