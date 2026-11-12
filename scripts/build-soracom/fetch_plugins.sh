@@ -143,12 +143,12 @@ download_artifact_from_s3 () {
   fi
 }
 
-clone_private_repo soracom-harvest-backend 2f199e02dfc569098f83cd784b7887ea7c1ef65b
+clone_private_repo soracom-harvest-backend 2027479d659c20e06662d5c539beb8fd1c591ea3
 clone_private_repo soracom-plot-panel a8e0d73809e4cd62e72e0af51d82852625989e7b
 
-download_artifact_from_s3 soracom-dynamic-image-panel 2.1.0
-download_artifact_from_s3 soracom-image-panel 2.0.1
-download_artifact_from_s3 soracom-map-panel 2.1.0
+download_artifact_from_s3 soracom-dynamic-image-panel 2.1.0 ci-pin-dependabot-cicd-sensor
+download_artifact_from_s3 soracom-image-panel 2.0.1 ci-pin-dependabot-cicd-sensor
+download_artifact_from_s3 soracom-map-panel 2.1.1 ci-pin-dependabot-cicd-sensor
 
 #Add any pre-built plugins to the dir
 cp -R ../pre-built-plugins/* .
