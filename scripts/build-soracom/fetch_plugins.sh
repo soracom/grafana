@@ -143,7 +143,7 @@ download_artifact_from_s3 () {
   fi
 }
 
-clone_private_repo soracom-harvest-backend 2027479d659c20e06662d5c539beb8fd1c591ea3
+clone_private_repo soracom-harvest-backend c5ae04244577fe5bce7f031144b5a9aa0411ca80
 clone_private_repo soracom-plot-panel a8e0d73809e4cd62e72e0af51d82852625989e7b
 
 download_artifact_from_s3 soracom-dynamic-image-panel 2.1.0 ci-pin-dependabot-cicd-sensor
