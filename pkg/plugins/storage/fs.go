@@ -2,15 +2,16 @@ package storage
 
 import (
 	"archive/zip"
-	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"regexp"
+	"runtime"
 	"strings"
 	"sync"
 
@@ -19,7 +20,7 @@ import (
 
 var _ Manager = (*FS)(nil)
 
-var reGitBuild = regexp.MustCompile("^[a-zA-Z0-9_.-]*/")
+var windowsDeviceName = regexp.MustCompile(`(?i)^(CON|PRN|AUX|NUL|CONIN\$|CONOUT\$|(COM|LPT)[0-9¹²³])$`)
 
 var (
 	ErrUninstallOutsideOfPluginDir = errors.New("cannot uninstall a plugin outside of the plugins directory")
@@ -28,7 +29,7 @@ var (
 
 type FS struct {
 	store      map[string]string
-	mu         sync.RWMutex
+	mu         sync.Mutex
 	pluginsDir string
 	log        logger.Logger
 }
@@ -43,6 +44,9 @@ func FileSystem(logger logger.Logger, pluginsDir string) *FS {
 
 func (fs *FS) Add(ctx context.Context, pluginID string, pluginArchive *zip.ReadCloser) (
 	*ExtractedPluginArchive, error) {
+	fs.mu.Lock()
+	defer fs.mu.Unlock()
+
 	pluginDir, err := fs.extractFiles(ctx, pluginArchive, pluginID)
 	if err != nil {
 		return nil, fmt.Errorf("%v: %w", "failed to extract plugin archive", err)
@@ -50,6 +54,7 @@ func (fs *FS) Add(ctx context.Context, pluginID string, pluginArchive *zip.ReadC
 
 	res, err := toPluginDTO(pluginID, pluginDir)
 	if err != nil {
+		fs.removePartialPlugin(pluginDir)
 		return nil, fmt.Errorf("%v: %w", "failed to convert to plugin DTO", err)
 	}
 
@@ -80,9 +85,9 @@ func (fs *FS) Register(_ context.Context, pluginID, pluginDir string) error {
 }
 
 func (fs *FS) Remove(_ context.Context, pluginID string) error {
-	fs.mu.RLock()
+	fs.mu.Lock()
+	defer fs.mu.Unlock()
 	pluginDir, exists := fs.store[pluginID]
-	fs.mu.RUnlock()
 	if !exists {
 		return fmt.Errorf("%s does not exist", pluginID)
 	}
@@ -103,38 +108,30 @@ func (fs *FS) Remove(_ context.Context, pluginID string) error {
 	return os.RemoveAll(pluginDir)
 }
 
-func (fs *FS) extractFiles(_ context.Context, pluginArchive *zip.ReadCloser, pluginID string) (string, error) {
-	installDir := filepath.Join(fs.pluginsDir, pluginID)
-	if _, err := os.Stat(installDir); !os.IsNotExist(err) {
-		fs.log.Debugf("Removing existing installation of plugin %s", installDir)
-		err = os.RemoveAll(installDir)
-		if err != nil {
-			return "", err
-		}
-	}
-
+func (fs *FS) extractFiles(_ context.Context, pluginArchive *zip.ReadCloser, pluginID string) (_ string, err error) {
 	defer func() {
 		if err := pluginArchive.Close(); err != nil {
 			fs.log.Warn("failed to close zip file", "err", err)
 		}
 	}()
 
-	for _, zf := range pluginArchive.File {
-		// We can ignore gosec G305 here since we check for the ZipSlip vulnerability below
-		// nolint:gosec
-		fullPath := filepath.Join(fs.pluginsDir, zf.Name)
+	if err := ValidateArchive(pluginID, &pluginArchive.Reader); err != nil {
+		return "", err
+	}
+	installDir := filepath.Join(fs.pluginsDir, pluginID)
 
-		// Check for ZipSlip. More Info: http://bit.ly/2MsjAWE
-		if filepath.IsAbs(zf.Name) ||
-			!strings.HasPrefix(fullPath, filepath.Clean(fs.pluginsDir)+string(os.PathSeparator)) ||
-			strings.HasPrefix(zf.Name, ".."+string(os.PathSeparator)) {
-			return "", fmt.Errorf(
-				"archive member %q tries to write outside of plugin directory: %q, this can be a security risk",
-				zf.Name, fs.pluginsDir)
+	// RemoveAll removes the directory entry itself, including a dangling symlink.
+	if err := os.RemoveAll(installDir); err != nil {
+		return "", err
+	}
+	defer func() {
+		if err != nil {
+			fs.removePartialPlugin(installDir)
 		}
+	}()
 
-		dstPath := filepath.Clean(filepath.Join(fs.pluginsDir, removeGitBuildFromName(zf.Name, pluginID))) // lgtm[go/zipslip]
-
+	for _, zf := range pluginArchive.File {
+		dstPath := archiveDestination(installDir, zf.Name)
 		if zf.FileInfo().IsDir() {
 			// We can ignore gosec G304 here since it makes sense to give all users read access
 			// nolint:gosec
@@ -155,14 +152,6 @@ func (fs *FS) extractFiles(_ context.Context, pluginArchive *zip.ReadCloser, plu
 			return "", fmt.Errorf("%v: %w", "failed to create directory to extract plugin files", err)
 		}
 
-		if isSymlink(zf) {
-			if err := extractSymlink(installDir, zf, dstPath); err != nil {
-				fs.log.Warn("failed to extract symlink", "err", err)
-				continue
-			}
-			continue
-		}
-
 		if err := extractFile(zf, dstPath); err != nil {
 			return "", fmt.Errorf("%v: %w", "failed to extract file", err)
 		}
@@ -171,50 +160,51 @@ func (fs *FS) extractFiles(_ context.Context, pluginArchive *zip.ReadCloser, plu
 	return installDir, nil
 }
 
-func isSymlink(file *zip.File) bool {
-	return file.Mode()&os.ModeSymlink == os.ModeSymlink
-}
-
-func extractSymlink(basePath string, file *zip.File, filePath string) error {
-	// symlink target is the contents of the file
-	src, err := file.Open()
-	if err != nil {
-		return fmt.Errorf("%v: %w", "failed to extract file", err)
+// ValidateArchive checks the archive headers before an installation can be replaced.
+func ValidateArchive(pluginID string, archive *zip.Reader) error {
+	if strings.Contains(pluginID, "/") || !validPluginPath(pluginID) {
+		return fmt.Errorf("invalid plugin directory name %q", pluginID)
 	}
-	buf := new(bytes.Buffer)
-	if _, err = io.Copy(buf, src); err != nil {
-		return fmt.Errorf("%v: %w", "failed to copy symlink contents", err)
-	}
-
-	symlinkPath := strings.TrimSpace(buf.String())
-	if !isSymlinkRelativeTo(basePath, symlinkPath, filePath) {
-		return fmt.Errorf("symlink %q pointing outside plugin directory is not allowed", filePath)
-	}
-
-	if err = os.Symlink(symlinkPath, filePath); err != nil {
-		return fmt.Errorf("failed to make symbolic link for %v: %w", filePath, err)
+	for _, member := range archive.File {
+		if member.Mode()&os.ModeSymlink != 0 {
+			return fmt.Errorf("archive member %q is a symbolic link", member.Name)
+		}
+		if !validPluginPath(strings.TrimSuffix(member.Name, "/")) {
+			return fmt.Errorf("invalid plugin archive member %q", member.Name)
+		}
+		if !strings.Contains(member.Name, "/") {
+			return fmt.Errorf("archive member %q is missing a plugin directory", member.Name)
+		}
 	}
 	return nil
 }
 
-// isSymlinkRelativeTo checks whether symlinkDestPath is relative to basePath.
-// symlinkOrigPath is the path to file holding the symbolic link.
-func isSymlinkRelativeTo(basePath string, symlinkDestPath string, symlinkOrigPath string) bool {
-	if filepath.IsAbs(symlinkDestPath) {
-		return false
-	}
-	fileDir := filepath.Dir(symlinkOrigPath)
-	cleanPath := filepath.Clean(filepath.Join(fileDir, "/", symlinkDestPath))
-	p, err := filepath.Rel(basePath, cleanPath)
-	if err != nil {
-		return false
-	}
+// Grafana release archives wrap plugin contents in a top-level directory, often a Git build name.
+func archiveDestination(installDir, name string) string {
+	_, relative, _ := strings.Cut(name, "/")
+	return filepath.Join(installDir, filepath.FromSlash(relative))
+}
 
-	if strings.HasPrefix(filepath.Clean(p), "..") {
+func validPluginPath(name string) bool {
+	if !fs.ValidPath(name) || name == "." || strings.ContainsAny(name, `\:`) {
 		return false
 	}
-
+	if runtime.GOOS == "windows" {
+		// Win32 normalizes trailing spaces and dots, and interprets reserved names as devices.
+		for _, part := range strings.Split(name, "/") {
+			stem, _, _ := strings.Cut(part, ".")
+			if strings.TrimRight(part, " .") != part || windowsDeviceName.MatchString(strings.TrimRight(stem, " ")) {
+				return false
+			}
+		}
+	}
 	return true
+}
+
+func (fs *FS) removePartialPlugin(dir string) {
+	if err := os.RemoveAll(dir); err != nil {
+		fs.log.Warn("failed to remove partially extracted plugin", "path", dir, "err", err)
+	}
 }
 
 func extractFile(file *zip.File, filePath string) (err error) {
@@ -242,7 +232,9 @@ func extractFile(file *zip.File, filePath string) (err error) {
 		return fmt.Errorf("%v: %w", "failed to open file", err)
 	}
 	defer func() {
-		err = dst.Close()
+		if closeErr := dst.Close(); err == nil {
+			err = closeErr
+		}
 	}()
 
 	src, err := file.Open()
@@ -250,15 +242,13 @@ func extractFile(file *zip.File, filePath string) (err error) {
 		return fmt.Errorf("%v: %w", "failed to extract file", err)
 	}
 	defer func() {
-		err = src.Close()
+		if closeErr := src.Close(); err == nil {
+			err = closeErr
+		}
 	}()
 
 	_, err = io.Copy(dst, src)
 	return err
-}
-
-func removeGitBuildFromName(filename, pluginID string) string {
-	return reGitBuild.ReplaceAllString(filename, pluginID+"/")
 }
 
 func toPluginDTO(pluginID, pluginDir string) (InstalledPlugin, error) {

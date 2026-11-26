@@ -74,22 +74,26 @@ func (m *PluginInstaller) Add(ctx context.Context, pluginID, version string, opt
 			return fmt.Errorf("could not determine update options for %s", pluginID)
 		}
 
-		// remove existing installation of plugin
-		err = m.Remove(ctx, plugin.ID)
+		if dlOpts.PluginZipURL != "" {
+			pluginArchive, err = m.pluginRepo.GetPluginArchiveByURL(ctx, dlOpts.PluginZipURL, compatOpts)
+		} else {
+			pluginArchive, err = m.pluginRepo.GetPluginArchive(ctx, pluginID, dlOpts.Version, compatOpts)
+		}
 		if err != nil {
 			return err
 		}
 
-		if dlOpts.PluginZipURL != "" {
-			pluginArchive, err = m.pluginRepo.GetPluginArchiveByURL(ctx, dlOpts.PluginZipURL, compatOpts)
-			if err != nil {
-				return err
+		// Unloading stops the running plugin and removes its files.
+		err = storage.ValidateArchive(pluginID, &pluginArchive.File.Reader)
+		if err == nil {
+			err = m.Remove(ctx, plugin.ID)
+		}
+		if err != nil {
+			// Storage takes ownership of the archive only when Add is called below.
+			if closeErr := pluginArchive.File.Close(); closeErr != nil {
+				m.log.Warn("Failed to close plugin archive", "err", closeErr)
 			}
-		} else {
-			pluginArchive, err = m.pluginRepo.GetPluginArchive(ctx, pluginID, dlOpts.Version, compatOpts)
-			if err != nil {
-				return err
-			}
+			return err
 		}
 	} else {
 		var err error
