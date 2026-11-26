@@ -3,7 +3,6 @@ package storage
 import (
 	"archive/zip"
 	"context"
-	"fmt"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -13,39 +12,73 @@ import (
 )
 
 func TestAdd(t *testing.T) {
-	testDir := "./testdata/tmpInstallPluginDir"
-	err := os.MkdirAll(testDir, os.ModePerm)
-	require.NoError(t, err)
+	const pluginID = "test-datasource"
+	testDir := t.TempDir()
+	store := FileSystem(&fakeLogger{}, testDir)
 
-	t.Cleanup(func() {
-		err = os.RemoveAll(testDir)
+	// Package the existing signed plugin fixture with a normal release archive prefix.
+	source := "../manager/testdata/valid-v2-signature/plugin"
+	archivePath := filepath.Join(t.TempDir(), "plugin.zip")
+	file, err := os.Create(archivePath)
+	require.NoError(t, err)
+	writer := zip.NewWriter(file)
+	for _, name := range []string{"MANIFEST.txt", "plugin.json"} {
+		data, err := os.ReadFile(filepath.Join(source, name))
 		require.NoError(t, err)
+		member, err := writer.Create("release/" + name)
+		require.NoError(t, err)
+		_, err = member.Write(data)
+		require.NoError(t, err)
+	}
+	require.NoError(t, writer.Close())
+	require.NoError(t, file.Close())
+
+	archive, err := store.Add(context.Background(), pluginID, zipFile(t, archivePath))
+	require.NoError(t, err)
+	require.Equal(t, pluginID, archive.ID)
+	require.Equal(t, "1.0.0", archive.Version)
+	require.Equal(t, filepath.Join(testDir, pluginID), archive.Path)
+	for _, name := range []string{"MANIFEST.txt", "plugin.json"} {
+		want, err := os.ReadFile(filepath.Join(source, name))
+		require.NoError(t, err)
+		got, err := os.ReadFile(filepath.Join(archive.Path, name))
+		require.NoError(t, err)
+		require.Equal(t, want, got)
+	}
+
+	t.Run("a rejected symlink archive leaves the installed copy intact", func(t *testing.T) {
+		_, err := store.Add(context.Background(), pluginID, zipFile(t, "testdata/plugin-with-symlinks.zip"))
+		require.ErrorContains(t, err, "symbolic link")
+		files, err := os.ReadDir(archive.Path)
+		require.NoError(t, err)
+		require.Len(t, files, 2)
+		want, err := os.ReadFile(filepath.Join(source, "plugin.json"))
+		require.NoError(t, err)
+		got, err := os.ReadFile(filepath.Join(archive.Path, "plugin.json"))
+		require.NoError(t, err)
+		require.Equal(t, want, got)
 	})
 
-	pluginID := "test-app"
+	t.Run("an invalid plugin ID leaves the plugins directory intact", func(t *testing.T) {
+		_, err := store.Add(context.Background(), ".", zipFile(t, archivePath))
+		require.ErrorContains(t, err, "invalid plugin directory name")
+		require.FileExists(t, filepath.Join(archive.Path, "plugin.json"))
+	})
 
-	fs := FileSystem(&fakeLogger{}, testDir)
-	archive, err := fs.Add(context.Background(), pluginID, zipFile(t, "./testdata/plugin-with-symlinks.zip"))
-	require.NotNil(t, archive)
-	require.NoError(t, err)
+	t.Run("missing metadata removes the partial installation", func(t *testing.T) {
+		const id = "missing-metadata"
+		_, err := store.Add(context.Background(), id, zipFile(t, "testdata/grafana-simple-json-datasource-ec18fa4da8096a952608a7e4c7782b4260b41bcf.zip"))
+		require.ErrorContains(t, err, "failed to convert to plugin DTO")
+		require.NoDirExists(t, filepath.Join(testDir, id))
+	})
 
-	// verify extracted contents
-	files, err := os.ReadDir(filepath.Join(testDir, pluginID))
-	require.NoError(t, err)
-	file2, err := files[2].Info()
-	require.NoError(t, err)
-	file4, err := files[4].Info()
-	require.NoError(t, err)
-
-	require.Len(t, files, 6)
-	require.Equal(t, files[0].Name(), "MANIFEST.txt")
-	require.Equal(t, files[1].Name(), "dashboards")
-	require.Equal(t, files[2].Name(), "extra")
-	require.Equal(t, os.ModeSymlink, file2.Mode()&os.ModeSymlink)
-	require.Equal(t, files[3].Name(), "plugin.json")
-	require.Equal(t, files[4].Name(), "symlink_to_txt")
-	require.Equal(t, os.ModeSymlink, file4.Mode()&os.ModeSymlink)
-	require.Equal(t, files[5].Name(), "text.txt")
+	t.Run("a failed copy removes the partial installation", func(t *testing.T) {
+		broken := zipFile(t, archivePath)
+		broken.File[1].CRC32 ^= 1
+		_, err := store.Add(context.Background(), "failed-copy", broken)
+		require.ErrorIs(t, err, zip.ErrChecksum)
+		require.NoDirExists(t, filepath.Join(testDir, "failed-copy"))
+	})
 }
 
 func TestRemove(t *testing.T) {
@@ -165,79 +198,23 @@ func TestExtractFiles(t *testing.T) {
 		require.Equal(t, "-rwxr-xr-x", fileInfo.Mode().String())
 	})
 
-	t.Run("Should extract file with relative symlink", func(t *testing.T) {
-		skipWindows(t)
+	for _, pluginID := range []string{"plugin-with-symlink", "plugin-with-symlink-dir", "plugin-with-absolute-symlink", "plugin-with-absolute-symlink-dir"} {
+		t.Run(pluginID, func(t *testing.T) {
+			path, err := i.extractFiles(context.Background(), zipFile(t, "testdata/"+pluginID+".zip"), pluginID)
+			require.Empty(t, path)
+			require.ErrorContains(t, err, "symbolic link")
+			require.NoDirExists(t, filepath.Join(pluginsDir, pluginID))
+		})
+	}
 
-		pluginID := "plugin-with-symlink"
-		path, err := i.extractFiles(context.Background(), zipFile(t, "testdata/plugin-with-symlink.zip"), pluginID)
-		require.Equal(t, filepath.Join(pluginsDir, pluginID), path)
-		require.NoError(t, err)
-
-		_, err = os.Stat(pluginsDir + "/plugin-with-symlink/symlink_to_txt")
-		require.NoError(t, err)
-
-		target, err := filepath.EvalSymlinks(pluginsDir + "/plugin-with-symlink/symlink_to_txt")
-		require.NoError(t, err)
-		require.Equal(t, pluginsDir+"/plugin-with-symlink/text.txt", target)
-	})
-
-	t.Run("Should extract directory with relative symlink", func(t *testing.T) {
-		skipWindows(t)
-
-		pluginID := "plugin-with-symlink-dir"
-		path, err := i.extractFiles(context.Background(), zipFile(t, "testdata/plugin-with-symlink-dir.zip"), pluginID)
-		require.Equal(t, filepath.Join(pluginsDir, pluginID), path)
-		require.NoError(t, err)
-
-		_, err = os.Stat(pluginsDir + "/plugin-with-symlink-dir/symlink_to_dir")
-		require.NoError(t, err)
-
-		target, err := filepath.EvalSymlinks(pluginsDir + "/plugin-with-symlink-dir/symlink_to_dir")
-		require.NoError(t, err)
-		require.Equal(t, pluginsDir+"/plugin-with-symlink-dir/dir", target)
-	})
-
-	t.Run("Should not extract file with absolute symlink", func(t *testing.T) {
-		skipWindows(t)
-
-		pluginID := "plugin-with-absolute-symlink"
-		path, err := i.extractFiles(context.Background(), zipFile(t, "testdata/plugin-with-absolute-symlink.zip"), pluginID)
-		require.Equal(t, filepath.Join(pluginsDir, pluginID), path)
-		require.NoError(t, err)
-
-		_, err = os.Stat(pluginsDir + "/plugin-with-absolute-symlink/test.txt")
-		require.True(t, os.IsNotExist(err))
-	})
-
-	t.Run("Should not extract directory with absolute symlink", func(t *testing.T) {
-		skipWindows(t)
-
-		pluginID := "plugin-with-absolute-symlink-dir"
-		path, err := i.extractFiles(context.Background(), zipFile(t, "testdata/plugin-with-absolute-symlink-dir.zip"), pluginID)
-		require.Equal(t, filepath.Join(pluginsDir, pluginID), path)
-		require.NoError(t, err)
-
-		_, err = os.Stat(pluginsDir + "/plugin-with-absolute-symlink-dir/target")
-		require.True(t, os.IsNotExist(err))
-	})
-
-	t.Run("Should detect if archive members point outside of the destination directory", func(t *testing.T) {
-		path, err := i.extractFiles(context.Background(), zipFile(t, "testdata/plugin-with-parent-member.zip"), "plugin-with-parent-member")
-		require.Empty(t, path)
-		require.EqualError(t, err, fmt.Sprintf(
-			`archive member "../member.txt" tries to write outside of plugin directory: %q, this can be a security risk`,
-			pluginsDir,
-		))
-	})
-
-	t.Run("Should detect if archive members are absolute", func(t *testing.T) {
-		path, err := i.extractFiles(context.Background(), zipFile(t, "testdata/plugin-with-absolute-member.zip"), "plugin-with-absolute-member")
-		require.Empty(t, path)
-		require.EqualError(t, err, fmt.Sprintf(
-			`archive member "/member.txt" tries to write outside of plugin directory: %q, this can be a security risk`,
-			pluginsDir,
-		))
-	})
+	for _, pluginID := range []string{"plugin-with-parent-member", "plugin-with-absolute-member"} {
+		t.Run(pluginID, func(t *testing.T) {
+			path, err := i.extractFiles(context.Background(), zipFile(t, "testdata/"+pluginID+".zip"), pluginID)
+			require.Empty(t, path)
+			require.ErrorContains(t, err, "invalid plugin archive member")
+			require.NoDirExists(t, filepath.Join(pluginsDir, pluginID))
+		})
+	}
 }
 
 func zipFile(t *testing.T, zipPath string) *zip.ReadCloser {
@@ -247,98 +224,22 @@ func zipFile(t *testing.T, zipPath string) *zip.ReadCloser {
 	return rc
 }
 
-func TestRemoveGitBuildFromName(t *testing.T) {
-	// The root directory should get renamed to the plugin name
-	paths := map[string]string{
-		"datasource-plugin-kairosdb-cc4a3965ef5d3eb1ae0ee4f93e9e78ec7db69e64/":                     "datasource-kairosdb/",
-		"datasource-plugin-kairosdb-cc4a3965ef5d3eb1ae0ee4f93e9e78ec7db69e64/README.md":            "datasource-kairosdb/README.md",
-		"datasource-plugin-kairosdb-cc4a3965ef5d3eb1ae0ee4f93e9e78ec7db69e64/partials/":            "datasource-kairosdb/partials/",
-		"datasource-plugin-kairosdb-cc4a3965ef5d3eb1ae0ee4f93e9e78ec7db69e64/partials/config.html": "datasource-kairosdb/partials/config.html",
-	}
-	for p, exp := range paths {
-		name := removeGitBuildFromName(p, "datasource-kairosdb")
-		require.Equal(t, exp, name)
-	}
+func TestArchiveDestination(t *testing.T) {
+	installDir := filepath.Join("plugins", "test-plugin")
+	got, err := archiveDestination(installDir, "release-123/partials/config.html")
+	require.NoError(t, err)
+	require.Equal(t, filepath.Join(installDir, "partials", "config.html"), got)
+
+	_, err = archiveDestination(installDir, "README.md")
+	require.Error(t, err)
 }
 
-func TestIsSymlinkRelativeTo(t *testing.T) {
-	tcs := []struct {
-		desc            string
-		basePath        string
-		symlinkDestPath string
-		symlinkOrigPath string
-		expected        bool
-	}{
-		{
-			desc:            "Symbolic link pointing to relative file within basePath should return true",
-			basePath:        "/dir",
-			symlinkDestPath: "test.txt",
-			symlinkOrigPath: "/dir/sub-dir/test1.txt",
-			expected:        true,
-		},
-		{
-			desc:            "Symbolic link pointing to relative file within basePath should return true",
-			basePath:        "/dir",
-			symlinkDestPath: "test.txt",
-			symlinkOrigPath: "/dir/test1.txt",
-			expected:        true,
-		},
-		{
-			desc:            "Symbolic link pointing to relative file within basePath should return true",
-			basePath:        "/dir",
-			symlinkDestPath: "../etc/test.txt",
-			symlinkOrigPath: "/dir/sub-dir/test1.txt",
-			expected:        true,
-		},
-		{
-			desc:            "Symbolic link pointing to absolute directory outside basePath should return false",
-			basePath:        "/dir",
-			symlinkDestPath: "/etc/test.txt",
-			symlinkOrigPath: "/dir/sub-dir/test1.txt",
-			expected:        false,
-		},
-		{
-			desc:            "Symbolic link pointing to relative file outside basePath should return false",
-			basePath:        "/dir",
-			symlinkDestPath: "../../etc/test.txt",
-			symlinkOrigPath: "/dir/sub-dir/test1.txt",
-			expected:        false,
-		},
-		{
-			desc:            "Symbolic link pointing to relative file outside basePath should return false",
-			basePath:        "/dir",
-			symlinkDestPath: "../../",
-			symlinkOrigPath: "/dir/sub-sir/symlink.txt",
-			expected:        false,
-		},
-		{
-			desc:            "Symbolic link pointing to relative file outside basePath should return false",
-			basePath:        "/dir",
-			symlinkDestPath: "../..",
-			symlinkOrigPath: "/dir/sub-sir/symlink.txt",
-			expected:        false,
-		},
-		{
-			desc:            "Symbolic link pointing to relative file outside basePath should return false",
-			basePath:        "/dir",
-			symlinkDestPath: "../../",
-			symlinkOrigPath: "/dir/sub-sir/",
-			expected:        false,
-		},
-		{
-			desc:            "Symbolic link pointing to relative file outside basePath should return false",
-			basePath:        "/dir",
-			symlinkDestPath: "../..",
-			symlinkOrigPath: "/dir/sub-sir/",
-			expected:        false,
-		},
+func TestWindowsPluginPaths(t *testing.T) {
+	if runtime.GOOS != "windows" {
+		t.Skip("Win32 path normalization")
 	}
-
-	for _, tc := range tcs {
-		t.Run(tc.desc, func(t *testing.T) {
-			actual := isSymlinkRelativeTo(tc.basePath, tc.symlinkDestPath, tc.symlinkOrigPath)
-			require.Equal(t, tc.expected, actual)
-		})
+	for _, name := range []string{"release/asset. ", "release/NUL.txt", "CONOUT$"} {
+		require.False(t, validPluginPath(name))
 	}
 }
 
