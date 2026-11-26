@@ -226,12 +226,11 @@ func zipFile(t *testing.T, zipPath string) *zip.ReadCloser {
 
 func TestArchiveDestination(t *testing.T) {
 	installDir := filepath.Join("plugins", "test-plugin")
-	got, err := archiveDestination(installDir, "release-123/partials/config.html")
-	require.NoError(t, err)
+	got := archiveDestination(installDir, "release-123/partials/config.html")
 	require.Equal(t, filepath.Join(installDir, "partials", "config.html"), got)
 
-	_, err = archiveDestination(installDir, "README.md")
-	require.Error(t, err)
+	archive := &zip.Reader{File: []*zip.File{{FileHeader: zip.FileHeader{Name: "README.md"}}}}
+	require.ErrorContains(t, ValidateArchive("test-plugin", archive), "missing a plugin directory")
 }
 
 func TestWindowsPluginPaths(t *testing.T) {

@@ -115,23 +115,10 @@ func (fs *FS) extractFiles(_ context.Context, pluginArchive *zip.ReadCloser, plu
 		}
 	}()
 
-	if strings.Contains(pluginID, "/") || !validPluginPath(pluginID) {
-		return "", fmt.Errorf("invalid plugin directory name %q", pluginID)
+	if err := ValidateArchive(pluginID, &pluginArchive.Reader); err != nil {
+		return "", err
 	}
 	installDir := filepath.Join(fs.pluginsDir, pluginID)
-
-	// Validate every member before removing an existing installation or writing any files.
-	destinations := make([]string, len(pluginArchive.File))
-	for i, zf := range pluginArchive.File {
-		if zf.Mode()&os.ModeSymlink != 0 {
-			return "", fmt.Errorf("archive member %q is a symbolic link", zf.Name)
-		}
-		dst, err := archiveDestination(installDir, zf.Name)
-		if err != nil {
-			return "", err
-		}
-		destinations[i] = dst
-	}
 
 	// RemoveAll removes the directory entry itself, including a dangling symlink.
 	if err := os.RemoveAll(installDir); err != nil {
@@ -143,8 +130,8 @@ func (fs *FS) extractFiles(_ context.Context, pluginArchive *zip.ReadCloser, plu
 		}
 	}()
 
-	for i, zf := range pluginArchive.File {
-		dstPath := destinations[i]
+	for _, zf := range pluginArchive.File {
+		dstPath := archiveDestination(installDir, zf.Name)
 		if zf.FileInfo().IsDir() {
 			// We can ignore gosec G304 here since it makes sense to give all users read access
 			// nolint:gosec
@@ -173,17 +160,29 @@ func (fs *FS) extractFiles(_ context.Context, pluginArchive *zip.ReadCloser, plu
 	return installDir, nil
 }
 
+// ValidateArchive checks the archive headers before an installation can be replaced.
+func ValidateArchive(pluginID string, archive *zip.Reader) error {
+	if strings.Contains(pluginID, "/") || !validPluginPath(pluginID) {
+		return fmt.Errorf("invalid plugin directory name %q", pluginID)
+	}
+	for _, member := range archive.File {
+		if member.Mode()&os.ModeSymlink != 0 {
+			return fmt.Errorf("archive member %q is a symbolic link", member.Name)
+		}
+		if !validPluginPath(strings.TrimSuffix(member.Name, "/")) {
+			return fmt.Errorf("invalid plugin archive member %q", member.Name)
+		}
+		if !strings.Contains(member.Name, "/") {
+			return fmt.Errorf("archive member %q is missing a plugin directory", member.Name)
+		}
+	}
+	return nil
+}
+
 // Grafana release archives wrap plugin contents in a top-level directory, often a Git build name.
-func archiveDestination(installDir, name string) (string, error) {
-	member := strings.TrimSuffix(name, "/")
-	if !validPluginPath(member) {
-		return "", fmt.Errorf("invalid plugin archive member %q", name)
-	}
-	_, relative, ok := strings.Cut(name, "/")
-	if !ok {
-		return "", fmt.Errorf("archive member %q is missing a plugin directory", name)
-	}
-	return filepath.Join(installDir, filepath.FromSlash(relative)), nil
+func archiveDestination(installDir, name string) string {
+	_, relative, _ := strings.Cut(name, "/")
+	return filepath.Join(installDir, filepath.FromSlash(relative))
 }
 
 func validPluginPath(name string) bool {

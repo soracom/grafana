@@ -99,8 +99,14 @@ func TestPluginManager_Add_Remove(t *testing.T) {
 			})
 
 			mockZipV2 := &zip.ReadCloser{Reader: zip.Reader{File: []*zip.File{{
-				FileHeader: zip.FileHeader{Name: zipNameV2},
+				FileHeader: zip.FileHeader{Name: "test-panel/plugin.json"},
 			}}}}
+			var unloaded bool
+			loader.UnloadFunc = func(_ context.Context, id string) error {
+				require.Equal(t, pluginID, id)
+				unloaded = true
+				return nil
+			}
 			loader.LoadFunc = func(_ context.Context, class plugins.Class, paths []string) ([]*plugins.Plugin, error) {
 				require.Equal(t, plugins.External, class)
 				require.Equal(t, []string{zipNameV2}, paths)
@@ -118,6 +124,7 @@ func TestPluginManager_Add_Remove(t *testing.T) {
 				}, nil
 			}
 			fs.AddFunc = func(_ context.Context, pluginID string, z *zip.ReadCloser) (*storage.ExtractedPluginArchive, error) {
+				require.True(t, unloaded)
 				require.Equal(t, pluginV1.ID, pluginID)
 				require.Equal(t, mockZipV2, z)
 				return &storage.ExtractedPluginArchive{
@@ -195,6 +202,32 @@ func TestPluginManager_Add_Remove(t *testing.T) {
 			})
 		}
 	})
+}
+
+func TestUpdateRejectsSymlinksBeforeUnloadingPlugin(t *testing.T) {
+	current := createPlugin(t, testPluginID, plugins.External, true, true)
+	current.Info.Version = "1.0.0"
+	registry := fakes.NewFakePluginRegistry()
+	require.NoError(t, registry.Add(context.Background(), current))
+	loader := &fakes.FakeLoader{
+		UnloadFunc: func(context.Context, string) error {
+			t.Fatal("rejected update unloaded the installed plugin")
+			return nil
+		},
+	}
+	repository := &fakes.FakePluginRepo{
+		GetPluginDownloadOptionsFunc: func(context.Context, string, string, repo.CompatOpts) (*repo.PluginDownloadOptions, error) {
+			return &repo.PluginDownloadOptions{Version: "2.0.0"}, nil
+		},
+		GetPluginArchiveFunc: func(context.Context, string, string, repo.CompatOpts) (*repo.PluginArchive, error) {
+			archive, err := zip.OpenReader("../storage/testdata/plugin-with-symlink.zip")
+			require.NoError(t, err)
+			return &repo.PluginArchive{File: archive}, nil
+		},
+	}
+	installer := New(registry, loader, repository, fakes.NewFakePluginStorage())
+	err := installer.Add(context.Background(), testPluginID, "2.0.0", plugins.CompatOpts{})
+	require.ErrorContains(t, err, "symbolic link")
 }
 
 func createPlugin(t *testing.T, pluginID string, class plugins.Class, managed, backend bool, cbs ...func(*plugins.Plugin)) *plugins.Plugin {
